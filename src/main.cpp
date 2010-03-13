@@ -14,7 +14,8 @@ using namespace HiveMind;
  */
 int main()
 {
-  Context *context = new Context();
+  Context *context = new Context("uniq-id");
+  context->connectTo("::1", 27910);
   delete context;
   return 0;
 }

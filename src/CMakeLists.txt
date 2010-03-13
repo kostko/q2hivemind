@@ -1,5 +1,5 @@
 
-#add_subdirectory(network)
+add_subdirectory(network)
 
 set(hivemind_src
 logger.cpp
@@ -10,8 +10,12 @@ main.cpp
 
 add_executable(hivemind ${hivemind_src})
 
-# External libraries
 target_link_libraries(hivemind
+  # Internal libraries
+  network
+
+  # External libraries
   ${Boost_LIBRARIES}
+  rt
 )
 

@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 SET(Boost_USE_MULTITHREAD ON)
 SET(Boost_USE_STATIC_LIBS OFF)
 
-find_package(Boost 1.37.0 COMPONENTS filesystem signals REQUIRED)
+find_package(Boost 1.37.0 COMPONENTS filesystem signals thread REQUIRED)
 find_package(Eigen2 REQUIRED)
 
 # Uncomment these lines for optimization

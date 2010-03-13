@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 using namespace std;
+using boost::format;
 
 namespace HiveMind {
 
@@ -26,14 +27,29 @@ void Logger::error(const std::string &message)
   abort();
 }
 
+void Logger::error(const boost::basic_format<char, std::char_traits<char>, std::allocator<char> > &message)
+{
+  Logger::error(str(message));
+}
+
 void Logger::warning(const std::string &message)
 {
   log("WARNING", message);
 }
 
+void Logger::warning(const boost::basic_format<char, std::char_traits<char>, std::allocator<char> > &message)
+{
+  Logger::warning(str(message));
+}
+
 void Logger::info(const std::string &message)
 {
   log("INFO   ", message);
+}
+
+void Logger::info(const boost::basic_format<char, std::char_traits<char>, std::allocator<char> > &message)
+{
+  Logger::info(str(message));
 }
 
 void Logger::log(const std::string &type, const std::string &message)

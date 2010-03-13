@@ -20,6 +20,7 @@ namespace HiveMind {
 
 // Global definitions for ease of use
 typedef boost::unordered_map<std::string, std::string> StringMap;
+typedef std::pair<std::string, std::string> StringPair;
 
 }
 
