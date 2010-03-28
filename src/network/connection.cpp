@@ -238,70 +238,70 @@ int Connection::processPacket(char *buffer, size_t length)
       case 0x03: {
         unsigned char entityType = buffer[i++];
         
-			  switch(entityType) {
-				  case 5:
-				  case 6:
-				  case 7:
-				  case 8:
-				  case 17:
-				  case 18:
-				  case 20:
-				  case 21:
-				  case 22:
-				  case 28: {
-				    i += 6;
-				    break;
-				  }
+		    switch(entityType) {
+          case 5:
+          case 6:
+          case 7:
+          case 8:
+          case 17:
+          case 18:
+          case 20:
+          case 21:
+          case 22:
+          case 28: {
+            i += 6;
+            break;
+          }
 
-				  case 0:
-				  case 1:
-				  case 2:
-				  case 4:
-				  case 9:
-				  case 12:
-				  case 13:
-				  case 14:
-				  case 27: {
-				    i += 7;
-				    break;
-				  }
+          case 0:
+          case 1:
+          case 2:
+          case 4:
+          case 9:
+          case 12:
+          case 13:
+          case 14:
+          case 27: {
+            i += 7;
+            break;
+          }
 
-				  case 3:
-				  case 11:
-				  case 23:
-				  case 26: {
-				    i += 12;
-				    break;
-				  }
+          case 3:
+          case 11:
+          case 23:
+          case 26: {
+            i += 12;
+            break;
+          }
 
-				  case 10: {
-				    i += 9;
-				    break;
-				  }
+          case 10: {
+            i += 9;
+            break;
+          }
 
-				  case 15:
-				  case 25:
-				  case 29: {
-				    i += 9;
-				    break;
-				  }
+          case 15:
+          case 25:
+          case 29: {
+            i += 9;
+            break;
+          }
 
-				  case 16:
-				  case 19: {
-				    i += 14;
-				    break;
-				  }
+          case 16:
+          case 19: {
+            i += 14;
+            break;
+          }
 
-				  case 24: {
-				    i += 20;
-				    break;
-				  }
+          case 24: {
+            i += 20;
+            break;
+          }
 
-				  default: {
-				    getLogger()->warning(format("Unrecognized entity type %d!") % entityType);
-				    return 0;
-				  }
-				}
+          default: {
+            getLogger()->warning(format("Unrecognized entity type %d!") % entityType);
+            return 0;
+          }
+			  }
         break;
       }
       
@@ -438,101 +438,101 @@ int Connection::processPacket(char *buffer, size_t length)
 
         mask = READ_CHAR;
         if (mask & 0x00000080) mask |= (READ_CHAR << 8);
-			  if (mask & 0x00008000) mask |= (READ_CHAR << 16);
-			  if (mask & 0x00800000) mask |= (READ_CHAR << 24);
-			  if (mask & 0x00000100) {
-				  entity = *((short*) (buffer + i));
-				  i += 2;
-			  } else {
-				  entity = READ_CHAR;
-			  }
-			  
-			  // Sanity check for entity identifier
-			  if (entity >= 1024) {
-			    getLogger()->error("Entity number greater than 1024! Protocol violation, aborting.");
-			  }
-			  
-			  m_spawn->entities[entity].modelIndex = (mask & 0x00000800) ? READ_CHAR : 0;
-			  m_spawn->entities[entity].modelIndex2 = (mask & 0x00100000) ? READ_CHAR : 0;
-			  m_spawn->entities[entity].modelIndex3 = (mask & 0x00200000) ? READ_CHAR : 0;
-			  m_spawn->entities[entity].modelIndex4 = (mask & 0x00400000) ? READ_CHAR : 0;
-			  m_spawn->entities[entity].framenum = 0;
-			  
-			  if (mask & 0x00000010)
-			    m_spawn->entities[entity].framenum = READ_CHAR;
-			  if (mask & 0x00020000) {
-				  m_spawn->entities[entity].framenum = *((short*) (buffer + i));
-				  i += 2;
-			  }
-			  if (mask & 0x00010000) {
-				  if (mask & 0x02000000) {
-					  i += 4;
-				  } else {
-					  i++;
-				  }
-			  } else {
-				  if (mask & 0x02000000) {
-					  i += 2;
-				  }
-			  }
-			  if (mask & 0x00004000) {
-				  if (mask & 0x00080000) {
-					  i += 4;
-				  } else {
-					  i++;
-				  }
-			  } else {
-				  if (mask & 0x00080000)
-				    i+=2;
-			  }
-			  if (mask & 0x00001000) {
-				  if (mask & 0x00040000) {
-					  m_spawn->entities[entity].renderfx = *((int*) (buffer + i));
-					  i += 4;
-				  } else {
-					  m_spawn->entities[entity].renderfx = READ_CHAR;
-				  }
-			  } else {
-				  if (mask & 0x00040000) {
-					  m_spawn->entities[entity].renderfx = *((short*) (buffer + i));
-					  i += 2;
-				  } else {
-					  m_spawn->entities[entity].renderfx = 0;
-				  }
-			  }
-			  if (mask & 0x00000001) {
-				  m_spawn->entities[entity].origin[0] = 0.125 * ((float) *((short*) (buffer + i)));
-				  i += 2;
-			  } else {
-				  m_spawn->entities[entity].origin[0] = 0;
-			  }
-			  if (mask & 0x00000002) {
-				  m_spawn->entities[entity].origin[1] = 0.125 * ((float) *((short*) (buffer + i)));
-				  i += 2;
-			  } else {
-				  m_spawn->entities[entity].origin[1] = 0;
-			  }
-			  if (mask & 0x00000200) {
-				  m_spawn->entities[entity].origin[2] = 0.125 * ((float) *((short*) (buffer + i)));
-				  i += 2;
-			  } else {
-				  m_spawn->entities[entity].origin[2] = 0;
-			  }
-			  
-			  m_spawn->entities[entity].angles[0] = (mask & 0x00000400) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
-			  m_spawn->entities[entity].angles[1] = (mask & 0x00000004) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
-			  m_spawn->entities[entity].angles[2] = (mask & 0x00000008) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
-			  if (mask & 0x01000000) i += 6;
-			  if (mask & 0x04000000) i++;
-			  if (mask & 0x00000020) i++;
-			  if (mask & 0x08000000) i += 2;
-			  
-			  // Mark entity as not updated (not visible)
-			  m_spawn->entities[entity].setVisible(false);
-			  m_dataPoints[entity].timestamp = timestamp;
-			  m_dataPoints[entity].origin[0] = m_spawn->entities[entity].origin[0];
-			  m_dataPoints[entity].origin[1] = m_spawn->entities[entity].origin[1];
-			  m_dataPoints[entity].origin[2] = m_spawn->entities[entity].origin[2];
+        if (mask & 0x00008000) mask |= (READ_CHAR << 16);
+        if (mask & 0x00800000) mask |= (READ_CHAR << 24);
+        if (mask & 0x00000100) {
+          entity = *((short*) (buffer + i));
+          i += 2;
+        } else {
+          entity = READ_CHAR;
+        }
+
+        // Sanity check for entity identifier
+        if (entity >= 1024) {
+          getLogger()->error("Entity number greater than 1024! Protocol violation, aborting.");
+        }
+
+        m_spawn->entities[entity].modelIndex = (mask & 0x00000800) ? READ_CHAR : 0;
+        m_spawn->entities[entity].modelIndex2 = (mask & 0x00100000) ? READ_CHAR : 0;
+        m_spawn->entities[entity].modelIndex3 = (mask & 0x00200000) ? READ_CHAR : 0;
+        m_spawn->entities[entity].modelIndex4 = (mask & 0x00400000) ? READ_CHAR : 0;
+        m_spawn->entities[entity].framenum = 0;
+
+        if (mask & 0x00000010)
+          m_spawn->entities[entity].framenum = READ_CHAR;
+        if (mask & 0x00020000) {
+          m_spawn->entities[entity].framenum = *((short*) (buffer + i));
+          i += 2;
+        }
+        if (mask & 0x00010000) {
+          if (mask & 0x02000000) {
+	          i += 4;
+          } else {
+	          i++;
+          }
+        } else {
+          if (mask & 0x02000000) {
+	          i += 2;
+          }
+        }
+        if (mask & 0x00004000) {
+          if (mask & 0x00080000) {
+	          i += 4;
+          } else {
+	          i++;
+          }
+        } else {
+          if (mask & 0x00080000)
+            i+=2;
+        }
+        if (mask & 0x00001000) {
+          if (mask & 0x00040000) {
+	          m_spawn->entities[entity].renderfx = *((int*) (buffer + i));
+	          i += 4;
+          } else {
+	          m_spawn->entities[entity].renderfx = READ_CHAR;
+          }
+        } else {
+          if (mask & 0x00040000) {
+	          m_spawn->entities[entity].renderfx = *((short*) (buffer + i));
+	          i += 2;
+          } else {
+	          m_spawn->entities[entity].renderfx = 0;
+          }
+        }
+        if (mask & 0x00000001) {
+          m_spawn->entities[entity].origin[0] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        } else {
+          m_spawn->entities[entity].origin[0] = 0;
+        }
+        if (mask & 0x00000002) {
+          m_spawn->entities[entity].origin[1] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        } else {
+          m_spawn->entities[entity].origin[1] = 0;
+        }
+        if (mask & 0x00000200) {
+          m_spawn->entities[entity].origin[2] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        } else {
+          m_spawn->entities[entity].origin[2] = 0;
+        }
+
+        m_spawn->entities[entity].angles[0] = (mask & 0x00000400) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+        m_spawn->entities[entity].angles[1] = (mask & 0x00000004) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+        m_spawn->entities[entity].angles[2] = (mask & 0x00000008) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+        if (mask & 0x01000000) i += 6;
+        if (mask & 0x04000000) i++;
+        if (mask & 0x00000020) i++;
+        if (mask & 0x08000000) i += 2;
+
+        // Mark entity as not updated (not visible)
+        m_spawn->entities[entity].setVisible(false);
+        m_dataPoints[entity].timestamp = timestamp;
+        m_dataPoints[entity].origin[0] = m_spawn->entities[entity].origin[0];
+        m_dataPoints[entity].origin[1] = m_spawn->entities[entity].origin[1];
+        m_dataPoints[entity].origin[2] = m_spawn->entities[entity].origin[2];
         break;
       }
       
