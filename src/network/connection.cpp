@@ -25,6 +25,7 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
   : m_host(host),
     m_port(boost::lexical_cast<std::string>(port)),
     m_connected(false),
+    m_online(false),
     m_svSequence(0),
     m_clSequence(0),
     m_svBit(0),
@@ -32,7 +33,15 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
     m_lastReliableSeq(0),
     m_lastPingTime(0),
     m_runningPing(0),
-    m_challengeNum(0)
+    m_challengeNum(0),
+    m_currentState(0),
+    m_currentFrame(0),
+    m_lastFrame(0xffffffff),
+    m_deltaFrame(0xffffffff),
+    m_cs(&(m_gamestates[0])),
+    m_ds(&(m_gamestates[16])),
+    m_spawn(&(m_gamestates[0])),
+    m_lastInventoryUpdate(0)
 {
   Object::init();
   
@@ -87,7 +96,7 @@ void Connection::connect()
   getLogger()->info(format("Host '%s' resolved, socket bound.") % m_host);
   
   // Create the processing thread
-  m_workerThread = boost::thread(&Connection::worker, this);
+  m_workerThread = boost::thread(&Connection::workerProtocol, this);
   m_connected = false;
   
   // Attempt connection sequence
@@ -109,22 +118,92 @@ void Connection::connect()
     sleep(1); 
   } while (!m_connected);
   
-  // TODO console thread
-  
+  // Spawn a console thread
+  m_consoleThread = boost::thread(&Connection::workerConsole, this);
   getLogger()->info("Connection established!");
+  
+  // Precache and come online
+  getLogger()->info("Precaching...");
+  writeConsoleSync("new");
+  {
+    boost::unique_lock<boost::mutex> lock(m_onlineMutex);
+    while (!m_online) {
+      m_onlineCond.wait(lock);
+    }
+  }
+  
+  getLogger()->info("We are synced to server!");
 }
 
-void Connection::worker()
+void Connection::begin()
+{
+  writeConsoleSync(str(format("begin %d\n") % m_loginKey));
+  getLogger()->info("Enter the cage!");
+}
+
+void Connection::workerConsole()
+{
+  getLogger()->info("Console thread is up and running.");
+  
+  // XXX there should be a stop signal
+  for (;;) {
+    boost::unique_lock<boost::mutex> lock(m_consoleMutex);
+    while (m_consoleQueue.empty()) {
+      m_consoleCond.wait(lock);
+    }
+    
+    // Process queued data
+    writeConsoleSync(m_consoleQueue.front());
+    m_consoleQueue.pop_front();
+  }
+}
+
+void Connection::writeConsoleSync(const std::string &msg)
+{
+  int length;
+  char buffer[2048];
+  
+  // Check if we are connected
+  if (!m_connected) {
+    getLogger()->warning("Attempted a console write while not connected!");
+    return;
+  }
+  
+  length = msg.length() + 1;
+  assert(length <= 2045);
+  
+  *((unsigned short *) buffer) = m_clientId;
+	buffer[2] = 0x04;
+	memcpy(buffer + 3, msg.c_str(), length);
+	sendReliablePacket(++m_clSequence, buffer, length + 3);
+}
+    
+void Connection::writeConsoleAsync(const std::string &msg)
+{
+  // Atomically insert an item into the queue
+  {
+    boost::lock_guard<boost::mutex> lock(m_consoleMutex);
+    m_consoleQueue.push_back(msg);
+  }
+  
+  // Notify the console thread that the queue now contains a task
+  m_consoleCond.notify_all();
+}
+
+void Connection::workerProtocol()
 {
   char buffer[2048];
   int length;
   int result;
+  
+  getLogger()->info("Protocol thread is up and running.");
   
   do {
     length = receivePacket(buffer);
     if (length > 0) {
       // Process received packet
       result = processPacket(buffer, length);
+      m_cs->timestamp = Timing::getCurrentTimestamp();
     } else {
       result = 0;
     }
@@ -137,6 +216,350 @@ void Connection::worker()
 int Connection::processPacket(char *buffer, size_t length)
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
+  
+  // Parse incoming packet
+  int i = 0;
+  unsigned char type;
+  char s[256];
+  int i_start = 0;
+  int timestamp = Timing::getCurrentTimestamp();
+  
+  while (i < length) {
+    type = buffer[i++];
+    
+    switch (type) {
+      // Muzzleflash
+      case 0x01: i += 3; break;
+      
+      // Monster Muzzleflash
+      case 0x02: i += 3; break;
+      
+      // Temporary entity
+      case 0x03: {
+        unsigned char entityType = buffer[i++];
+        
+			  switch(entityType) {
+				  case 5:
+				  case 6:
+				  case 7:
+				  case 8:
+				  case 17:
+				  case 18:
+				  case 20:
+				  case 21:
+				  case 22:
+				  case 28: {
+				    i += 6;
+				    break;
+				  }
+
+				  case 0:
+				  case 1:
+				  case 2:
+				  case 4:
+				  case 9:
+				  case 12:
+				  case 13:
+				  case 14:
+				  case 27: {
+				    i += 7;
+				    break;
+				  }
+
+				  case 3:
+				  case 11:
+				  case 23:
+				  case 26: {
+				    i += 12;
+				    break;
+				  }
+
+				  case 10: {
+				    i += 9;
+				    break;
+				  }
+
+				  case 15:
+				  case 25:
+				  case 29: {
+				    i += 9;
+				    break;
+				  }
+
+				  case 16:
+				  case 19: {
+				    i += 14;
+				    break;
+				  }
+
+				  case 24: {
+				    i += 20;
+				    break;
+				  }
+
+				  default: {
+				    getLogger()->warning(format("Unrecognized entity type %d!") % entityType);
+				    return 0;
+				  }
+				}
+        break;
+      }
+      
+      // Layout
+      case 0x04: {
+        while (buffer[i++]);
+        break;
+      }
+      
+      // Inventory
+      case 0x05: {
+        for (int j = 0; j < 256; j++) {
+          m_inventory[j] = *((short *) (buffer + i));
+          i += 2;
+        }
+        m_lastInventoryUpdate = Timing::getCurrentTimestamp();
+        break;
+      }
+      
+      // NOOP
+      case 0x06: break;
+      
+      // Disconnect
+      case 0x07: return 1;
+      
+      // Reconnect
+      case 0x08: return 1;
+      
+      // Sound
+      case 0x09: {
+        unsigned int mask = (unsigned char) buffer[i++];
+			  i++;
+			  
+			  if (mask & 0x01) i++;
+			  if (mask & 0x02) i++;
+			  if (mask & 0x10) i++;
+			  if (mask & 0x08) i += 2;
+			  if (mask & 0x04) i += 6;
+        break;
+      }
+      
+      // Print
+      case 0x0a: {
+        int j = 0;
+			  i++;
+			  
+			  while (buffer[i++]) {
+				  s[j++] = buffer[i-1] & 0x7f;
+			  }
+			  
+			  s[j++] = 0;
+			  getLogger()->info(format("SERVER PRINT: %s") % s);
+        break;
+      }
+      
+      // StuffText (client transfers commands from the server and executes
+      // them in its console)
+      case 0x0b: {
+        int j = 0;
+        while (buffer[i++]) {
+          s[j++] = buffer[i - 1];
+        }
+        s[j++] = 0;
+        
+        // Check what we got
+        std::string command(s);
+        if (command.find("precache") != std::string::npos) {
+          getLogger()->info("Precache completed.");
+          
+          // Atomically update our online status
+          {
+            boost::lock_guard<boost::mutex> lock(m_onlineMutex);
+            m_online = true;
+          }
+          
+          // Notify the console thread that the queue now contains a task
+          m_onlineCond.notify_all();
+        } else if (command.find("cmd") != std::string::npos) {
+          // Execute the command that the server wants us to execute
+          writeConsoleAsync(command.substr(4));
+        } else {
+          // Unknown StuffText
+          getLogger()->warning(format("Received unknown StuffText command: %s") % command);
+        }
+        break;
+      }
+      
+      // Serverinfo
+      case 0x0c: {
+        m_serverVersion = *((int*) (buffer + i));
+        i += 4;
+        m_loginKey = *((int*) (buffer + i));
+        i += 4;
+        buffer[i++] = 1;
+        while (buffer[i++]);
+        m_playerNum = *((short*) (buffer + i)) + 1;
+        i += 2;
+        while (buffer[i++]);
+        
+        // Show some information
+        getLogger()->info(format("Server protocol version: %d") % m_serverVersion);
+        getLogger()->info(format("Server login key: %d") % m_loginKey);
+        getLogger()->info(format("Player number: %d") % m_playerNum);
+        break;
+      }
+      
+      // ConfigString
+      case 0x0d: {
+        int num;
+        int j = 0;
+        
+        num = *((short *) (buffer + i));
+        i += 2;
+        
+        while (buffer[i]) {
+          m_serverConfig[num] += buffer[i++];
+        }
+        i++;
+        //getLogger()->info(format("Server config string[%d] = '%s' (%d)") % num % m_serverConfig[num] % m_serverConfig[num].length());
+        
+        // Handle max number of players config string
+        if (num == 30) {
+          m_maxPlayers = boost::lexical_cast<int>(m_serverConfig[num]);
+        }
+        break;
+      }
+      
+      // SpawnEntity
+      case 0x0e: {
+        unsigned int mask;
+        int entity;
+
+#define READ_CHAR ((unsigned char) buffer[i++])
+
+        mask = READ_CHAR;
+        if (mask & 0x00000080) mask |= (READ_CHAR << 8);
+			  if (mask & 0x00008000) mask |= (READ_CHAR << 16);
+			  if (mask & 0x00800000) mask |= (READ_CHAR << 24);
+			  if (mask & 0x00000100) {
+				  entity = *((short*) (buffer + i));
+				  i += 2;
+			  } else {
+				  entity = READ_CHAR;
+			  }
+			  
+			  // Sanity check for entity identifier
+			  if (entity >= 1024) {
+			    getLogger()->error("Entity number greater than 1024! Protocol violation, aborting.");
+			  }
+			  
+			  m_spawn->entities[entity].modelIndex = (mask & 0x00000800) ? READ_CHAR : 0;
+			  m_spawn->entities[entity].modelIndex2 = (mask & 0x00100000) ? READ_CHAR : 0;
+			  m_spawn->entities[entity].modelIndex3 = (mask & 0x00200000) ? READ_CHAR : 0;
+			  m_spawn->entities[entity].modelIndex4 = (mask & 0x00400000) ? READ_CHAR : 0;
+			  m_spawn->entities[entity].framenum = 0;
+			  
+			  if (mask & 0x00000010)
+			    m_spawn->entities[entity].framenum = READ_CHAR;
+			  if (mask & 0x00020000) {
+				  m_spawn->entities[entity].framenum = *((short*) (buffer + i));
+				  i += 2;
+			  }
+			  if (mask & 0x00010000) {
+				  if (mask & 0x02000000) {
+					  i += 4;
+				  } else {
+					  i++;
+				  }
+			  } else {
+				  if (mask & 0x02000000) {
+					  i += 2;
+				  }
+			  }
+			  if (mask & 0x00004000) {
+				  if (mask & 0x00080000) {
+					  i += 4;
+				  } else {
+					  i++;
+				  }
+			  } else {
+				  if (mask & 0x00080000)
+				    i+=2;
+			  }
+			  if (mask & 0x00001000) {
+				  if (mask & 0x00040000) {
+					  m_spawn->entities[entity].renderfx = *((int*) (buffer + i));
+					  i += 4;
+				  } else {
+					  m_spawn->entities[entity].renderfx = READ_CHAR;
+				  }
+			  } else {
+				  if (mask & 0x00040000) {
+					  m_spawn->entities[entity].renderfx = *((short*) (buffer + i));
+					  i += 2;
+				  } else {
+					  m_spawn->entities[entity].renderfx = 0;
+				  }
+			  }
+			  if (mask & 0x00000001) {
+				  m_spawn->entities[entity].origin[0] = 0.125 * ((float) *((short*) (buffer + i)));
+				  i += 2;
+			  } else {
+				  m_spawn->entities[entity].origin[0] = 0;
+			  }
+			  if (mask & 0x00000002) {
+				  m_spawn->entities[entity].origin[1] = 0.125 * ((float) *((short*) (buffer + i)));
+				  i += 2;
+			  } else {
+				  m_spawn->entities[entity].origin[1] = 0;
+			  }
+			  if (mask & 0x00000200) {
+				  m_spawn->entities[entity].origin[2] = 0.125 * ((float) *((short*) (buffer + i)));
+				  i += 2;
+			  } else {
+				  m_spawn->entities[entity].origin[2] = 0;
+			  }
+			  
+			  m_spawn->entities[entity].angles[0] = (mask & 0x00000400) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+			  m_spawn->entities[entity].angles[1] = (mask & 0x00000004) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+			  m_spawn->entities[entity].angles[2] = (mask & 0x00000008) ? (M_PI/128.0 * (float) buffer[i++]) : 0;
+			  if (mask & 0x01000000) i += 6;
+			  if (mask & 0x04000000) i++;
+			  if (mask & 0x00000020) i++;
+			  if (mask & 0x08000000) i += 2;
+			  
+			  // Mark entity as not updated (not visible)
+			  m_spawn->entities[entity].setVisible(false);
+			  m_dataPoints[entity].timestamp = timestamp;
+			  m_dataPoints[entity].origin[0] = m_spawn->entities[entity].origin[0];
+			  m_dataPoints[entity].origin[1] = m_spawn->entities[entity].origin[1];
+			  m_dataPoints[entity].origin[2] = m_spawn->entities[entity].origin[2];
+        break;
+      }
+      
+      // CenterPrint
+      case 0x0f: {
+        while(buffer[i++]);
+        break;
+      }
+      
+      // TODO Download
+      // TODO Playerinfo
+      // TODO EntityUpdate
+      // TODO FrameUpdate
+      
+      // Unknown packet type
+      default: {
+        getLogger()->warning(format("Received unknown packet type from server: 0x%02x") % (unsigned int) type);
+        return 0;
+      }
+    }
+  }
+  
+  // Check for misalignments
+  if (i > length) {
+    getLogger()->warning("Server packet misalignment error.");
+    return 0;
+  }
   
   return 0;
 }
@@ -199,6 +622,7 @@ int Connection::receivePacket(char *data)
 	// Emit status packets every 3 seconds
 	pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
 	if (pingTime > 3000) {
+	  getLogger()->info("Sending status packet.");
 	  sprintf(b, "status");
 	  sendUnorderedPacket(b, 7);
 	  m_lastPingTime = Timing::getCurrentTimestamp();
@@ -212,9 +636,9 @@ int Connection::receivePacket(char *data)
 	// XXX why is this not in packet processor ?
 	seq = *((unsigned int *) buffer);
 	if (seq == 0xffffffff) {
+	  // Unordered packet
 		buffer[length + 8] = 0;
 		sscanf((char *)(buffer + 4), "%s %d", b, &temp);
-		//getLogger()->info(format("packet %s") % b);
 		
 		if(!strcmp(b, "challenge")) {
 		  // We got the challenge number
@@ -231,6 +655,7 @@ int Connection::receivePacket(char *data)
 		
 		length = -1;
 	} else {
+	  // Packet with sequence number
 		if (length)
 		  memcpy(data, buffer + 8, length);
     

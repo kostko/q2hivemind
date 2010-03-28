@@ -11,10 +11,14 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include <boost/thread.hpp>
+
 using namespace std;
 using boost::format;
 
 namespace HiveMind {
+
+static boost::mutex __logger_mutex;
 
 Logger::Logger(const std::string &name)
   : m_module(name)
@@ -54,6 +58,7 @@ void Logger::info(const boost::basic_format<char, std::char_traits<char>, std::a
 
 void Logger::log(const std::string &type, const std::string &message)
 {
+  boost::lock_guard<boost::mutex> g(__logger_mutex);
   time_t rawtime;
   struct tm *timeinfo;
   

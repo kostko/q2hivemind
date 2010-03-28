@@ -28,6 +28,8 @@ void Context::connectTo(const std::string &host, unsigned int port)
   
   m_connection = new Connection(m_botId, host, port);
   m_connection->connect();
+  // TODO load maps here
+  m_connection->begin();
 }
 
 }
