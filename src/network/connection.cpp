@@ -57,11 +57,11 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
   srand(Timing::getCurrentTimestamp());
   m_clientId = rand();
 }
-    
+
 Connection::~Connection()
 {
 }
-    
+
 void Connection::connect()
 {
   getLogger()->info(format("Attempting to connect with [%s]:%s...") % m_host % m_port);
@@ -173,11 +173,11 @@ void Connection::writeConsoleSync(const std::string &msg)
   assert(length <= 2045);
   
   *((unsigned short *) buffer) = m_clientId;
-	buffer[2] = 0x04;
-	memcpy(buffer + 3, msg.c_str(), length);
-	sendReliablePacket(++m_clSequence, buffer, length + 3);
+  buffer[2] = 0x04;
+  memcpy(buffer + 3, msg.c_str(), length);
+  sendReliablePacket(++m_clSequence, buffer, length + 3);
 }
-    
+
 void Connection::writeConsoleAsync(const std::string &msg)
 {
   // Atomically insert an item into the queue
@@ -212,7 +212,7 @@ void Connection::workerProtocol()
   m_connected = false;
   getLogger()->info("We are disconnected!");
 }
-    
+
 int Connection::processPacket(char *buffer, size_t length)
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
@@ -238,7 +238,7 @@ int Connection::processPacket(char *buffer, size_t length)
       case 0x03: {
         unsigned char entityType = buffer[i++];
         
-		    switch(entityType) {
+        switch(entityType) {
           case 5:
           case 6:
           case 7:
@@ -301,7 +301,7 @@ int Connection::processPacket(char *buffer, size_t length)
             getLogger()->warning(format("Unrecognized entity type %d!") % entityType);
             return 0;
           }
-			  }
+        }
         break;
       }
       
@@ -333,27 +333,27 @@ int Connection::processPacket(char *buffer, size_t length)
       // Sound
       case 0x09: {
         unsigned int mask = (unsigned char) buffer[i++];
-			  i++;
-			  
-			  if (mask & 0x01) i++;
-			  if (mask & 0x02) i++;
-			  if (mask & 0x10) i++;
-			  if (mask & 0x08) i += 2;
-			  if (mask & 0x04) i += 6;
+        i++;
+
+        if (mask & 0x01) i++;
+        if (mask & 0x02) i++;
+        if (mask & 0x10) i++;
+        if (mask & 0x08) i += 2;
+        if (mask & 0x04) i += 6;
         break;
       }
       
       // Print
       case 0x0a: {
         int j = 0;
-			  i++;
-			  
-			  while (buffer[i++]) {
-				  s[j++] = buffer[i-1] & 0x7f;
-			  }
-			  
-			  s[j++] = 0;
-			  getLogger()->info(format("SERVER PRINT: %s") % s);
+        i++;
+
+        while (buffer[i++]) {
+          s[j++] = buffer[i-1] & 0x7f;
+        }
+
+        s[j++] = 0;
+        getLogger()->info(format("SERVER PRINT: %s") % s);
         break;
       }
       
@@ -466,20 +466,20 @@ int Connection::processPacket(char *buffer, size_t length)
         }
         if (mask & 0x00010000) {
           if (mask & 0x02000000) {
-	          i += 4;
+            i += 4;
           } else {
-	          i++;
+            i++;
           }
         } else {
           if (mask & 0x02000000) {
-	          i += 2;
+            i += 2;
           }
         }
         if (mask & 0x00004000) {
           if (mask & 0x00080000) {
-	          i += 4;
+            i += 4;
           } else {
-	          i++;
+            i++;
           }
         } else {
           if (mask & 0x00080000)
@@ -487,17 +487,17 @@ int Connection::processPacket(char *buffer, size_t length)
         }
         if (mask & 0x00001000) {
           if (mask & 0x00040000) {
-	          m_spawn->entities[entity].renderfx = *((int*) (buffer + i));
-	          i += 4;
+            m_spawn->entities[entity].renderfx = *((int*) (buffer + i));
+            i += 4;
           } else {
-	          m_spawn->entities[entity].renderfx = READ_CHAR;
+            m_spawn->entities[entity].renderfx = READ_CHAR;
           }
         } else {
           if (mask & 0x00040000) {
-	          m_spawn->entities[entity].renderfx = *((short*) (buffer + i));
-	          i += 2;
+            m_spawn->entities[entity].renderfx = *((short*) (buffer + i));
+            i += 2;
           } else {
-	          m_spawn->entities[entity].renderfx = 0;
+            m_spawn->entities[entity].renderfx = 0;
           }
         }
         if (mask & 0x00000001) {
@@ -587,7 +587,7 @@ void Connection::sendUnreliablePacket(unsigned int seq, char *data, size_t lengt
   *((unsigned int*) (buffer + 4)) = m_svSequence | m_svBit;
   send(m_socket, buffer, length + 8, 0); 
 }
-    
+
 void Connection::sendReliablePacket(unsigned int seq, char *data, size_t length)
 {
   boost::lock_guard<boost::mutex> g(m_sendRLMutex);
@@ -615,69 +615,69 @@ int Connection::receivePacket(char *data)
   char buffer[2048];
   char b[256];
   int length;
-	unsigned int seq;
-	unsigned int temp;
-	int pingTime;
-	
-	// Emit status packets every 3 seconds
-	pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
-	if (pingTime > 3000) {
-	  getLogger()->info("Sending status packet.");
-	  sprintf(b, "status");
-	  sendUnorderedPacket(b, 7);
-	  m_lastPingTime = Timing::getCurrentTimestamp();
-	}
-	
-	// Receive a packet
-	length = recv(m_socket, buffer, 2048, 0) - 8;
-	if (length + 8 < 0)
-	  getLogger()->error(format("Receive error %d (%s)!") % errno % strerror(errno));
-	
-	// XXX why is this not in packet processor ?
-	seq = *((unsigned int *) buffer);
-	if (seq == 0xffffffff) {
-	  // Unordered packet
-		buffer[length + 8] = 0;
-		sscanf((char *)(buffer + 4), "%s %d", b, &temp);
-		
-		if(!strcmp(b, "challenge")) {
-		  // We got the challenge number
-			m_challengeNum = temp;
-		} else if(!strcmp(b, "print")) {
-		  // We got RTT measurement packet
-			pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
-			m_runningPing = (2*m_runningPing + pingTime)/3;
-		} else if(!strcmp(b, "client_connect")) {
-		  // We got client connected packet
-		  getLogger()->info("Received connect confirmation.");
-			m_connected = true;
-		}
-		
-		length = -1;
-	} else {
-	  // Packet with sequence number
-		if (length)
-		  memcpy(data, buffer + 8, length);
+  unsigned int seq;
+  unsigned int temp;
+  int pingTime;
+
+  // Emit status packets every 3 seconds
+  pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
+  if (pingTime > 3000) {
+    getLogger()->info("Sending status packet.");
+    sprintf(b, "status");
+    sendUnorderedPacket(b, 7);
+    m_lastPingTime = Timing::getCurrentTimestamp();
+  }
+
+  // Receive a packet
+  length = recv(m_socket, buffer, 2048, 0) - 8;
+  if (length + 8 < 0)
+    getLogger()->error(format("Receive error %d (%s)!") % errno % strerror(errno));
+
+  // XXX why is this not in packet processor ?
+  seq = *((unsigned int *) buffer);
+  if (seq == 0xffffffff) {
+    // Unordered packet
+    buffer[length + 8] = 0;
+    sscanf((char *)(buffer + 4), "%s %d", b, &temp);
+
+    if(!strcmp(b, "challenge")) {
+      // We got the challenge number
+      m_challengeNum = temp;
+    } else if(!strcmp(b, "print")) {
+      // We got RTT measurement packet
+      pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
+      m_runningPing = (2*m_runningPing + pingTime)/3;
+    } else if(!strcmp(b, "client_connect")) {
+      // We got client connected packet
+      getLogger()->info("Received connect confirmation.");
+      m_connected = true;
+    }
+
+    length = -1;
+  } else {
+    // Packet with sequence number
+    if (length)
+      memcpy(data, buffer + 8, length);
     
-		m_svSequence = seq;
-		if (m_svSequence & 0x80000000) {
-		  // Server sent us a reliable packet
-			m_svSequence &= 0x7fffffff;
-			if (m_svSequence > m_lastReliableSeq) {
-				m_lastReliableSeq = m_svSequence;
-				m_svBit ^= 0x80000000;
-			}
-		}
-		
-		seq = *((unsigned int *) (buffer + 4));
-		if ((seq & 0x80000000) != m_clBit) {
-		  // Received reliable packet ACK
-			m_clBit = seq & 0x80000000;
-			m_reliableReceived = true;
-		}
-	}
-	
-	return length;
+    m_svSequence = seq;
+    if (m_svSequence & 0x80000000) {
+      // Server sent us a reliable packet
+      m_svSequence &= 0x7fffffff;
+      if (m_svSequence > m_lastReliableSeq) {
+        m_lastReliableSeq = m_svSequence;
+        m_svBit ^= 0x80000000;
+      }
+    }
+
+    seq = *((unsigned int *) (buffer + 4));
+    if ((seq & 0x80000000) != m_clBit) {
+      // Received reliable packet ACK
+      m_clBit = seq & 0x80000000;
+      m_reliableReceived = true;
+    }
+  }
+
+  return length;
 }
 
 }
