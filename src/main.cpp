@@ -16,6 +16,7 @@ int main()
 {
   Context *context = new Context("uniq-id");
   context->connectTo("::1", 27910);
+  for (;;) { sleep(1); }
   delete context;
   return 0;
 }

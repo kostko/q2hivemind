@@ -542,10 +542,231 @@ int Connection::processPacket(char *buffer, size_t length)
         break;
       }
       
-      // TODO Download
-      // TODO Playerinfo
-      // TODO EntityUpdate
-      // TODO FrameUpdate
+      // Download
+      case 0x10: {
+        int size;
+        int percent;
+        
+        size = *((unsigned short*) (buffer + i));
+        i += 2;
+        percent = buffer[i++];
+        if (size > -1) {
+          i += size;
+        }
+        break;
+      }
+      
+      // Playerinfo
+      case 0x11: {
+        unsigned int mask;
+        mask = *((unsigned short*) (buffer + i));
+        i += 2;
+        
+        if (mask & 0x0001)
+          i++;
+        if (mask & 0x0002) {
+          // Origin update
+          m_cs->player.origin[0] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.origin[1] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.origin[2] = 0.125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        }
+        if (mask & 0x0004) {
+          // Velocity update
+          m_cs->player.velocity[0] = 0.0125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.velocity[1] = 0.0125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.velocity[2] = 0.0125 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        }
+        if (mask & 0x0008) i++;
+        if (mask & 0x0010) i++;
+        if (mask & 0x0020) i += 2;
+        if (mask & 0x0040) {
+          // Orientation update
+          m_cs->player.angles[0] = M_PI/32768.0 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.angles[1] = M_PI/32768.0 * ((float) *((short*) (buffer + i)));
+          i += 2;
+          m_cs->player.angles[2] = M_PI/32768.0 * ((float) *((short*) (buffer + i)));
+          i += 2;
+        }
+        if (mask & 0x0080) i += 3;
+        if (mask & 0x0100) i += 6;
+        if (mask & 0x0200) i += 3;
+        if (mask & 0x1000) m_cs->player.gunindex = buffer[i++];
+        if (mask & 0x2000) i += 7;
+        if (mask & 0x0400) i += 4;
+        if (mask & 0x0800) i++;
+        if (mask & 0x4000) i++;
+        
+        // Update player stats
+        mask = *((unsigned long*) (buffer + i));
+        i += 4;
+        for (int j = 0; j < 32; j++) {
+          if (mask & (0x00000001 << j)) {
+            if (j == 13) {
+              *((short*) (buffer + i)) = 0;
+            }
+            
+            m_cs->player.stats[j] = *((short*) (buffer + i));
+            i += 2;
+          }
+        }
+        break;
+      }
+      
+      // EntityUpdate
+      case 0x12: {
+        unsigned int mask;
+        int entity;
+        
+        for (;;) {
+          mask = READ_CHAR;
+          if (mask & 0x00000080) mask |= (READ_CHAR << 8);
+          if (mask & 0x00008000) mask |= (READ_CHAR << 16);
+          if (mask & 0x00800000) mask |= (READ_CHAR << 24);
+          if (mask & 0x00000100) {
+            entity = *((short*) (buffer + i));
+            i += 2;
+          } else {
+            entity = READ_CHAR;
+          }
+          
+          if (!entity)
+            break;
+
+          // Sanity check for entity identifier
+          if (entity >= 1024) {
+            getLogger()->error("Entity number greater than 1024! Protocol violation, aborting.");
+          }
+          
+          m_cs->entities[entity].setVisible(true);
+          if (mask & 0x00000800) m_cs->entities[entity].modelIndex =  READ_CHAR;
+          if (mask & 0x00100000) m_cs->entities[entity].modelIndex2 = READ_CHAR;
+          if (mask & 0x00200000) m_cs->entities[entity].modelIndex3 = READ_CHAR;
+          if (mask & 0x00400000) m_cs->entities[entity].modelIndex4 =  READ_CHAR;
+          if (mask & 0x00000010) m_cs->entities[entity].framenum = READ_CHAR;
+          if (mask & 0x00020000) {
+            m_cs->entities[entity].framenum = *((short*) (buffer + i));
+            i += 2;
+          }
+          if (mask & 0x00010000) {
+            if (mask & 0x02000000) {
+              i += 4;
+            } else {
+              i++;
+            }
+          } else {
+            if (mask & 0x02000000) {
+              i += 2;
+            }	
+          }
+          if (mask & 0x00004000) {
+            if (mask & 0x00080000) {
+              i+=4;
+            } else {
+              i++;
+            }
+          } else if (mask & 0x00080000) {
+            i += 2;
+          }
+          if (mask & 0x00001000) {
+            if (mask & 0x00040000) {
+              m_cs->entities[entity].renderfx = *((int*) (buffer + i));
+              i += 4;
+            } else {
+              m_cs->entities[entity].renderfx = READ_CHAR;
+            }
+          } else {
+            if (mask & 0x00040000) {
+              m_cs->entities[entity].renderfx = *((short*) (buffer + i));
+              i += 2;
+            }
+          }
+          if (mask & 0x00000001) {
+            m_cs->entities[entity].origin[0] = 0.125 * ((float) *((short*) (buffer + i)));
+            i += 2;
+          }
+          if (mask & 0x00000002) {
+            m_cs->entities[entity].origin[1] = 0.125 * ((float) *((short*) (buffer + i)));
+            i += 2;
+          }
+          if (mask & 0x00000200) {
+            m_cs->entities[entity].origin[2] = 0.125 * ((float) *((short*) (buffer + i)));
+            i += 2;
+          }
+          float f = 0.01 * (float) (timestamp - m_dataPoints[entity].timestamp);
+          if (f > 0.0 && f <= 10.0) {
+            m_cs->entities[entity].velocity[0] = (m_cs->entities[entity].origin[0] - m_dataPoints[entity].origin[0]) / f;
+            m_cs->entities[entity].velocity[1] = (m_cs->entities[entity].origin[1] - m_dataPoints[entity].origin[1]) / f;
+            m_cs->entities[entity].velocity[2] = (m_cs->entities[entity].origin[2] - m_dataPoints[entity].origin[2]) / f;
+          } else {
+            m_cs->entities[entity].velocity[0] = 0;
+            m_cs->entities[entity].velocity[1] = 0;
+            m_cs->entities[entity].velocity[2] = 0;
+          }
+          
+          m_dataPoints[entity].timestamp = timestamp;
+          m_dataPoints[entity].origin[0] = m_cs->entities[entity].origin[0];
+          m_dataPoints[entity].origin[1] = m_cs->entities[entity].origin[1];
+          m_dataPoints[entity].origin[2] = m_cs->entities[entity].origin[2];
+          
+          if (mask & 0x00000004) m_cs->entities[entity].angles[0] = (M_PI / 128.0 * (float) buffer[i++]);
+          if (mask & 0x00000400) m_cs->entities[entity].angles[1] = (M_PI / 128.0 * (float) buffer[i++]);
+          if (mask & 0x00000008) m_cs->entities[entity].angles[2] = (M_PI / 128.0 * (float) buffer[i++]);
+          if (mask & 0x01000000) i += 6;
+          if (mask & 0x04000000) i++;
+          if (mask & 0x00000020) i++;
+          if (mask & 0x08000000) i += 2;
+          if (mask & 0x00000040) {
+            m_cs->entities[entity].setVisible(false);
+          }
+        }
+        break;
+      }
+      
+      // FrameUpdate
+      case 0x14: {
+        int count;
+        
+        // Save current frame and parse updated frame
+        m_lastFrame = m_currentFrame;
+        m_currentFrame = *((unsigned long*) (buffer + i));
+        i += 4;
+        
+        // Parse delta frame
+        m_deltaFrame = *((unsigned long*) (buffer + i));
+        i += 4;
+        i += 1;
+        
+        count = buffer[i++];
+        i += count;
+        if (m_currentFrame - m_lastFrame > 12) {
+          m_currentState = 0;
+        } else {
+          m_currentState = (m_currentState + m_currentFrame - m_lastFrame) % 16;
+        }
+        
+        if (m_deltaFrame == 0xffffffff) {
+          m_ds = &(m_gamestates[16]);
+          m_packetLoss = 0;
+        } else if (m_currentFrame - m_deltaFrame > 12) {
+          getLogger()->warning("Too much packet loss!");
+          m_packetLoss = 0x80000000;
+          return 0;
+        } else {
+          m_ds = &(m_gamestates[(m_currentState + m_deltaFrame - m_currentFrame + 16) % 16]);
+          m_packetLoss = 0;
+        }
+        
+        m_cs = &(m_gamestates[m_currentState]);
+        memcpy(m_cs, m_ds, sizeof(InternalGameState));
+        break;
+      }
       
       // Unknown packet type
       default: {
@@ -622,7 +843,6 @@ int Connection::receivePacket(char *data)
   // Emit status packets every 3 seconds
   pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;
   if (pingTime > 3000) {
-    getLogger()->info("Sending status packet.");
     sprintf(b, "status");
     sendUnorderedPacket(b, 7);
     m_lastPingTime = Timing::getCurrentTimestamp();
