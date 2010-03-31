@@ -14,6 +14,8 @@
 #include <list>
 #include <boost/thread.hpp>
 
+#define MAX_UPDATES 128
+
 namespace HiveMind {
 
 class Connection : public Object {
@@ -25,6 +27,12 @@ public:
     void connect();
     
     void begin();
+    
+    void disconnect();
+    
+    void move(const Vector3f &angles, const Vector3f &velocity, bool attack);
+    
+    void say(const std::string &msg);
     
     /**
      * Returns true if the connection is currently established.
@@ -49,6 +57,8 @@ protected:
      * Entry point for the internal console worker thread.
      */
     void workerConsole();
+    
+    void dispatchUpdate();
     
     int receivePacket(char *buffer);
     
@@ -122,6 +132,21 @@ private:
     int m_maxPlayers;
     int m_playerNum;
     int m_loginKey;
+    
+    // Updates
+    class Update {
+    public:
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+      
+      Vector3f angles;
+      Vector3f velocity;
+      unsigned char msec, light, buttons, impulse;
+      int timestamp;
+    };
+    
+    Update m_updates[MAX_UPDATES];
+    int m_currentUpdate;
+    int m_lastUpdateTime;
 };
 
 }

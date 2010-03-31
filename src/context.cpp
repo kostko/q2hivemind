@@ -30,6 +30,19 @@ void Context::connectTo(const std::string &host, unsigned int port)
   m_connection->connect();
   // TODO load maps here
   m_connection->begin();
+  
+  // XXX test
+  for (int i = 0; i < 200; i++) {
+    m_connection->move(
+      Vector3f(0.0, (float) i / 50.0, 0.0),
+      Vector3f(400.0, 0.0, 0.0),
+      true
+    );
+    
+    if (i == 100) {
+      m_connection->say("Hello world!!");
+    }
+  }
 }
 
 }

@@ -1,5 +1,6 @@
 
 set(network_src
+util.cpp
 connection.cpp
 )
 

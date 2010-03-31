@@ -6,6 +6,7 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "network/connection.h"
+#include "network/util.h"
 #include "logger.h"
 #include "timing.h"
 
@@ -41,7 +42,9 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
     m_cs(&(m_gamestates[0])),
     m_ds(&(m_gamestates[16])),
     m_spawn(&(m_gamestates[0])),
-    m_lastInventoryUpdate(0)
+    m_lastInventoryUpdate(0),
+    m_currentUpdate(0),
+    m_lastUpdateTime(0)
 {
   Object::init();
   
@@ -141,11 +144,136 @@ void Connection::begin()
   getLogger()->info("Enter the cage!");
 }
 
+void Connection::disconnect()
+{
+  if (m_online) {
+    m_online = false;
+    writeConsoleSync("disconnect");
+    
+    // Terminate threads
+    m_consoleThread.interrupt();
+    m_workerThread.interrupt();
+  }
+  
+  getLogger()->info("Client disconnected.");
+}
+
+void Connection::say(const std::string &msg)
+{
+  writeConsoleSync("say " + msg);
+}
+
+void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool attack)
+{
+  boost::lock_guard<boost::mutex> g(m_gameStateMutex);
+  Vector3f adjAngles;
+  int frameTime;
+  
+  if (!m_online)
+    return;
+  
+  frameTime = Timing::getCurrentTimestamp() - m_lastUpdateTime;
+  while (frameTime < 10) {
+    usleep(10000);
+    frameTime = Timing::getCurrentTimestamp() - m_lastUpdateTime;
+  }
+  m_lastUpdateTime += frameTime;
+  if (frameTime > 255)
+    frameTime = 255;
+  
+  adjAngles[0] = angles[0] + m_cs->player.angles[0];
+  adjAngles[1] = angles[1] - m_cs->player.angles[1];
+  adjAngles[2] = angles[2];
+  
+  m_updates[m_currentUpdate].angles = adjAngles;
+  m_updates[m_currentUpdate].velocity = velocity;
+  m_updates[m_currentUpdate].msec = frameTime;
+  m_updates[m_currentUpdate].light = 0;
+  m_updates[m_currentUpdate].buttons = attack ? 0x81 : 0;
+  m_updates[m_currentUpdate].impulse = 0;
+  m_updates[m_currentUpdate].timestamp = Timing::getCurrentTimestamp();
+  
+  dispatchUpdate();
+}
+
+void Connection::dispatchUpdate()
+{
+  char buffer[2048];
+  unsigned char mask;
+  unsigned int seq;
+  int i, n, m;
+  
+  seq = ++m_clSequence;
+  i = 0;
+  
+  *((unsigned short*) (buffer + i)) = m_clientId;
+  i += 2;
+  
+  buffer[i++] = 0x02;
+  buffer[i++] = 0x00;
+  *((unsigned long*) (buffer + i)) = m_currentFrame | m_packetLoss;
+  i += 4;
+  
+  for (int j = -3; j < 0; j++) {
+    n = (m_currentUpdate + MAX_UPDATES + j + 1) % MAX_UPDATES;
+    m = (m_currentUpdate + MAX_UPDATES + j) % MAX_UPDATES;
+    if (j == -3)
+      m = MAX_UPDATES;
+    
+    mask = 0;
+    if (m_updates[n].angles[0] != m_updates[m].angles[0]) mask |= 0x01; // pitch
+    if (m_updates[n].angles[1] != m_updates[m].angles[1]) mask |= 0x02; // yaw
+    if (m_updates[n].angles[2] != m_updates[m].angles[2]) mask |= 0x04; // roll
+    if (m_updates[n].velocity[0] != m_updates[m].velocity[0]) mask |= 0x08;
+    if (m_updates[n].velocity[1] != m_updates[m].velocity[1]) mask |= 0x10;
+    if (m_updates[n].velocity[2] != m_updates[m].velocity[2]) mask |= 0x20;
+    if (m_updates[n].buttons != m_updates[m].buttons) mask |= 0x40;
+    if (m_updates[n].impulse != m_updates[m].impulse) mask |= 0x80;
+    buffer[i++] = mask;
+    
+    if (mask & 0x01) {
+      *((short*) (buffer + i)) = (short) (-m_updates[n].angles[0] * 32768.0/M_PI);
+      i += 2;
+    }
+    if (mask&0x02) {
+      *((short*) (buffer + i)) = (short) (m_updates[n].angles[1] * 32768.0/M_PI);
+      i += 2;
+    }
+    if (mask & 0x04) {
+      *((short*) (buffer + i)) = (short) (m_updates[n].angles[2] * 32768.0/M_PI);
+      i += 2;
+    }
+    if(mask & 0x08) {
+      *((short*) (buffer + i)) = (short) (m_updates[n].velocity[0]);
+      i += 2;
+    }
+    if(mask & 0x10) {
+      *((short*) (buffer + i)) = (short) (m_updates[n].velocity[1]);
+      i += 2;
+    }
+    if (mask & 0x20) {
+      *((short*) (buffer + i)) = (short) (m_updates[n].velocity[2]);
+      i += 2;
+    }
+    if(mask & 0x40)
+      buffer[i++] = m_updates[n].buttons;
+    if(mask & 0x80)
+      buffer[i++] = m_updates[n].impulse;
+    
+    buffer[i++] = m_updates[n].msec;
+    buffer[i++] = m_updates[n].light;
+  }
+  
+  m_currentUpdate = (m_currentUpdate + 1) % MAX_UPDATES;
+  buffer[3] = Util::checksum((unsigned char*) (buffer + 4), i - 4, seq);
+  sendUnreliablePacket(seq, buffer, i); 
+}
+
 void Connection::workerConsole()
 {
   getLogger()->info("Console thread is up and running.");
   
-  // XXX there should be a stop signal
+  try {
   for (;;) {
     boost::unique_lock<boost::mutex> lock(m_consoleMutex);
     while (m_consoleQueue.empty()) {
@@ -155,6 +283,9 @@ void Connection::workerConsole()
     // Process queued data
     writeConsoleSync(m_consoleQueue.front());
     m_consoleQueue.pop_front();
+  }
+  } catch (boost::thread_interrupted e) {
+    getLogger()->info("Console thread is terminating.");
   }
 }
 
