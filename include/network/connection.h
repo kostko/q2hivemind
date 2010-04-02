@@ -18,20 +18,55 @@
 
 namespace HiveMind {
 
+/**
+ * A complete Quake 2 client implementation.
+ */
 class Connection : public Object {
 public:
+    /**
+     * Class constructor.
+     *
+     * @param id A unique bot identifier
+     * @param host Quake 2 server host
+     * @param port Quake 2 server port
+     */
     Connection(const std::string &id, const std::string &host, int port);
     
+    /**
+     * Class destructor.
+     */
     virtual ~Connection();
     
+    /**
+     * Establishes a connection with the server.
+     */
     void connect();
     
+    /**
+     * Notifies the server to start sending game updates.
+     */
     void begin();
     
+    /**
+     * Disconnects from a server.
+     */
     void disconnect();
     
+    /**
+     * Issues a move command. This method must be called on every
+     * frame.
+     *
+     * @param angles Orientation vector
+     * @param velocity Velocity vector
+     * @param attack True to fire
+     */
     void move(const Vector3f &angles, const Vector3f &velocity, bool attack);
     
+    /**
+     * Says something in global chat.
+     *
+     * @param msg Message to say
+     */
     void say(const std::string &msg);
     
     /**
@@ -44,8 +79,18 @@ public:
      */
     inline bool isOnline() const { return m_online; }
     
+    /**
+     * Writes to the server console in a blocking manner.
+     *
+     * @param msg Message to write
+     */
     void writeConsoleSync(const std::string &msg);
     
+    /**
+     * Writes to the server console in a non-blocking manner.
+     *
+     * @param msg Message to write
+     */
     void writeConsoleAsync(const std::string &msg);
 protected:
     /**
@@ -58,16 +103,39 @@ protected:
      */
     void workerConsole();
     
+    /**
+     * Dispatches a player update.
+     */
     void dispatchUpdate();
     
+    /**
+     * Receives a packet from the server.
+     *
+     * @param buffer Destination buffer
+     */
     int receivePacket(char *buffer);
     
+    /**
+     * Processes a received packet.
+     *
+     * @param data Packet contents
+     * @param length Packet length
+     */
     int processPacket(char *data, size_t length);
     
+    /**
+     * Sends an unordered unreliable data packet to server.
+     */
     void sendUnorderedPacket(char *data, size_t length);
     
+    /**
+     * Sends an ordered unreliable data packet to server.
+     */
     void sendUnreliablePacket(unsigned int seq, char *data, size_t length);
     
+    /**
+     * Sends an ordered reliable data packet to server.
+     */
     void sendReliablePacket(unsigned int seq, char *data, size_t length);
 private:
     // Server information
