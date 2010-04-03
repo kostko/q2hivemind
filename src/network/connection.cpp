@@ -269,6 +269,12 @@ void Connection::dispatchUpdate()
   sendUnreliablePacket(seq, buffer, i); 
 }
 
+std::string Connection::getServerConfig(int index)
+{
+  boost::lock_guard<boost::mutex> g(m_gameStateMutex);
+  return m_serverConfig[index + 32];
+}
+
 void Connection::workerConsole()
 {
   getLogger()->info("Console thread is up and running.");

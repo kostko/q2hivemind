@@ -14,6 +14,7 @@
 namespace HiveMind {
 
 class Connection;
+class Map;
 
 class Context : public Object {
 public:
@@ -21,13 +22,19 @@ public:
      * Class constructor.
      *
      * @param id Unique bot identifier
+     * @param gamedir Quake 2 resource directory
      */
-    Context(const std::string &id);
+    Context(const std::string &id, const std::string &gamedir);
     
     /**
      * Class destructor.
      */
     virtual ~Context();
+    
+    /**
+     * Returns the Quake 2 resource directory location.
+     */
+    inline std::string getGameDir() const { return m_gamedir; }
     
     /**
      * Returns this bot's identifier.
@@ -41,15 +48,24 @@ public:
     inline Connection *getConnection() const { return m_connection; }
     
     /**
+     * Returns the current map instance.
+     */
+    inline Map *getMap() const { return m_map; }
+    
+    /**
      * Establishes a connection with the specified Quake 2 server.
      */
     void connectTo(const std::string &host, unsigned int port);
 private:
-    // Unique bot identifier
+    // Unique bot identifier and game directory
     std::string m_botId;
+    std::string m_gamedir;
     
     // Connection to Quake 2 server
     Connection *m_connection;
+    
+    // Current map
+    Map *m_map;
 };
 
 }

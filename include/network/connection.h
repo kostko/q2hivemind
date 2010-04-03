@@ -24,6 +24,13 @@ namespace HiveMind {
 class Connection : public Object {
 public:
     /**
+     * Predefined server configuration indices.
+     */
+    enum ConfigIndex {
+      MapName = 1
+    };
+    
+    /**
      * Class constructor.
      *
      * @param id A unique bot identifier
@@ -78,6 +85,19 @@ public:
      * Returns true if the connection is currently synced with server.
      */
     inline bool isOnline() const { return m_online; }
+    
+    /**
+     * Returns the specified configuration string.
+     *
+     * @param index Configuration string index
+     * @return Configuration string
+     */
+    std::string getServerConfig(int index);
+    
+    /**
+     * Returns the map name as sent by the server.
+     */
+    inline std::string getMapName() { return getServerConfig(MapName); }
     
     /**
      * Writes to the server console in a blocking manner.

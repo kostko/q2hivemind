@@ -6,19 +6,29 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "context.h"
+#include "logger.h"
 #include "network/connection.h"
+#include "mapping/map.h"
+
+#include <boost/format.hpp>
+
+using boost::format;
 
 namespace HiveMind {
 
-Context::Context(const std::string &id)
+Context::Context(const std::string &id, const std::string &gamedir)
   : m_botId(id),
-    m_connection(NULL)
+    m_gamedir(gamedir),
+    m_connection(NULL),
+    m_map(NULL)
 {
   Object::init();
 }
 
 Context::~Context()
 {
+  delete m_connection;
+  delete m_map;
 }
 
 void Context::connectTo(const std::string &host, unsigned int port)
@@ -28,21 +38,15 @@ void Context::connectTo(const std::string &host, unsigned int port)
   
   m_connection = new Connection(m_botId, host, port);
   m_connection->connect();
-  // TODO load maps here
-  m_connection->begin();
   
-  // XXX test
-  for (int i = 0; i < 200; i++) {
-    m_connection->move(
-      Vector3f(0.0, (float) i / 50.0, 0.0),
-      Vector3f(400.0, 0.0, 0.0),
-      true
-    );
-    
-    if (i == 100) {
-      m_connection->say("Hello world!!");
-    }
-  }
+  // Load maps
+  getLogger()->info(format("Currently playing map: %s") % m_connection->getMapName());
+  m_map = new Map(this, m_connection->getMapName());
+  if (!m_map->open())
+    getLogger()->error("Map open has failed, aborting now.");
+  
+  // Enter the game
+  m_connection->begin();
 }
 
 }
