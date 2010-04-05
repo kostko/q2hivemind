@@ -160,6 +160,33 @@ typedef struct {
   long firstareaportal;
 } area_t;
 
+typedef struct {
+  long type;
+  unsigned short firstlink;
+  unsigned short numlinks;
+  vec3_t origin;
+} xface_t;
+
+typedef struct {
+  unsigned char pitch;
+  unsigned char yaw;
+  unsigned short key;
+  unsigned int key2;
+  unsigned short firstfriend;
+  unsigned short numfriends;
+} xedge_t;
+
+typedef struct {
+  unsigned short face;
+  bool valid;
+  char pad;
+  vec3_t origin;
+} link_t;
+
+typedef struct {
+  long face[2];
+} edgeface_t;
+
 }
 
 }

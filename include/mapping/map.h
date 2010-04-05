@@ -39,10 +39,24 @@ public:
      * Opens the map, loading and linking it.
      */
     bool open();
+    
+    void markLinkInvalid(int link);
 protected:
     bool load();
     
     bool link();
+    
+    bool findFriends();
+    
+    bool findFriends2(int start, int end);
+    
+    bool colinear(int m, int n);
+    
+    bool edgeOverlap(int n, int m);
+    
+    float heightBetween(int n, int m);
+    
+    bool checkWall(int wall, int face, int edge);
 private:
     // Context
     Context *m_context;
