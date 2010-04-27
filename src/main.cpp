@@ -16,7 +16,7 @@ using namespace HiveMind;
 int main()
 {
   Context *context = new Context("uniq-id", "/usr/share/games/quake2");
-  context->connectTo("::1", 27910);
+  context->connectTo("192.168.123.178", 27910);
   
   // XXX test
   Connection *connection = context->getConnection();
