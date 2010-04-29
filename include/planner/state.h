@@ -24,6 +24,7 @@ class LocalPlanner;
  * at any given time.
  */
 class State : public Object {
+friend class LocalPlanner;
 public:
     /**
      * Class constructor.
@@ -58,10 +59,8 @@ public:
      * This method should implement state specific processing on
      * each frame update. This method is called in main thread
      * context.
-     *
-     * @param state State of the world
      */
-    virtual void processFrame(const GameState &state) = 0;
+    virtual void processFrame() = 0;
     
     /**
      * This method should implement state specific processing in
@@ -106,6 +105,9 @@ protected:
     Vector3f m_moveOrientation;
     Vector3f m_moveVelocity;
     bool m_moveFire;
+    
+    // Last game state
+    GameState *m_gameState;
 private:
     // Unique state name
     std::string m_name;

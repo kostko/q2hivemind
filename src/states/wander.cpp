@@ -30,7 +30,7 @@ void WanderState::goodbye()
   getLogger()->info("Now leaving wander state.");
 }
 
-void WanderState::processFrame(const GameState &state)
+void WanderState::processFrame()
 {
 }
 

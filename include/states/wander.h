@@ -50,10 +50,8 @@ public:
      * This method should implement state specific processing on
      * each frame update. This method is called in main thread
      * context.
-     *
-     * @param state State of the world
      */
-    virtual void processFrame(const GameState &state);
+    virtual void processFrame();
     
     /**
      * This method should implement state specific processing in

@@ -31,6 +31,9 @@ void LocalPlanner::registerState(State *state)
   
   getLogger()->info(format("Registering new state '%s'...") % state->getName());
   m_states[state->getName()] = state;
+  
+  // Setup pointer
+  state->m_gameState = &m_gameState;
 }
 
 void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire) const
@@ -69,11 +72,13 @@ void LocalPlanner::start()
 
 void LocalPlanner::worldUpdated(const GameState &state)
 {
+  m_gameState = state;
+  
   // TODO Decide if we need to change states
   
   // Perform current state frame processing
   if (m_currentState)
-    m_currentState->processFrame(state);
+    m_currentState->processFrame();
 }
 
 void LocalPlanner::process()

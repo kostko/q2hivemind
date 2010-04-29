@@ -134,6 +134,9 @@ private:
     boost::mutex m_stateMutex;
     boost::mutex m_requestMutex;
     
+    // Last game state
+    GameState m_gameState;
+    
     // Abort request flag
     bool m_abort;
 };
