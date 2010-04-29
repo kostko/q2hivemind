@@ -9,6 +9,7 @@
 #define HM_NETWORK_CONNECTION_H
 
 #include "object.h"
+#include "timing.h"
 #include "network/gamestate.h"
 
 #include <list>
@@ -75,6 +76,11 @@ public:
      * @param msg Message to say
      */
     void say(const std::string &msg);
+    
+    /**
+     * Returns the current game state.
+     */
+    GameState getGameState() const;
     
     /**
      * Returns true if the connection is currently established.
@@ -171,7 +177,7 @@ private:
     // Processing threads and locks
     boost::thread m_workerThread;
     boost::thread m_consoleThread;
-    boost::mutex m_gameStateMutex;
+    mutable boost::mutex m_gameStateMutex;
     boost::mutex m_sendURMutex;
     boost::mutex m_sendRLMutex;
     boost::mutex m_consoleMutex;
@@ -193,7 +199,7 @@ private:
     unsigned int m_clBit;
     unsigned int m_lastReliableSeq;
     bool m_reliableReceived;
-    int m_lastPingTime;
+    timestamp_t m_lastPingTime;
     int m_runningPing;
     unsigned int m_challengeNum;
     unsigned short m_clientId;
@@ -212,7 +218,7 @@ private:
     
     // Inventory
     int m_inventory[256];
-    unsigned int m_lastInventoryUpdate;
+    timestamp_t m_lastInventoryUpdate;
     
     // Server information
     std::string m_serverConfig[1568];
@@ -229,12 +235,12 @@ private:
       Vector3f angles;
       Vector3f velocity;
       unsigned char msec, light, buttons, impulse;
-      int timestamp;
+      timestamp_t timestamp;
     };
     
     Update m_updates[MAX_UPDATES];
     int m_currentUpdate;
-    int m_lastUpdateTime;
+    timestamp_t m_lastUpdateTime;
 };
 
 }

@@ -9,6 +9,7 @@
 #define HM_NETWORK_GAMESTATE_H
 
 #include "globals.h"
+#include "timing.h"
 
 #include <string>
 #include <vector>
@@ -82,7 +83,7 @@ public:
 
 class InternalGameState {
 public:
-  int timestamp;
+  timestamp_t timestamp;
   InternalPlayer player;
   Entity entities[1024];
 };
@@ -91,7 +92,7 @@ class TimePoint {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
-  int timestamp;
+  timestamp_t timestamp;
   Vector3f origin;
 };
 

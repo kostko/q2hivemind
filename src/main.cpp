@@ -17,22 +17,7 @@ int main()
 {
   Context *context = new Context("uniq-id", "/usr/share/games/quake2");
   context->connectTo("::1", 27910);
-  
-  // XXX test
-  Connection *connection = context->getConnection();
-  for (int i = 0; i < 200; i++) {
-    connection->move(
-      Vector3f(0.0, (float) i / 50.0, 0.0),
-      Vector3f(400.0, 0.0, 0.0),
-      true
-    );
-    
-    if (i == 100) {
-      connection->say("Hello world!!");
-    }
-  }
-  
-  for (;;) { sleep(1); }
+  context->execute();
   delete context;
   return 0;
 }

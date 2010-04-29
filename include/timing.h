@@ -12,12 +12,14 @@
 
 namespace HiveMind {
 
+typedef unsigned long long timestamp_t;
+
 namespace Timing {
 
 /**
  * Returns the current timestamp in miliseconds.
  */
-inline int getCurrentTimestamp()
+inline timestamp_t getCurrentTimestamp()
 {
   timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);

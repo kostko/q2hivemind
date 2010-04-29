@@ -1,6 +1,8 @@
 
 add_subdirectory(network)
 add_subdirectory(mapping)
+add_subdirectory(planner)
+add_subdirectory(states)
 
 set(hivemind_src
 logger.cpp
@@ -15,6 +17,8 @@ target_link_libraries(hivemind
   # Internal libraries
   network
   mapping
+  planner
+  states
 
   # External libraries
   ${Boost_LIBRARIES}

@@ -16,10 +16,7 @@
 #include <netdb.h>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/format.hpp>
 #include <boost/foreach.hpp>
-
-using boost::format;
 
 namespace HiveMind {
 
@@ -168,7 +165,7 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
   Vector3f adjAngles;
-  int frameTime;
+  timestamp_t frameTime;
   
   if (!m_online)
     return;
@@ -195,6 +192,48 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
   m_updates[m_currentUpdate].timestamp = Timing::getCurrentTimestamp();
   
   dispatchUpdate();
+}
+
+GameState Connection::getGameState() const
+{
+  boost::lock_guard<boost::mutex> g(m_gameStateMutex);
+  GameState s;
+
+  if (!m_online)
+    return s;  
+   
+  // For origin interpolation
+  float f = 0.01 * (float) (m_runningPing + Timing::getCurrentTimestamp() - m_cs->timestamp);
+  
+  // Mostly copying and origin interpolation
+  s.player.serverOrigin = m_cs->player.origin;
+  s.player.origin = m_cs->player.origin + f*m_cs->player.velocity;
+  s.player.velocity = m_cs->player.velocity;
+  s.player.health = m_cs->player.stats[1];
+  s.player.ammoIcon = m_serverConfig[m_cs->player.stats[2] + 544];
+  s.player.ammo = m_cs->player.stats[3];
+  s.player.armorIcon = m_serverConfig[m_cs->player.stats[4] + 544];
+  s.player.armor = m_cs->player.stats[5];
+  s.player.weaponModel = m_serverConfig[m_cs->player.gunindex + 32];
+  s.player.timer = m_cs->player.stats[10];
+  s.player.frags = m_cs->player.stats[14];
+  
+  // Copy entities
+  for (int i = 0; i < 1024; i++) {
+    Entity *e = &(m_cs->entities[i]);
+    Entity *d = &(s.entities[i]);
+    d->origin = e->origin + f*e->velocity;
+    d->velocity = e->velocity;
+    d->angles = e->angles;
+    d->modelIndex = e->modelIndex;
+    d->framenum = e->framenum;
+    d->setVisible(e->isVisible());
+  }
+  
+  s.playerEntityId = m_playerNum;
+  s.maxPlayers = m_maxPlayers;
+  
+  return s;
 }
 
 void Connection::dispatchUpdate()
@@ -360,7 +399,7 @@ int Connection::processPacket(char *buffer, size_t length)
   unsigned char type;
   char s[256];
   int i_start = 0;
-  int timestamp = Timing::getCurrentTimestamp();
+  timestamp_t timestamp = Timing::getCurrentTimestamp();
   
   while (i < length) {
     type = buffer[i++];
@@ -976,7 +1015,7 @@ int Connection::receivePacket(char *data)
   int length;
   unsigned int seq;
   unsigned int temp;
-  int pingTime;
+  timestamp_t pingTime;
 
   // Emit status packets every 3 seconds
   pingTime = Timing::getCurrentTimestamp() - m_lastPingTime;

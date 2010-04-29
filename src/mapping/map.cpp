@@ -17,9 +17,7 @@
 #include <algorithm>
 
 #include <boost/foreach.hpp>
-#include <boost/format.hpp>
 
-using boost::format;
 using namespace HiveMind::BSP;
 
 namespace HiveMind {

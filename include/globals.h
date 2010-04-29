@@ -9,12 +9,14 @@
 #define HM_GLOBALS_H
 
 #include <boost/unordered_map.hpp>
+#include <boost/format.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/Array>
 
 USING_PART_OF_NAMESPACE_EIGEN
+using boost::format;
 
 namespace HiveMind {
 

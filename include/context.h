@@ -15,6 +15,7 @@ namespace HiveMind {
 
 class Connection;
 class Map;
+class LocalPlanner;
 
 class Context : public Object {
 public:
@@ -53,9 +54,24 @@ public:
     inline Map *getMap() const { return m_map; }
     
     /**
+     * Returns the local planner instance for this bot.
+     */
+    inline LocalPlanner *getLocalPlanner() const { return m_localPlanner; }
+    
+    /**
      * Establishes a connection with the specified Quake 2 server.
      */
     void connectTo(const std::string &host, unsigned int port);
+    
+    /**
+     * Enters the central bot processing loop.
+     */
+    void execute();
+    
+    /**
+     * Raise the abort flag.
+     */
+    inline void abort() { m_abort = true; }
 private:
     // Unique bot identifier and game directory
     std::string m_botId;
@@ -66,6 +82,12 @@ private:
     
     // Current map
     Map *m_map;
+    
+    // Abort request flag
+    bool m_abort;
+    
+    // Planners
+    LocalPlanner *m_localPlanner;
 };
 
 }
