@@ -48,6 +48,7 @@ void LocalPlanner::requestTransition(const TransitionRequest &request)
   if (m_states.find(request.state) == m_states.end())
     getLogger()->error(format("Attempted use of unregistered state '%s'!") % request.state);
   
+  boost::lock_guard<boost::mutex> g(m_requestMutex);
   m_transitionRequests.push_back(request);
 }
 
@@ -87,19 +88,25 @@ void LocalPlanner::process()
     int bestPriority = m_currentState ? m_currentState->getPriority() : 0;
     TransitionRequest *rq = NULL;
     BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
-      if (p.priority > bestPriority)
+      if (p.priority > bestPriority && (!m_currentState || p.state != m_currentState->getName()))
         rq = &p;
     }
     
     if (rq != NULL) {
-      if (m_currentState)
-        m_currentState->goodbye();
+      {
+        boost::lock_guard<boost::mutex> g(m_stateMutex);
+        if (m_currentState)
+          m_currentState->goodbye();
+        
+        m_currentState = m_states[rq->state];
+        m_currentState->initialize(rq->metadata);
+      }
       
-      m_currentState = m_states[rq->state];
-      m_currentState->initialize(rq->metadata);
-      
-      // Remove request from the list
-      m_transitionRequests.remove(*rq);
+      // Remove requests from the list
+      {
+        boost::lock_guard<boost::mutex> g(m_requestMutex);
+        m_transitionRequests.clear();
+      }
     }
     
     // Perform current state planning processing
