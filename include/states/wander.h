@@ -9,6 +9,8 @@
 #define HM_STATES_WANDER_H
 
 #include "planner/state.h"
+#include "mapping/map.h"
+#include "timing.h"
 
 #include <list>
 #include <boost/any.hpp>
@@ -59,6 +61,12 @@ public:
      * context.
      */
     virtual void processPlanning();
+private:
+    // Current path to follow
+    MapPath m_currentPath;
+    int m_nextPoint;
+    timestamp_t m_lastFrameUpdate;
+    float m_speed;
 };
 
 }

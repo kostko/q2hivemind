@@ -6,7 +6,10 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "planner/local.h"
+#include "mapping/map.h"
+#include "context.h"
 #include "logger.h"
+#include "algebra.h"
 
 #include <boost/foreach.hpp>
 
@@ -15,6 +18,7 @@ namespace HiveMind {
 LocalPlanner::LocalPlanner(Context *context)
   : m_context(context),
     m_currentState(NULL),
+    m_worldUpdated(false),
     m_abort(false)
 {
   Object::init();
@@ -32,8 +36,52 @@ void LocalPlanner::registerState(State *state)
   getLogger()->info(format("Registering new state '%s'...") % state->getName());
   m_states[state->getName()] = state;
   
-  // Setup pointer
+  // Setup pointers
   state->m_gameState = &m_gameState;
+  state->m_lastGameState = &m_lastGameState;
+}
+
+void LocalPlanner::sideAdjust(Vector3f *delta) const
+{
+  Map *map = m_context->getMap();
+  float t = sqrt((*delta)[0] * (*delta)[0] + (*delta)[1] * (*delta)[1]);
+  if (t == 0)
+    return;
+  
+  *delta = *delta / t;
+  
+  Vector3f a(0.0, 0.0, 0.0);
+  Vector3f p = m_gameState.player.origin;
+  float yaw = Algebra::yawFromVect(*delta);
+  
+  for (int i = -8; i <= 8; i++) {
+    float angle = yaw + (float) i * (M_PI/32.0);
+    Vector3f b(
+      m_gameState.player.origin[0] + 64.0 * cos(angle),
+      m_gameState.player.origin[1] + 64.0 * sin(angle),
+      0.0
+    );
+    t = 0;
+    
+    for (float height = -16; height < 32; height += 16) {
+      p[2] = m_gameState.player.origin[2] + height;
+      b[2] = p[2];
+      float s = 1.0 - map->rayTest(p, b, Map::Solid);
+      if (s > t)
+        t = s;
+    }
+    
+    a[0] -= t * cos(angle);
+    a[1] -= t * sin(angle);
+  }
+  
+  Vector3f b(
+    cos(yaw + (M_PI/2.0)),
+    sin(yaw + (M_PI/2.0)),
+    0.0
+  );
+  t = a.dot(b);
+  *delta += t*b;
 }
 
 void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire) const
@@ -42,8 +90,36 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   *velocity = Vector3f(0, 0, 0);
   *fire = false;
   
-  if (m_currentState)
-    m_currentState->getNextMove(orientation, velocity, fire);
+  // If there is no current state we have nothing to do but stay idle
+  if (!m_currentState)
+    return;
+
+  // Get destination and target coordinates from current state
+  Vector3f destination, target;
+  m_currentState->getNextTarget(&destination, &target, fire);
+  
+  // Compute orientation and velocity vectors for given target
+  Vector3f delta = target - m_gameState.player.origin;
+  float pitch = Algebra::pitchFromVect(delta);
+  float yaw = Algebra::yawFromVect(delta);
+  
+  delta = destination - m_gameState.player.origin;
+  sideAdjust(&delta);
+  
+  float vx = delta[0] * (float) cos(-yaw) - delta[1] * (float) sin(-yaw);
+  float vy = -delta[0] * (float) sin(-yaw) - delta[1] * (float) cos(-yaw);
+  float vl = sqrt(vx*vx + vy*vy);
+  
+  (*orientation)[0] = 0.0; // TODO pitch
+  (*orientation)[1] = yaw;
+  (*orientation)[2] = 0.0;
+  
+  if (vl > 0) {
+    // TODO increase maximum speed to 400
+    (*velocity)[0] = 100.0 * vx/vl;
+    (*velocity)[1] = 100.0 * vy/vl;
+    (*velocity)[2] = 0.0; // No jumping:)
+  }
 }
     
 void LocalPlanner::requestTransition(const TransitionRequest &request)
@@ -73,12 +149,15 @@ void LocalPlanner::start()
 void LocalPlanner::worldUpdated(const GameState &state)
 {
   m_gameState = state;
+  m_worldUpdated = true;
   
   // TODO Decide if we need to change states
   
   // Perform current state frame processing
   if (m_currentState)
     m_currentState->processFrame();
+  
+  m_lastGameState = state;
 }
 
 void LocalPlanner::process()
@@ -115,7 +194,7 @@ void LocalPlanner::process()
     }
     
     // Perform current state planning processing
-    if (m_currentState)
+    if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
     
     // Sleep some 200ms

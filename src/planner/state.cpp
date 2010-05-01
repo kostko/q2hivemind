@@ -24,10 +24,10 @@ State::~State()
 {
 }
 
-void State::getNextMove(Vector3f *orientation, Vector3f *velocity, bool *fire) const
+void State::getNextTarget(Vector3f *destination, Vector3f *target, bool *fire) const
 {
-  *orientation = m_moveOrientation;
-  *velocity = m_moveVelocity;
+  *destination = m_moveDestination;
+  *target = m_moveTarget;
   *fire = m_moveFire;
 }
 

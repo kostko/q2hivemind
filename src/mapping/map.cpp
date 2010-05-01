@@ -54,6 +54,13 @@ public:
     int *edgefriends;
     xedge_t *xedges;
     std::vector<int> sortededges;
+    
+    // Path finding structures
+    // XXX this here is rubbish and should be removed/changed
+    int *dist;
+    int s_lists[256][256];
+    int s_listnum[256];
+    int path[256];
 };
 
 Map::Map(Context *context, const std::string &name)
@@ -194,6 +201,8 @@ bool Map::load()
           lseek(fh, pakDirEntries[i].offset + mapHeader.models.offset, 0);
           read(fh, d->models, length);
           
+          d->dist = (int*) malloc(d->faceCount * sizeof(int));
+          
           // Map loading is done
           getLogger()->info(format("Found and loaded map %s from PAK %s.") % m_name % pak);
           free(pakDirEntries);
@@ -276,7 +285,7 @@ public:
   
   bool operator()(int a, int b) const
   {
-    return m_key1 ? m_p->xedges[a].key > m_p->xedges[b].key : m_p->xedges[a].key2 > m_p->xedges[b].key2;
+    return m_key1 ? m_p->xedges[a].key < m_p->xedges[b].key : m_p->xedges[a].key2 < m_p->xedges[b].key2;
   }
 private:
   MapPrivate *m_p;
@@ -490,6 +499,12 @@ bool Map::link()
     }
   }
   
+  // Disable links with unset faces
+  for (int i = 0; i < d->linkCount; i++) {
+    if (d->links[i].face >= d->faceCount)
+      d->links[i].valid = false;
+  }
+  
   // We are done linking the map
   getLogger()->info(format("Linked map and produced %d links.") % d->linkCount);
   
@@ -527,7 +542,7 @@ bool Map::findFriends()
         
         // Sort by other key
         edge_compare compare_fun(d, false);
-        std::sort(d->sortededges.begin() + first, d->sortededges.begin() + last, compare_fun);
+        std::sort(d->sortededges.begin() + first, d->sortededges.begin() + last + 1, compare_fun);
         
         if (!findFriends2(first, last)) {
           return false;
@@ -575,7 +590,7 @@ bool Map::findFriends2(int start, int end)
     if (d->xedges[edge].key2 != key2) {
       key2 = d->xedges[edge].key2;
       
-      for (first = 0; d->xedges[d->sortededges[first]].key2 != key2; first++) {
+      for (first = start; d->xedges[d->sortededges[first]].key2 != key2; first++) {
       }
       
       for (last = first; d->xedges[d->sortededges[last]].key2 == key2; last++) {
@@ -751,6 +766,463 @@ void Map::markLinkInvalid(int link)
     return;
   
   d->links[link].valid = false;
+}
+
+int Map::findLeafId(const Vector3f &pos) const
+{
+  // Start at the map root node
+  int nextNode = d->models[0].rootnode;
+  
+  while (nextNode >= 0) {
+    plane_t *plane = &(d->planes[d->nodes[nextNode].planenum]);
+    
+    // Decide where to go next in the BSP tree
+    if (plane->type == 0) {
+      // X plane
+      if ((pos[0] * plane->normal[0]) < plane->dist) {
+        nextNode = d->nodes[nextNode].back;
+      } else {
+        nextNode = d->nodes[nextNode].front;
+      }
+    } else if (plane->type == 1) {
+      // Y plane
+      if ((pos[1] * plane->normal[1]) < plane->dist) {
+        nextNode = d->nodes[nextNode].back;
+      } else {
+        nextNode = d->nodes[nextNode].front;
+      }
+    } else if (plane->type == 2) {
+      // Z plane
+      if ((pos[2] * plane->normal[2]) < plane->dist) {
+        nextNode = d->nodes[nextNode].back;
+      } else {
+        nextNode = d->nodes[nextNode].front;
+      }
+    } else {
+      // ? plane
+      if ((pos[0] * plane->normal[0] + pos[1] * plane->normal[1] + pos[2] * plane->normal[2]) < plane->dist) {
+        nextNode = d->nodes[nextNode].back;
+      } else {
+        nextNode = d->nodes[nextNode].front;
+      }
+    }
+  }
+  
+  // This wierd return is here because leafs are stored with their
+  // negative indices + 1
+  return -1 - nextNode;
+}
+    
+int Map::findFaceId(const Vector3f &pos) const
+{
+  int leaf = findLeafId(pos);
+  int firstFace = d->leafs[leaf].firstleafface;
+  int lastFace = d->leafs[leaf].numleaffaces + firstFace;
+  int possible = 0;
+  int hits;
+  int v0, v1;
+  float dx, dy, t;
+  
+  for (int i = firstFace; i < lastFace; i++) {
+    int face = d->leaffaces[i];
+    
+    if (d->xfaces[face].type & 0x00000001) {
+      int firstEdge = d->faces[face].firstedge;
+      int lastEdge = d->faces[face].numedges + firstEdge;
+      hits = 0;
+      
+      for (int j = firstEdge; j < lastEdge; j++) {
+        int edge = d->surfedges[j];
+        
+        if (edge > 0) {
+          v0 = d->edges[edge].v[0];
+          v1 = d->edges[edge].v[1];
+        } else {
+          edge = -edge;
+          v0 = d->edges[edge].v[1];
+          v1 = d->edges[edge].v[0];
+        }
+        
+        dx = d->vertices[v1].origin[0] - d->vertices[v0].origin[0];
+        dy = d->vertices[v1].origin[1] - d->vertices[v0].origin[1];
+        if (dy == 0) {
+          if (pos[1] == d->vertices[v0].origin[1]) {
+            if (pos[0] >= d->vertices[v0].origin[0] && pos[0] <= d->vertices[v1].origin[0]) {
+              return face;
+            }
+            
+            if (pos[0] >= d->vertices[v1].origin[0] && pos[0] <= d->vertices[v0].origin[0]) {
+              return face;
+            }
+          }
+        } else {
+          t = (pos[1] - d->vertices[v0].origin[1]) / dy;
+          if (t < 1 && t >= 0) {
+            if ((t*dx + d->vertices[v0].origin[0]) == pos[0]) {
+              return face;
+            } else if ((t*dx + d->vertices[v0].origin[0]) >= pos[0]) {
+              hits++;
+            }
+          }
+        }
+      }
+      
+      if (hits == 1) {
+        return face;
+      }
+    }
+  }
+  
+  return -1;
+}
+
+bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full)
+{
+  // Sanity check start position
+  if (findLeafId(start) == 0) {
+    getLogger()->warning("Start position is outside map!");
+    return false;
+  }
+  
+  // Sanity check end position
+  if (findLeafId(end) == 0) {
+    getLogger()->warning("End position is outside map!");
+    return false;
+  }
+  
+  int startFace = findFaceId(start);
+  int endFace = findFaceId(end);
+  if (startFace == -1 || endFace == -1) {
+    return false;
+  }
+  
+  // Initialize distances
+  for (int i = 0; i < d->faceCount; i++) {
+    d->dist[i] = -1;
+  }
+  
+  d->s_lists[0][0] = startFace;
+  d->s_listnum[0] = 1;
+  if (startFace >= d->faceCount || startFace < 0) {
+    getLogger()->error("Start face out of bounds!");
+    return false;
+  }
+  
+  d->dist[startFace] = 0;
+  bool found = false;
+  int depth = 0;
+  
+  // XXX this search is fucking stupid, we should upgrade it to A* and define
+  //     some cool heuristic (euclidian distance should suffice)
+  
+  while (!found) {
+    depth++;
+    if (depth >= 250) {
+      return false;
+    }
+    
+    d->s_listnum[depth] = 0;
+    for (int i = 0; i < d->s_listnum[depth - 1]; i++) {
+      int face = d->s_lists[depth - 1][i];
+      if (face >= d->faceCount || face < 0) {
+        getLogger()->error("Face out of bounds!");
+        return false;
+      }
+      
+      for (int j = 0; j < d->xfaces[face].numlinks; j++) {
+        int link = d->xfaces[face].firstlink + j;
+        if (link >= d->linkCount || link < 0) {
+          getLogger()->error("Link out of bounds!");
+          return false;
+        }
+        
+        // Skip links marked as invalid
+        if (!d->links[link].valid)
+          continue;
+        
+        int face2 = d->links[link].face;
+        if (face2 >= d->faceCount || face2 < 0) {
+          getLogger()->error("Face out of bounds!");
+          return false;
+        }
+        
+        if (face2 == endFace) {
+          found = true;
+        }
+        
+        if (d->dist[face2] == -1) {
+          d->dist[face2] = depth;
+          int index = d->s_listnum[depth];
+          if (index >= 256) {
+            getLogger()->error(format("Too many faces at depth %d!") % depth);
+            return false;
+          }
+          
+          d->s_lists[depth][index] = face2;
+          d->s_listnum[depth]++;
+        }
+      }
+    }
+  }
+  
+  path->length = depth*2 + 1;
+  if (!full)
+    return true;
+  
+  // Reconstruct the path
+  int face2 = endFace;
+  int face;
+  for (int i = depth - 1; i >= 0; i--) {
+    found = false;
+    for (int j = 0; !found; j++) {
+      face = d->s_lists[i][j];
+      for (int k = 0; k < d->xfaces[face].numlinks; k++) {
+        int link = d->xfaces[face].firstlink + k;
+        if (d->links[link].face == face2) {
+          found = true;
+          d->path[i] = link;
+        }
+      }
+    }
+    
+    face2 = face;
+  }
+  
+  // + 24.0 is for player height
+  
+  path->points[0][0] = d->xfaces[startFace].origin[0];
+  path->points[0][1] = d->xfaces[startFace].origin[1];
+  path->points[0][2] = d->xfaces[startFace].origin[2] + 24.0;
+  
+  for (int i = 0; i < depth; i++) {
+    path->points[2*i+1][0] = d->links[d->path[i]].origin[0];
+    path->points[2*i+1][1] = d->links[d->path[i]].origin[1];
+    path->points[2*i+1][2] = d->links[d->path[i]].origin[2] + 24.0;
+    
+    path->points[2*i+2][0] = d->xfaces[d->links[d->path[i]].face].origin[0];
+    path->points[2*i+2][1] = d->xfaces[d->links[d->path[i]].face].origin[1];
+    path->points[2*i+2][2] = d->xfaces[d->links[d->path[i]].face].origin[2] + 24.0;
+    
+    path->links[i] = d->path[i];
+  }
+  
+  return true;
+}
+
+bool Map::randomPath(const Vector3f &start, MapPath *path)
+{
+  // Sanity check start position
+  if (findLeafId(start) == 0) {
+    getLogger()->warning("Start position is outside map!");
+    return false;
+  }
+  
+  int face = findFaceId(start);
+  if (face == -1) {
+    return false;
+  }
+  
+  // Initialize distances
+  for (int i = 0; i < d->faceCount; i++) {
+    d->dist[i] = -1;
+  }
+  
+  if (face >= d->faceCount || face < 0) {
+    getLogger()->error("Start face out of bounds!");
+    return false;
+  }
+  
+  d->dist[face] = 0;
+  path->points[0][0] = d->xfaces[face].origin[0];
+  path->points[0][1] = d->xfaces[face].origin[1];
+  path->points[0][2] = d->xfaces[face].origin[2] + 24.0;
+  path->length = 1;
+  
+  int list[256];
+  int list2[256];
+  
+  for (int i = 0; i < 256; i++) {
+    if (face >= d->faceCount || face < 0) {
+      getLogger()->error("Face out of bounds!");
+      return false;
+    }
+    
+    int numlinks = std::min(256, (int) d->xfaces[face].numlinks);
+    for (int j = 0; j < numlinks; j++) {
+      list2[j] = d->xfaces[face].firstlink + j;
+    }
+    
+    for (int j = numlinks - 1; j >= 0; j--) {
+      int k = rand() % (j + 1);
+      list[j] = list2[k];
+      list2[k] = list2[j-1];
+    }
+    
+    int j;
+    for (j = 0; j < numlinks; j++) {
+      int link = list[j];
+      if (link >= d->linkCount || link < 0) {
+        getLogger()->error("Link out of bounds!");
+        return false;
+      }
+      
+      if (!d->links[link].valid)
+        continue;
+      
+      int face2 = d->links[link].face;
+      if (face2 >= d->faceCount || face2 < 0) {
+        getLogger()->error("Face out of bounds!");
+        return false;
+      }
+      
+      if (d->dist[face2] == -1) {
+        d->dist[face2] = 0;
+        face = face2;
+        path->points[2*i+1][0] = d->links[link].origin[0];
+        path->points[2*i+1][1] = d->links[link].origin[1];
+        path->points[2*i+1][2] = d->links[link].origin[2] + 24.0;
+        path->points[2*i+2][0] = d->xfaces[face].origin[0];
+        path->points[2*i+2][1] = d->xfaces[face].origin[1];
+        path->points[2*i+2][2] = d->xfaces[face].origin[2] + 24.0;
+        path->links[i] = link;
+        path->length = 2*i + 3;
+        break;
+      }
+    }
+    
+    if (j == numlinks)
+      break;
+  }
+  
+  return true;
+}
+
+bool Map::intersectLeaf(int leaf, int mask) const
+{
+  if (leaf == 0) {
+    getLogger()->error("Error in BSP leaf intersection, leaf is zero!");
+    return true;
+  }
+  
+  return d->leafs[leaf].contents & mask;
+}
+    
+float Map::intersectTree(const Vector3f &start, const Vector3f &end, int node, float min, float max, int mask) const
+{
+  int planeId = d->nodes[node].planenum;
+  Vector3f t = end - start;
+  Vector3f n(
+    d->planes[planeId].normal[0],
+    d->planes[planeId].normal[1],
+    d->planes[planeId].normal[2]
+  );
+  float pdist = d->planes[planeId].dist;
+  float tmp; 
+  int farNode, nearNode;
+  
+  int pType = d->planes[planeId].type;
+  switch (pType) {
+    case 0:
+    case 1:
+    case 2: {
+      // X, Y or Z planes
+      if (t[pType] != 0) {
+        tmp = (n[pType] * pdist - start[pType]) / t[pType];
+      } else {
+        tmp = 999999;
+      }
+      
+      if ((start[pType] * n[pType]) < pdist) {
+        nearNode = d->nodes[node].back;
+        farNode = d->nodes[node].front;
+      } else {
+        nearNode = d->nodes[node].front;
+        farNode = d->nodes[node].back;
+      }
+      break;
+    }
+    
+    default: {
+      // ? plane
+      float l = n.dot(t);
+      if (l != 0) {
+        tmp = (pdist - start.dot(n)) / l;
+      } else {
+        tmp = 999999;
+      }
+      
+      if (start.dot(n) < pdist) {
+        nearNode = d->nodes[node].back;
+        farNode = d->nodes[node].front;
+      } else {
+        nearNode = d->nodes[node].front;
+        farNode = d->nodes[node].back;
+      }
+      break;
+    }
+  }
+  
+  if (tmp >= max || tmp <= 0) {
+    // Recurse into near node
+    if (nearNode < 0) {
+      // Leaf
+      if (intersectLeaf(-1 - nearNode, mask))
+        return min;
+      else
+        return 1.0;
+    } else {
+      // Recurse into near node
+      return intersectTree(start, end, nearNode, min, max, mask);
+    }
+  } else if (tmp <= min) {
+    // Recurse into far node
+    if (farNode < 0) {
+      // Leaf
+      if (intersectLeaf(-1 - farNode, mask))
+        return min;
+      else
+        return 1.0;
+    } else {
+      // Recurse into far node
+      return intersectTree(start, end, farNode, min, max, mask);
+    }
+  } else {
+    float test;
+    if (nearNode < 0) {
+      // Leaf
+      if (intersectLeaf(-1 - nearNode, mask))
+        test = min;
+      else
+        test = 1.0;
+    } else {
+      // Tree
+      test = intersectTree(start, end, nearNode, min, tmp, mask);
+    }
+    
+    if (test < 1.0) {
+      return test;
+    } else {
+      // Try far
+      if (farNode < 0) {
+        // Leaf
+        if (intersectLeaf(-1 - farNode, mask))
+          return tmp;
+        else
+          return 1.0;
+      } else {
+        // Tree
+        return intersectTree(start, end, farNode, tmp, max, mask);
+      }
+    }
+  }
+}
+
+float Map::rayTest(const Vector3f &start, const Vector3f &end, int mask)
+{
+  if (!mask)
+    return 1.0;
+  
+  return intersectTree(start, end, d->models[0].rootnode, 0.0, 1.0, mask);
 }
 
 }

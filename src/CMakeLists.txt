@@ -5,6 +5,7 @@ add_subdirectory(planner)
 add_subdirectory(states)
 
 set(hivemind_src
+algebra.cpp
 logger.cpp
 object.cpp
 context.cpp

@@ -100,6 +100,10 @@ void Connection::connect()
   m_workerThread = boost::thread(&Connection::workerProtocol, this);
   m_connected = false;
   
+  // Initialize updates array and reset spawn angles
+  memset(m_updates, 0, (MAX_UPDATES + 1) * sizeof(Update));
+  m_spawnAngles = Vector3f(-1, -1, -1);
+  
   // Attempt connection sequence
   getLogger()->info("Attempting to get challenge from server...");
   do {
@@ -176,12 +180,15 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
     frameTime = Timing::getCurrentTimestamp() - m_lastUpdateTime;
   }
   m_lastUpdateTime += frameTime;
-  if (frameTime > 255)
-    frameTime = 255;
+  if (frameTime > 200)
+    frameTime = 200;
   
-  adjAngles[0] = angles[0] + m_cs->player.angles[0];
-  adjAngles[1] = angles[1] - m_cs->player.angles[1];
-  adjAngles[2] = angles[2];
+  // Adjust angles as orientation depends on spawn angles
+  adjAngles = angles - m_spawnAngles;
+  if (adjAngles[1] >= 2*M_PI)
+    adjAngles[1] -= 2*M_PI;
+  else if (adjAngles[1] < 0)
+    adjAngles[1] = 2*M_PI - adjAngles[1];
   
   m_updates[m_currentUpdate].angles = adjAngles;
   m_updates[m_currentUpdate].velocity = velocity;
@@ -209,6 +216,7 @@ GameState Connection::getGameState() const
   s.player.serverOrigin = m_cs->player.origin;
   s.player.origin = m_cs->player.origin + f*m_cs->player.velocity;
   s.player.velocity = m_cs->player.velocity;
+  s.player.angles = m_cs->player.angles;
   s.player.health = m_cs->player.stats[1];
   s.player.ammoIcon = m_serverConfig[m_cs->player.stats[2] + 544];
   s.player.ammo = m_cs->player.stats[3];
@@ -264,23 +272,23 @@ void Connection::dispatchUpdate()
     if (m_updates[n].angles[0] != m_updates[m].angles[0]) mask |= 0x01; // pitch
     if (m_updates[n].angles[1] != m_updates[m].angles[1]) mask |= 0x02; // yaw
     if (m_updates[n].angles[2] != m_updates[m].angles[2]) mask |= 0x04; // roll
-    if (m_updates[n].velocity[0] != m_updates[m].velocity[0]) mask |= 0x08;
-    if (m_updates[n].velocity[1] != m_updates[m].velocity[1]) mask |= 0x10;
-    if (m_updates[n].velocity[2] != m_updates[m].velocity[2]) mask |= 0x20;
+    if (m_updates[n].velocity[0] != m_updates[m].velocity[0]) mask |= 0x08; // forward
+    if (m_updates[n].velocity[1] != m_updates[m].velocity[1]) mask |= 0x10; // side
+    if (m_updates[n].velocity[2] != m_updates[m].velocity[2]) mask |= 0x20; // up
     if (m_updates[n].buttons != m_updates[m].buttons) mask |= 0x40;
     if (m_updates[n].impulse != m_updates[m].impulse) mask |= 0x80;
     buffer[i++] = mask;
-    
+
     if (mask & 0x01) {
-      *((short*) (buffer + i)) = (short) (-m_updates[n].angles[0] * 32768.0/M_PI);
+      *((short*) (buffer + i)) = (unsigned short) (m_updates[n].angles[0] * 32768.0/M_PI);
       i += 2;
     }
-    if (mask&0x02) {
-      *((short*) (buffer + i)) = (short) (m_updates[n].angles[1] * 32768.0/M_PI);
+    if (mask & 0x02) {
+      *((short*) (buffer + i)) = (unsigned short) (m_updates[n].angles[1] * 32768.0/M_PI);
       i += 2;
     }
     if (mask & 0x04) {
-      *((short*) (buffer + i)) = (short) (m_updates[n].angles[2] * 32768.0/M_PI);
+      *((short*) (buffer + i)) = (unsigned short) (m_updates[n].angles[2] * 32768.0/M_PI);
       i += 2;
     }
     if(mask & 0x08) {
@@ -386,8 +394,12 @@ void Connection::workerProtocol()
     }
   } while (result == 0);
   
+  // Terminate console thread
+  m_consoleThread.interrupt();
+  
   m_connected = false;
-  getLogger()->info("We are disconnected!");
+  getLogger()->error("We are disconnected!");
+  // TODO handle reconnects
 }
 
 int Connection::processPacket(char *buffer, size_t length)
@@ -770,6 +782,12 @@ int Connection::processPacket(char *buffer, size_t length)
           i += 2;
           m_cs->player.angles[2] = M_PI/32768.0 * ((float) *((short*) (buffer + i)));
           i += 2;
+          
+          // Populate spawn angles (we need this so we can properly send updates)
+          if (m_spawnAngles == Vector3f(-1, -1, -1)) {
+            m_spawnAngles = m_cs->player.angles;
+            getLogger()->info(format("Spawn angles for today are %f, %f, %f.") % m_spawnAngles[0] % m_spawnAngles[1] % m_spawnAngles[2]);
+          }
         }
         if (mask & 0x0080) i += 3;
         if (mask & 0x0100) i += 6;

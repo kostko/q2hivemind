@@ -115,6 +115,11 @@ protected:
      * Main processing loop for the local planner.
      */
     void process();
+    
+    /**
+     * Adjusts delta vector for any obstacles with side movements.
+     */
+    void sideAdjust(Vector3f *delta) const;
 private:
     // Context
     Context *m_context;
@@ -134,8 +139,10 @@ private:
     boost::mutex m_stateMutex;
     boost::mutex m_requestMutex;
     
-    // Last game state
+    // Current and last game state
     GameState m_gameState;
+    GameState m_lastGameState;
+    bool m_worldUpdated;
     
     // Abort request flag
     bool m_abort;

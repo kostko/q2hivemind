@@ -7,11 +7,14 @@
  */
 #include "states/wander.h"
 #include "logger.h"
+#include "context.h"
 
 namespace HiveMind {
 
 WanderState::WanderState(Context *context)
-  : State(context, "wander")
+  : State(context, "wander"),
+    m_nextPoint(-1),
+    m_speed(0)
 {
   Object::init();
 }
@@ -23,6 +26,8 @@ WanderState::~WanderState()
 void WanderState::initialize(const boost::any &metadata)
 {
   getLogger()->info("Now entering wander state.");
+  
+  // TODO Check metadata if it contains a destination
 }
 
 void WanderState::goodbye()
@@ -32,10 +37,79 @@ void WanderState::goodbye()
 
 void WanderState::processFrame()
 {
+  Map *map = getContext()->getMap();
+  
+  // By default we stand still
+  m_moveTarget = m_moveDestination = m_gameState->player.origin;
+  
+  // TODO this needs to be improved
+  
+  // Check if we got stuck
+  if (m_speed > 0) {
+    int delta = Timing::getCurrentTimestamp() - m_lastFrameUpdate;
+    if (delta > 0)
+      m_speed = 0.05*(1000 * (m_gameState->player.origin - m_lastGameState->player.origin).norm()/delta + 19.0*m_speed);
+    
+    m_lastFrameUpdate += delta;
+  } else {
+    m_lastFrameUpdate = Timing::getCurrentTimestamp();
+    m_speed = 400.0;
+  }
+  
+  // Follow current path
+  if (m_nextPoint > -1) {
+    for (int i = m_currentPath.length - 2; i >= m_nextPoint; i--) {
+      float n = m_gameState->player.origin[2] - m_currentPath.points[i][2];
+      if (n < -16 || n > 64)
+        continue;
+      
+      Vector3f v = m_currentPath.points[i];
+      v[2] = m_gameState->player.origin[2];
+      if ((m_gameState->player.origin - v).norm() < 24.0) {
+        // Consider this point visited when we come close enough
+        m_nextPoint = i + 1;
+        getLogger()->info(format("Got it. Next point is %d.") % m_nextPoint);
+        break;
+      }
+    }
+    
+    if (m_nextPoint == m_currentPath.length - 1) {
+      // We have reached our destination
+      getLogger()->info("Destination reached.");
+      m_nextPoint = -1;
+    } else {
+      Vector3f p = m_currentPath.points[m_nextPoint];
+      //getLogger()->info(format("Travelling to point %d/%d (%f,%f,%f).") % m_nextPoint % m_currentPath.length % p[0] % p[1] % p[2]);
+      p = m_gameState->player.origin;
+      //getLogger()->info(format("Currently at (%f,%f,%f).") % p[0] % p[1] % p[2]);
+      m_moveTarget = m_moveDestination = m_currentPath.points[m_nextPoint];
+    }
+    
+    if (m_speed < 10) {
+      // Mark this link as bad and request to recompute the path
+      map->markLinkInvalid(m_currentPath.links[(m_nextPoint - 1) / 2]);
+      m_speed = -1;
+      m_nextPoint = -1;
+      
+      getLogger()->info("We are stuck, but should be following a path!");
+    }
+  }
 }
 
 void WanderState::processPlanning()
 {
+  Vector3f p = m_gameState->player.origin;
+  Map *map = getContext()->getMap();
+  MapPath path;
+  
+  // Plan a path if none is currently available
+  if (m_nextPoint == -1) {
+    getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
+    if (map->randomPath(p, &m_currentPath))
+      m_nextPoint = 0;
+    
+    getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
+  }
 }
 
 }

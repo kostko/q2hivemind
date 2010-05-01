@@ -215,6 +215,7 @@ private:
     InternalGameState *m_ds;
     InternalGameState *m_spawn;
     TimePoint m_dataPoints[1024];
+    Vector3f m_spawnAngles;
     
     // Inventory
     int m_inventory[256];
@@ -238,7 +239,7 @@ private:
       timestamp_t timestamp;
     };
     
-    Update m_updates[MAX_UPDATES];
+    Update m_updates[MAX_UPDATES + 1];
     int m_currentUpdate;
     timestamp_t m_lastUpdateTime;
 };
