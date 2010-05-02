@@ -187,8 +187,10 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
   adjAngles = angles - m_spawnAngles;
   if (adjAngles[1] >= 2*M_PI)
     adjAngles[1] -= 2*M_PI;
-  else if (adjAngles[1] < 0)
-    adjAngles[1] = 2*M_PI - adjAngles[1];
+  
+  while (adjAngles[1] < 0) {
+    adjAngles[1] = 2*M_PI + adjAngles[1];
+  }
   
   m_updates[m_currentUpdate].angles = adjAngles;
   m_updates[m_currentUpdate].velocity = velocity;

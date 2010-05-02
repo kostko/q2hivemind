@@ -56,6 +56,9 @@ void WanderState::processFrame()
     m_speed = 400.0;
   }
   
+  // TODO Detect when we are falling (raycast?), then after we hit the ground force
+  //      path recalculation
+  
   // Follow current path
   if (m_nextPoint > -1) {
     for (int i = m_currentPath.length - 2; i >= m_nextPoint; i--) {
@@ -69,6 +72,11 @@ void WanderState::processFrame()
         // Consider this point visited when we come close enough
         m_nextPoint = i + 1;
         getLogger()->info(format("Got it. Next point is %d.") % m_nextPoint);
+        
+        Vector3f p = m_gameState->player.origin;
+        getLogger()->info(format("My position is %f,%f,%f.") % p[0] % p[1] % p[2]);
+        p = m_currentPath.points[m_nextPoint];
+        getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
         break;
       }
     }
@@ -76,12 +84,10 @@ void WanderState::processFrame()
     if (m_nextPoint == m_currentPath.length - 1) {
       // We have reached our destination
       getLogger()->info("Destination reached.");
-      m_nextPoint = -1;
+      m_nextPoint = -2; // XXX
     } else {
       Vector3f p = m_currentPath.points[m_nextPoint];
-      //getLogger()->info(format("Travelling to point %d/%d (%f,%f,%f).") % m_nextPoint % m_currentPath.length % p[0] % p[1] % p[2]);
       p = m_gameState->player.origin;
-      //getLogger()->info(format("Currently at (%f,%f,%f).") % p[0] % p[1] % p[2]);
       m_moveTarget = m_moveDestination = m_currentPath.points[m_nextPoint];
     }
     
@@ -105,10 +111,14 @@ void WanderState::processPlanning()
   // Plan a path if none is currently available
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
-    if (map->randomPath(p, &m_currentPath))
+    //if (map->randomPath(p, &m_currentPath))
+    if (map->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
+      getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
       m_nextPoint = 0;
-    
-    getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
+    } else {
+      getLogger()->info("Path not found.");
+      m_nextPoint = -2;
+    }
   }
 }
 

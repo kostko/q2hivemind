@@ -965,7 +965,7 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     }
   }
   
-  path->length = depth*2 + 1;
+  path->length = depth*2 + 2;
   if (!full)
     return true;
   
@@ -1006,6 +1006,7 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     path->links[i] = d->path[i];
   }
   
+  path->points[path->length - 1] = end + Vector3f(0., 0., 24.);
   return true;
 }
 

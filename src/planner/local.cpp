@@ -110,14 +110,13 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   float vy = -delta[0] * (float) sin(-yaw) - delta[1] * (float) cos(-yaw);
   float vl = sqrt(vx*vx + vy*vy);
   
-  (*orientation)[0] = 0.0; // TODO pitch
+  (*orientation)[0] = pitch;
   (*orientation)[1] = yaw;
   (*orientation)[2] = 0.0;
   
   if (vl > 0) {
-    // TODO increase maximum speed to 400
-    (*velocity)[0] = 100.0 * vx/vl;
-    (*velocity)[1] = 100.0 * vy/vl;
+    (*velocity)[0] = 400.0 * vx/vl;
+    (*velocity)[1] = 400.0 * vy/vl;
     (*velocity)[2] = 0.0; // No jumping:)
   }
 }
