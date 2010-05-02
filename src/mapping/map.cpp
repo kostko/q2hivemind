@@ -71,6 +71,9 @@ Map::Map(Context *context, const std::string &name)
 {
   Object::init();
   
+  // Convert map name to lower case to avoid possible incosistancies
+  std::transform(m_name.begin(), m_name.end(), m_name.begin(), std::ptr_fun(::tolower));
+
   // Initialize paks
   m_paks.push_back("baseq2/pak0.pak");
   m_paks.push_back("baseq2/pak1.pak");
