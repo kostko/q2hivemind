@@ -31,6 +31,19 @@ public:
     
     // Metadata (state-specific)
     boost::any metadata;
+
+    /**
+     * Constructs an invalid request.
+     */
+    TransitionRequest()
+      : state(""),
+        priority(0)
+    {}
+
+    /**
+     * Returns true if this is a valid request.
+     */
+    inline bool isValid() const { return state != "" && priority > 0; }
     
     /**
      * Comparison function.

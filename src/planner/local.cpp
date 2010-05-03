@@ -169,20 +169,22 @@ void LocalPlanner::process()
     
     // Process state transition requests
     int bestPriority = m_currentState ? m_currentState->getPriority() : 0;
-    TransitionRequest *rq = NULL;
+    TransitionRequest rq;
     BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
-      if (p.priority > bestPriority && (!m_currentState || p.state != m_currentState->getName()))
-        rq = &p;
+      if (p.priority > bestPriority && (!m_currentState || p.state != m_currentState->getName())) {
+        rq = p;
+        bestPriority = p.priority;
+      }
     }
     
-    if (rq != NULL) {
+    if (rq.isValid()) {
       {
         boost::lock_guard<boost::mutex> g(m_stateMutex);
         if (m_currentState)
           m_currentState->goodbye();
         
-        m_currentState = m_states[rq->state];
-        m_currentState->initialize(rq->metadata);
+        m_currentState = m_states[rq.state];
+        m_currentState->initialize(rq.metadata);
       }
       
       // Remove requests from the list
