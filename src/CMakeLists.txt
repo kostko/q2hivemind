@@ -3,6 +3,7 @@ add_subdirectory(network)
 add_subdirectory(mapping)
 add_subdirectory(planner)
 add_subdirectory(states)
+add_subdirectory(rl)
 
 set(hivemind_src
 algebra.cpp
@@ -20,6 +21,7 @@ target_link_libraries(hivemind
   mapping
   planner
   states
+  rl
 
   # External libraries
   ${Boost_LIBRARIES}
