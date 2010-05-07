@@ -5,26 +5,32 @@
  * Copyright (C) 2010 by Anze Vavpetic <anze.vavpetic@gmail.com>
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
-#include "rl/statespace.h"
+#ifndef HM_RL_STATESPACE_H
+#define HM_RL_STATESPACE_H
 
-StateSpace::StateSpace(vector<int> &stateComponents, vector<int> &actionComponents)
-{
-  m_state = new EnumVector(stateComponents);
-  m_action = new EnumVector(actionComponents);
+#include <vector>
+
+using namespace std;
+
+class StateSpace {
+public:
+  /**
+   * Constructor.
+   */
+  StateSpace(vector<int> &stateComponents, vector<int> &actionComponents);
   
-  // Allocate the needed space for all Q values
-  m_data = vector<double>(m_state->permutations() * m_action->permutations(), 0);
-}
+  /**
+   * Destructor.
+   */
+  ~StateSpace();
   
-StateSpace::~StateSpace()
-{
-  delete m_state;
-  delete m_action;
-  delete &m_data;
-}
+  double& at(EnumVector *state, EnumVector *action);
   
-double& StateSpace::at(EnumVector *state, EnumVector *action)
-{
-  int id = action->id() * state->permutations() + state->id();
-  return m_data[id + 1];
-}
+private:
+  EnumVector *m_state;       // These two vectors define the space
+  EnumVector *m_action;
+  vector<double> m_data;     // The actual vector of Q values
+};
+
+#endif
+
