@@ -10,6 +10,7 @@
 #include "network/connection.h"
 #include "mapping/map.h"
 #include "planner/local.h"
+#include "dispatcher.h"
 
 // States
 #include "states/wander.h"
@@ -21,7 +22,8 @@ Context::Context(const std::string &id, const std::string &gamedir)
     m_gamedir(gamedir),
     m_connection(NULL),
     m_map(NULL),
-    m_abort(false)
+    m_abort(false),
+    m_dispatcher(new Dispatcher(this))
 {
   Object::init();
 }

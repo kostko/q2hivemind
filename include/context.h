@@ -16,6 +16,7 @@ namespace HiveMind {
 class Connection;
 class Map;
 class LocalPlanner;
+class Dispatcher;
 
 class Context : public Object {
 public:
@@ -59,6 +60,11 @@ public:
     inline LocalPlanner *getLocalPlanner() const { return m_localPlanner; }
     
     /**
+     * Returns the event dispatcher instance for this bot.
+     */
+    inline Dispatcher *getDispatcher() const { return m_dispatcher; }
+    
+    /**
      * Establishes a connection with the specified Quake 2 server.
      */
     void connectTo(const std::string &host, unsigned int port);
@@ -88,6 +94,9 @@ private:
     
     // Planners
     LocalPlanner *m_localPlanner;
+    
+    // Event dispatcher
+    Dispatcher *m_dispatcher;
 };
 
 }

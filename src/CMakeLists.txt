@@ -10,6 +10,8 @@ algebra.cpp
 logger.cpp
 object.cpp
 context.cpp
+event.cpp
+dispatcher.cpp
 main.cpp
 )
 
