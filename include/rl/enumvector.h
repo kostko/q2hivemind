@@ -47,6 +47,11 @@ public:
      int permutations() const { return m_p; }
      
      /**
+      * Get components.
+      */
+     void getComponents(std::vector<int> &components);
+     
+     /**
       * Element access by index.
       */
      int& operator[](int i);
@@ -57,7 +62,7 @@ public:
      EnumVector& operator=(EnumVector &other);
      
 private:
-    int m_p;                    // Number of possible vectors.
+    int m_p;                         // Number of possible vectors.
     std::vector<int> m_data;         // Data holder.
     std::vector<int> m_components;   // Element i of m_components represents how many states the i-th component can take.
 };

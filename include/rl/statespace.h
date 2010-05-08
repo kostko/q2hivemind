@@ -10,7 +10,12 @@
 
 #include <vector>
 
+#include "rl/enumvector.h"
+
 using namespace std;
+
+typedef EnumVector State;
+typedef EnumVector Action;
 
 class StateSpace {
 public:
@@ -24,11 +29,34 @@ public:
    */
   ~StateSpace();
   
-  double& at(EnumVector *state, EnumVector *action);
+  /**
+   * Q value for state and action.
+   */
+  double& at(State *state, Action *action);
+  
+  /**
+   * Maximum possible Q value for state and some action.
+   */
+  double max(State *state);
+  
+  /**
+   * Number of actions.
+   */
+  int actions() const { return m_action->permutations(); }
+
+  /**
+   * Number of states.
+   */
+  int states() const { return m_state->permutations(); }
+  
+  /**
+   * Sum of all elements.
+   */
+  double sum();
   
 private:
-  EnumVector *m_state;       // These two vectors define the space
-  EnumVector *m_action;
+  State  *m_state;           // These two vectors define the space
+  Action *m_action;
   vector<double> m_data;     // The actual vector of Q values
 };
 

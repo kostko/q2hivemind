@@ -19,8 +19,6 @@ EnumVector::EnumVector(std::vector<int> &components)
 
 EnumVector::~EnumVector()
 {
-  delete &m_components;
-  delete &m_data;
 }
 
 int EnumVector::id()
@@ -45,6 +43,11 @@ void EnumVector::from(int id)
     (*this)[i] = id / p;
     id = id % p;
   }
+}
+
+void EnumVector::getComponents(std::vector<int> &components)
+{
+  components.swap(m_components);
 }
 
 int& EnumVector::operator[](int i)
