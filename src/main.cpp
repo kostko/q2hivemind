@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     ("mold-client", po::value<std::string>(), "connect to MOLD message bus")
     ("quake2-server", po::value<std::string>()->default_value("::1"), "connection to specified quake2 server")
     ("quake2-dir", po::value<std::string>()->default_value("/usr/share/games/quake2"), "specify quake2 directory")
+    ("bot-id", po::value<std::string>(), "override bot id (must be unique)")
   ;
   
   po::variables_map vm;
@@ -51,6 +52,9 @@ int main(int argc, char **argv)
   boost::mt19937 rng;
   rng.seed(static_cast<unsigned int>(std::time(0)));
   std::string uniqueId = boost::lexical_cast<std::string>(rng());
+  if (vm.count("bot-id")) {
+    uniqueId = vm["bot-id"].as<std::string>();
+  }
   
   // Create a context
   Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>());

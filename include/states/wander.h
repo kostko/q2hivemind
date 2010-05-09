@@ -61,12 +61,52 @@ public:
      * context.
      */
     virtual void processPlanning();
+protected:
+    /**
+     * Returns the current destination vector.
+     */
+    Vector3f getNextDestination() const;
+    
+    /**
+     * Returns the distance from origin to destination.
+     */
+    float getDistanceToDestination() const;
+    
+    /**
+     * Sets new destination point on current path.
+     */
+    void travelToPoint(int index);
+    
+    /**
+     * Returns the current link identifier.
+     */
+    int getCurrentLinkId() const;
+    
+    /**
+     * Requests path recomputation from current location to our
+     * destination.
+     *
+     * @param markInvalidOnNone True if planner should mark the link
+     *                          that lead here as invalid when no path
+     *                          out can be found
+     */
+    void recomputePath(bool markInvalidOnNone = false);
 private:
     // Current path to follow
     MapPath m_currentPath;
     int m_nextPoint;
     timestamp_t m_lastFrameUpdate;
     float m_speed;
+    
+    // Metadata used for travel checks
+    float m_minDistance;
+    float m_maxDistance;
+    float m_lastZ;
+    timestamp_t m_lastMinChange;
+    
+    // For checking invalid links
+    bool m_markInvalidOnNone;
+    int m_lastLinkId;
 };
 
 }

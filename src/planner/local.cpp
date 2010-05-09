@@ -102,8 +102,6 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   Vector3f delta = target - m_gameState.player.origin;
   float pitch = Algebra::pitchFromVect(delta);
   float yaw = Algebra::yawFromVect(delta);
-
-  //getLogger()->info(format("Delta to target: %f %f %f") % delta[0] % delta[1] % delta[2]);
   
   delta = destination - m_gameState.player.origin;
   sideAdjust(&delta);
@@ -117,8 +115,8 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   (*orientation)[2] = 0.0;
   
   if (vl > 0) {
-    (*velocity)[0] = 100.0 * vx/vl;
-    (*velocity)[1] = 100.0 * vy/vl;
+    (*velocity)[0] = 400.0 * vx/vl;
+    (*velocity)[1] = 400.0 * vy/vl;
     (*velocity)[2] = 0.0; // No jumping:)
   }
 }
@@ -149,10 +147,22 @@ void LocalPlanner::start()
 
 void LocalPlanner::worldUpdated(const GameState &state)
 {
+  // Update game state
   m_gameState = state;
   m_worldUpdated = true;
   
+  Map *map = m_context->getMap();
+  Vector3f origin = m_gameState.player.origin;
+  
   // TODO Decide if we need to change states
+  
+  // Detect when we hit water or lava via raycasting
+  if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {
+    getLogger()->warning("We are sinking, I repeat we are sinking!");
+    
+    // TODO Some proper reaction? We should probably try to find a path out
+    //      and if that doesn't work, enter PANIC state:-))
+  }
   
   // Perform current state frame processing
   if (m_currentState)

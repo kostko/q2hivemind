@@ -14,7 +14,9 @@ namespace HiveMind {
 WanderState::WanderState(Context *context)
   : State(context, "wander"),
     m_nextPoint(-1),
-    m_speed(0)
+    m_speed(0),
+    m_markInvalidOnNone(false),
+    m_lastLinkId(-1)
 {
   Object::init();
 }
@@ -35,30 +37,62 @@ void WanderState::goodbye()
   getLogger()->info("Now leaving wander state.");
 }
 
+Vector3f WanderState::getNextDestination() const
+{
+  return m_currentPath.points[m_nextPoint];
+}
+
+float WanderState::getDistanceToDestination() const
+{
+  return (m_currentPath.points[m_nextPoint] - m_gameState->player.origin).norm();
+}
+
+void WanderState::travelToPoint(int index)
+{
+  m_nextPoint = index;
+  m_minDistance = -1;
+  
+  // Log some information about our destination
+  Vector3f p = m_gameState->player.origin;
+  getLogger()->info(format("My position is %f,%f,%f.") % p[0] % p[1] % p[2]);
+  p = m_currentPath.points[m_nextPoint];
+  getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
+}
+
+int WanderState::getCurrentLinkId() const
+{
+  return m_currentPath.links[(m_nextPoint - 1) / 2];
+}
+
+void WanderState::recomputePath(bool markInvalidOnNone)
+{
+  m_lastLinkId = getCurrentLinkId();
+  m_markInvalidOnNone = markInvalidOnNone;
+  m_speed = -1;
+  m_nextPoint = -1;
+}
+
 void WanderState::processFrame()
 {
   Map *map = getContext()->getMap();
+  timestamp_t now = Timing::getCurrentTimestamp();
+  Vector3f origin = m_gameState->player.origin;
   
   // By default we stand still and do not fire
-  m_moveTarget = m_moveDestination = m_gameState->player.origin;
+  m_moveTarget = m_moveDestination = origin;
   m_moveFire = false;
-  
-  // TODO this needs to be improved
   
   // Check if we got stuck
   if (m_speed > 0) {
-    int delta = Timing::getCurrentTimestamp() - m_lastFrameUpdate;
+    int delta = now - m_lastFrameUpdate;
     if (delta > 0)
-      m_speed = 0.05*(1000 * (m_gameState->player.origin - m_lastGameState->player.origin).norm()/delta + 19.0*m_speed);
+      m_speed = 0.05*(1000 * (origin - m_lastGameState->player.origin).norm()/delta + 19.0*m_speed);
     
     m_lastFrameUpdate += delta;
   } else {
-    m_lastFrameUpdate = Timing::getCurrentTimestamp();
+    m_lastFrameUpdate = now;
     m_speed = 400.0;
   }
-  
-  // TODO Detect when we are falling (raycast?), then after we hit the ground force
-  //      path recalculation
   
   // Follow current path
   if (m_nextPoint > -1) {
@@ -68,16 +102,11 @@ void WanderState::processFrame()
         continue;
       
       Vector3f v = m_currentPath.points[i];
-      v[2] = m_gameState->player.origin[2];
-      if ((m_gameState->player.origin - v).norm() < 24.0) {
+      v[2] = origin[2];
+      if ((origin - v).norm() < 24.0) {
         // Consider this point visited when we come close enough
-        m_nextPoint = i + 1;
-        getLogger()->info(format("Got it. Next point is %d.") % m_nextPoint);
-        
-        Vector3f p = m_gameState->player.origin;
-        getLogger()->info(format("My position is %f,%f,%f.") % p[0] % p[1] % p[2]);
-        p = m_currentPath.points[m_nextPoint];
-        getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
+        getLogger()->info(format("Got it. Next point is %d.") % (i + 1));
+        travelToPoint(i + 1);
         break;
       }
     }
@@ -86,19 +115,66 @@ void WanderState::processFrame()
       // We have reached our destination
       getLogger()->info("Destination reached.");
       m_nextPoint = -2; // XXX
+      return;
     } else {
-      Vector3f p = m_currentPath.points[m_nextPoint];
-      p = m_gameState->player.origin;
-      m_moveTarget = m_moveDestination = m_currentPath.points[m_nextPoint];
+      m_moveTarget = m_moveDestination = getNextDestination();
     }
     
     if (m_speed < 10) {
       // Mark this link as bad and request to recompute the path
-      map->markLinkInvalid(m_currentPath.links[(m_nextPoint - 1) / 2]);
-      m_speed = -1;
-      m_nextPoint = -1;
+      getLogger()->warning("We are stuck, but should be following a path!");
       
-      getLogger()->info("We are stuck, but should be following a path!");
+      // TODO maybe this should just increase cost, not remove it completely
+      map->markLinkInvalid(getCurrentLinkId());
+      recomputePath();
+    } else {
+      // Check whether we will probably never reach our destination 
+      float distance = getDistanceToDestination();
+      
+      if (m_minDistance == -1 || distance < m_minDistance) {
+        m_minDistance = distance;
+        m_maxDistance = distance;
+        m_lastMinChange = now;
+        m_lastZ = origin[2];
+      } else if (now - m_lastMinChange > 1000) {
+        float diff = m_maxDistance - m_minDistance;
+        float diffZ = m_lastZ - origin[2];
+        //
+        // Reasons for stalepoint:
+        //
+        //   * Fell somewhere and our path is actually invalid (check via Z difference)
+        //     (we must recalculate the path)
+        //   * We are circling a waypoint
+        //     (we must treat the waypoint as visited)
+        //   * We are stuck because a link is unwalkable
+        //     (we must mark the link as invalid and recalculate the path)
+        //
+        getLogger()->warning(format("Potential stalepoint detected at distance %f max diff %f Z diff %f!") % m_minDistance % diff % diffZ);
+        
+        if (diff > 25 && diffZ <= 24) {
+          // Probably circling a waypoint
+          getLogger()->info("Probably circling a waypoint. Marking it as reached.");
+          travelToPoint(m_nextPoint + 1);
+        } else if (diffZ > 24) {
+          // Probably fell somewhere
+          getLogger()->info("Probably fell somewhere. Recomputing a new path.");
+          recomputePath(true);
+        } else {
+          // Probably found an invalid link
+          getLogger()->info("Probably found an invalid link.");
+          
+          // TODO maybe this should just increase cost, not remove it completely
+          map->markLinkInvalid(getCurrentLinkId());
+          recomputePath();
+        }
+        
+        return;
+      }
+      
+      // Update max distance from last potential stalepoint when passed
+      if (distance > m_maxDistance) {
+        m_maxDistance = distance;
+      }
     }
   }
 }
@@ -115,10 +191,17 @@ void WanderState::processPlanning()
     //if (map->randomPath(p, &m_currentPath))
     if (map->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
-      m_nextPoint = 0;
+      travelToPoint(0);
     } else {
       getLogger()->info("Path not found.");
       m_nextPoint = -2;
+      
+      // Mark link that lead here as invalid as no path out exists and we don't want
+      // to repeat our mistakes
+      if (m_markInvalidOnNone) {
+        getLogger()->info("Marking last link as invalid as we fell into some hellhole.");
+        map->markLinkInvalid(m_lastLinkId);
+      }
     }
   }
 }
