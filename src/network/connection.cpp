@@ -118,8 +118,8 @@ void Connection::connect()
   
   getLogger()->info("Sending connect request...");
   do {
-    char *buffer = (char*) str(format("connect 34 %d %d \"%s\"\x0a") % m_clientId % m_challengeNum % options).c_str();
-    sendUnorderedPacket(buffer, strlen(buffer));
+    std::string buffer = str(format("connect 34 %d %d \"%s\"\x0a") % m_clientId % m_challengeNum % options);
+    sendUnorderedPacket((char*) buffer.data(), buffer.size());
     sleep(1); 
   } while (!m_connected);
   
