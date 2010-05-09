@@ -39,8 +39,9 @@ void WanderState::processFrame()
 {
   Map *map = getContext()->getMap();
   
-  // By default we stand still
+  // By default we stand still and do not fire
   m_moveTarget = m_moveDestination = m_gameState->player.origin;
+  m_moveFire = false;
   
   // TODO this needs to be improved
   
