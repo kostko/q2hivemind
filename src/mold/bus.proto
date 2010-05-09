@@ -1,0 +1,24 @@
+package HiveMind.MOLD.Protocol;
+
+message Message {
+  // Valid packet types
+  enum PacketType {
+    CONTROL_PING = 1;
+    CONTROL_SYNC = 2;
+    EVENT = 3;
+  };
+  
+  // Source bot identifier
+  required string sourceId = 1;
+  
+  // Timestamp
+  required uint64 timestamp = 2;
+  
+  // Type
+  required PacketType type = 3;
+  
+  // Payload
+  required bytes data = 4;
+};
+
+

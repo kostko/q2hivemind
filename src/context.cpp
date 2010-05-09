@@ -10,10 +10,15 @@
 #include "network/connection.h"
 #include "mapping/map.h"
 #include "planner/local.h"
+#include "planner/global.h"
 #include "dispatcher.h"
 
 // States
 #include "states/wander.h"
+
+// MOLD message bus
+#include "mold/server.h"
+#include "mold/client.h"
 
 namespace HiveMind {
 
@@ -26,6 +31,9 @@ Context::Context(const std::string &id, const std::string &gamedir)
     m_dispatcher(new Dispatcher(this))
 {
   Object::init();
+  
+  // Log our unique identifier
+  getLogger()->info(format("Hivemind instance unique identifier is: %s") % id);
 }
 
 Context::~Context()
@@ -63,9 +71,13 @@ void Context::execute()
   m_localPlanner->start();
   
   // Create and start global planner
-  // TODO
+  m_globalPlanner = new GlobalPlanner(this);
+  m_globalPlanner->start();
   
   while (!m_abort) {
+    sleep(10);
+    continue;
+    
     // Process frame update from Quake II server, update planner
     GameState state = m_connection->getGameState();
     m_localPlanner->worldUpdated(state);
@@ -83,6 +95,39 @@ void Context::execute()
   
   // Reset abort flag
   m_abort = false;
+}
+
+void Context::runMOLDBus(const std::string &address)
+{
+  getLogger()->info("Attempting to run MOLD message bus server...");
+  
+  // Create the async IO service and run the server (port 8472)
+  try {
+    boost::asio::io_service service;
+    tcp::endpoint endpoint(boost::asio::ip::address::from_string(address), 8472);
+    MOLD::ServerPtr server(new MOLD::Server(service, endpoint));
+    service.run();
+  } catch (std::exception &e) {
+    getLogger()->error("Invalid MOLD listen address specified! Enter a valid IPv4/IPv6 address.");
+  }
+}
+
+void Context::runMOLDClient(const std::string &address)
+{
+  getLogger()->info(format("Spawning MOLD message bus client and connecting to '%s'...") % address);
+  
+  // Create the async IO service and run the client
+  try {
+    tcp::resolver resolver(m_moldClientService);
+    tcp::resolver::query query(address, "8472");
+    tcp::resolver::iterator endpoints = resolver.resolve(query);
+    m_moldClient = MOLD::ClientPtr(new MOLD::Client(this, m_moldClientService, endpoints));
+    
+    // Spawn the thread for handling communications
+    m_moldClientThread = boost::thread(boost::bind(&boost::asio::io_service::run, &m_moldClientService));
+  } catch (std::exception &e) {
+    getLogger()->error("Failed to initialize MOLD message bus client!");
+  }
 }
 
 }

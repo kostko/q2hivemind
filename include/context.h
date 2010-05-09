@@ -11,11 +11,21 @@
 #include "globals.h"
 #include "object.h"
 
+#include <boost/thread.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+
 namespace HiveMind {
+
+namespace MOLD {
+  class Client;
+  typedef boost::shared_ptr<Client> ClientPtr;
+}
 
 class Connection;
 class Map;
 class LocalPlanner;
+class GlobalPlanner;
 class Dispatcher;
 
 class Context : public Object {
@@ -60,6 +70,11 @@ public:
     inline LocalPlanner *getLocalPlanner() const { return m_localPlanner; }
     
     /**
+     * Returns the global planner instance for this bot.
+     */
+    inline GlobalPlanner *getGlobalPlanner() const { return m_globalPlanner; }
+    
+    /**
      * Returns the event dispatcher instance for this bot.
      */
     inline Dispatcher *getDispatcher() const { return m_dispatcher; }
@@ -78,6 +93,25 @@ public:
      * Raise the abort flag.
      */
     inline void abort() { m_abort = true; }
+    
+    /**
+     * Runs the MOLD message bus server.
+     *
+     * @param address Address to bind to
+     */
+    void runMOLDBus(const std::string &address);
+    
+    /**
+     * Runs the MOLD client.
+     *
+     * @param address Address to connect to
+     */
+    void runMOLDClient(const std::string &address);
+    
+    /**
+     * Returns the MOLD client instance.
+     */
+    inline MOLD::ClientPtr getMOLDClient() const { return m_moldClient; }
 private:
     // Unique bot identifier and game directory
     std::string m_botId;
@@ -94,9 +128,15 @@ private:
     
     // Planners
     LocalPlanner *m_localPlanner;
+    GlobalPlanner *m_globalPlanner;
     
     // Event dispatcher
     Dispatcher *m_dispatcher;
+    
+    // MOLD message bus
+    boost::thread m_moldClientThread;
+    boost::asio::io_service m_moldClientService;
+    MOLD::ClientPtr m_moldClient;
 };
 
 }

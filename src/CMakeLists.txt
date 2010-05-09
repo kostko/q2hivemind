@@ -1,4 +1,5 @@
 
+add_subdirectory(mold)
 add_subdirectory(network)
 add_subdirectory(mapping)
 add_subdirectory(planner)
@@ -19,6 +20,7 @@ add_executable(hivemind ${hivemind_src})
 
 target_link_libraries(hivemind
   # Internal libraries
+  mold
   network
   mapping
   planner
@@ -26,6 +28,7 @@ target_link_libraries(hivemind
   rl
 
   # External libraries
+  ${PROTOBUF_LIBRARY}
   ${Boost_LIBRARIES}
   rt
 )

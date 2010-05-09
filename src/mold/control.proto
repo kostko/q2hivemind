@@ -1,0 +1,12 @@
+package HiveMind.MOLD.Protocol;
+
+//
+// Ping message is a simple message that is used for testing
+// the connection and is the first message sent via the bus
+//
+message Ping {
+  // Included message
+  required string message = 1;
+};
+
+
