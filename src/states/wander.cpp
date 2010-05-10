@@ -16,7 +16,7 @@ WanderState::WanderState(Context *context)
     m_nextPoint(-1),
     m_speed(0),
     m_markInvalidOnNone(false),
-    m_lastLinkId(-1)
+    m_lastLink(NULL)
 {
   Object::init();
 }
@@ -59,14 +59,14 @@ void WanderState::travelToPoint(int index)
   getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
 }
 
-int WanderState::getCurrentLinkId() const
+MapLink *WanderState::getCurrentLink() const
 {
   return m_currentPath.links[(m_nextPoint - 1) / 2];
 }
 
 void WanderState::recomputePath(bool markInvalidOnNone)
 {
-  m_lastLinkId = getCurrentLinkId();
+  m_lastLink = getCurrentLink();
   m_markInvalidOnNone = markInvalidOnNone;
   m_speed = -1;
   m_nextPoint = -1;
@@ -125,7 +125,7 @@ void WanderState::processFrame()
       getLogger()->warning("We are stuck, but should be following a path!");
       
       // TODO maybe this should just increase cost, not remove it completely
-      map->markLinkInvalid(getCurrentLinkId());
+      getCurrentLink()->invalidate();
       recomputePath();
     } else {
       // Check whether we will probably never reach our destination 
@@ -164,7 +164,7 @@ void WanderState::processFrame()
           getLogger()->info("Probably found an invalid link.");
           
           // TODO maybe this should just increase cost, not remove it completely
-          map->markLinkInvalid(getCurrentLinkId());
+          getCurrentLink()->invalidate();
           recomputePath();
         }
         
@@ -198,9 +198,11 @@ void WanderState::processPlanning()
       
       // Mark link that lead here as invalid as no path out exists and we don't want
       // to repeat our mistakes
-      if (m_markInvalidOnNone) {
+      if (m_markInvalidOnNone && m_lastLink) {
         getLogger()->info("Marking last link as invalid as we fell into some hellhole.");
-        map->markLinkInvalid(m_lastLinkId);
+        m_lastLink->invalidate();
+        m_markInvalidOnNone = false;
+        m_lastLink = NULL;
       }
     }
   }

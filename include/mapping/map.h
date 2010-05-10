@@ -9,13 +9,64 @@
 #define HM_MAPPING_MAP_H
 
 #include "object.h"
+#include "timing.h"
 
 #include <list>
+#include <vector>
 
 namespace HiveMind {
 
 class Context;
 class MapPrivate;
+
+/**
+ * Map link.
+ */
+class MapLink {
+public:
+    /**
+     * Class constructor.
+     */
+    MapLink();
+    
+    /**
+     * Updates last visited timestamp to current time.
+     */
+    void updateVisited();
+    
+    /**
+     * Multiplies existing link cost with given value. Bigger costs
+     * mean lower probability of using the link.
+     *
+     * @param cost Cost multiplier
+     */
+    void applyCost(float cost);
+    
+    /**
+     * Returns the current link cost.
+     */
+    inline float getCost() const { return m_cost; }
+    
+    /**
+     * Returns the last time the link was visited.
+     */
+    inline timestamp_t getLastVisited() const { return m_lastVisited; }
+    
+    /**
+     * Invalidates this link.
+     */
+    inline void invalidate() { valid = false; }
+public:
+    // FIXME
+    unsigned short face;
+    bool valid;
+    char pad;
+    Vector3f origin;
+private:
+    // Link properties
+    timestamp_t m_lastVisited;
+    float m_cost;
+};
 
 /**
  * A path through the map.
@@ -25,8 +76,8 @@ struct MapPath {
     int length;
     
     // Point coordinates and link identifiers
-    Vector3f points[513];
-    int links[256];
+    std::vector<Vector3f> points;
+    std::vector<MapLink*> links;
 };
 
 /**
@@ -98,6 +149,14 @@ public:
      * @return Fraction of distance where the hit ocurred
      */
     float rayTest(const Vector3f &start, const Vector3f &end, int mask);
+    
+    /**
+     * Returns the specified link object.
+     *
+     * @param linkId Link identifier
+     * @return Associated MapLink instance or NULL when id is invalid
+     */
+    MapLink *getLink(int linkId) const;
     
     /**
      * Marks the specified links as invalid and therefore excludes it from

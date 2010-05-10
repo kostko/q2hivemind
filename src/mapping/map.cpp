@@ -47,8 +47,9 @@ public:
     
     // Computed map info
     xface_t *xfaces;
+    // FIXME std::vector<MapLink> links;
     int linkCount;
-    link_t *links;
+    MapLink *links;
     edgeface_t *edgefaces;
     int edgefriendCount;
     int *edgefriends;
@@ -62,6 +63,22 @@ public:
     int s_listnum[256];
     int path[256];
 };
+
+MapLink::MapLink()
+  : m_cost(1.0),
+    m_lastVisited(0)
+{
+}
+
+void MapLink::updateVisited()
+{
+  m_lastVisited = Timing::getCurrentTimestamp();
+}
+
+void MapLink::applyCost(float cost)
+{
+  m_cost *= cost;
+}
 
 Map::Map(Context *context, const std::string &name)
   : m_context(context),
@@ -222,6 +239,14 @@ bool Map::load()
   return false;
 }
 
+MapLink *Map::getLink(int linkId) const
+{
+  if (linkId < 0 || linkId >= d->linkCount)
+    return NULL;
+  
+  return &d->links[linkId];
+}
+
 // XXX use eigen2
 float yawFromVect(vec3_t delta) {
 	if(delta[0]==0) {
@@ -298,7 +323,7 @@ private:
 bool Map::link()
 {
   // Initialize structures
-  d->links = (link_t*) malloc(65536 * sizeof(link_t));
+  d->links = (MapLink*) malloc(65536 * sizeof(MapLink));
   d->edgefriends = (int*) malloc(65536 * sizeof(int));
   d->edgefaces = (edgeface_t*) malloc(d->edgeCount * sizeof(edgeface_t));
   d->xedges = (xedge_t*) malloc(d->edgeCount * sizeof(xedge_t));
@@ -991,8 +1016,11 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     face2 = face;
   }
   
-  // + 24.0 is for player height
+  // Allocate sufficient space
+  path->points.resize(path->length);
+  path->links.resize(path->length / 2);
   
+  // + 24.0 is for player height
   path->points[0][0] = d->xfaces[startFace].origin[0];
   path->points[0][1] = d->xfaces[startFace].origin[1];
   path->points[0][2] = d->xfaces[startFace].origin[2] + 24.0;
@@ -1006,7 +1034,7 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     path->points[2*i+2][1] = d->xfaces[d->links[d->path[i]].face].origin[1];
     path->points[2*i+2][2] = d->xfaces[d->links[d->path[i]].face].origin[2] + 24.0;
     
-    path->links[i] = d->path[i];
+    path->links[i] = &d->links[d->path[i]];
   }
   
   path->points[path->length - 1] = end + Vector3f(0., 0., 24.);
@@ -1037,9 +1065,11 @@ bool Map::randomPath(const Vector3f &start, MapPath *path)
   }
   
   d->dist[face] = 0;
-  path->points[0][0] = d->xfaces[face].origin[0];
-  path->points[0][1] = d->xfaces[face].origin[1];
-  path->points[0][2] = d->xfaces[face].origin[2] + 24.0;
+  path->points.push_back(Vector3f(
+    d->xfaces[face].origin[0],
+    d->xfaces[face].origin[1],
+    d->xfaces[face].origin[2] + 24.0
+  ));
   path->length = 1;
   
   int list[256];
@@ -1082,13 +1112,18 @@ bool Map::randomPath(const Vector3f &start, MapPath *path)
       if (d->dist[face2] == -1) {
         d->dist[face2] = 0;
         face = face2;
-        path->points[2*i+1][0] = d->links[link].origin[0];
-        path->points[2*i+1][1] = d->links[link].origin[1];
-        path->points[2*i+1][2] = d->links[link].origin[2] + 24.0;
-        path->points[2*i+2][0] = d->xfaces[face].origin[0];
-        path->points[2*i+2][1] = d->xfaces[face].origin[1];
-        path->points[2*i+2][2] = d->xfaces[face].origin[2] + 24.0;
-        path->links[i] = link;
+        
+        path->points.push_back(Vector3f(
+          d->links[link].origin[0],
+          d->links[link].origin[1],
+          d->links[link].origin[2] + 24.0
+        ));
+        path->points.push_back(Vector3f(
+          d->xfaces[face].origin[0],
+          d->xfaces[face].origin[1],
+          d->xfaces[face].origin[2] + 24.0
+        ));
+        path->links.push_back(&d->links[link]);
         path->length = 2*i + 3;
         break;
       }

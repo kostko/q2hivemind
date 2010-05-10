@@ -78,9 +78,9 @@ protected:
     void travelToPoint(int index);
     
     /**
-     * Returns the current link identifier.
+     * Returns the current link.
      */
-    int getCurrentLinkId() const;
+    MapLink *getCurrentLink() const;
     
     /**
      * Requests path recomputation from current location to our
@@ -106,7 +106,7 @@ private:
     
     // For checking invalid links
     bool m_markInvalidOnNone;
-    int m_lastLinkId;
+    MapLink *m_lastLink;
 };
 
 }

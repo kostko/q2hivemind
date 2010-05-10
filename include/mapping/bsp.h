@@ -177,13 +177,6 @@ typedef struct {
 } xedge_t;
 
 typedef struct {
-  unsigned short face;
-  bool valid;
-  char pad;
-  vec3_t origin;
-} link_t;
-
-typedef struct {
   long face[2];
 } edgeface_t;
 
