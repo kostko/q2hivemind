@@ -157,14 +157,6 @@ public:
      * @return Associated MapLink instance or NULL when id is invalid
      */
     MapLink *getLink(int linkId) const;
-    
-    /**
-     * Marks the specified links as invalid and therefore excludes it from
-     * further searches.
-     *
-     * @param link Link identifier
-     */
-    void markLinkInvalid(int link);
 protected:
     /**
      * Loads the map.

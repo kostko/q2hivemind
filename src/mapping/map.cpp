@@ -788,14 +788,6 @@ bool Map::checkWall(int wall, int face, int edge)
   return true;
 }
 
-void Map::markLinkInvalid(int link)
-{
-  if (link < 0 || link > 65535)
-    return;
-  
-  d->links[link].valid = false;
-}
-
 int Map::findLeafId(const Vector3f &pos) const
 {
   // Start at the map root node
