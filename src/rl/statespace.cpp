@@ -7,10 +7,14 @@
  */
 #include "rl/statespace.h"
 
+namespace HiveMind {
+
 StateSpace::StateSpace(vector<int> &stateComponents, vector<int> &actionComponents)
 {
-  m_state = new State(stateComponents);
-  m_action = new Action(actionComponents);
+  m_state = new BrainState();
+  m_state->init(stateComponents);
+  m_action = new BrainAction();
+  m_action->init(actionComponents);
   
   // Allocate the needed space for all Q values
   m_data = vector<double>(m_state->permutations() * m_action->permutations(), 0);
@@ -22,15 +26,15 @@ StateSpace::~StateSpace()
   delete m_action;
 }
   
-double& StateSpace::at(State *state, Action *action)
+double& StateSpace::at(BrainState *state, BrainAction *action)
 {
   int id = action->id() * state->permutations() + state->id();
   return m_data[id + 1];
 }
 
-double StateSpace::max(State *state)
+double StateSpace::max(BrainState *state)
 {
-  Action *action = m_action;
+  BrainAction *action = m_action;
   int p = actions();         // All actions
   action->from(0);           // Start the search at action number 0
 
@@ -51,6 +55,16 @@ double StateSpace::max(State *state)
   return maxQ;
 }
 
+void StateSpace::getStateComponents(std::vector<int> &components)
+{
+  m_state->getComponents(components);
+}
+
+void StateSpace::getActionComponents(std::vector<int> &components)
+{
+  m_action->getComponents(components);
+}
+
 double StateSpace::sum()
 {
   double sum = 0;
@@ -59,4 +73,6 @@ double StateSpace::sum()
     sum += m_data[i];
     
   return sum;
+}
+
 }

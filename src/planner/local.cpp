@@ -10,6 +10,9 @@
 #include "context.h"
 #include "logger.h"
 #include "algebra.h"
+#include "rl/action.h"
+#include "rl/brainstate.h"
+#include "brains/soldier.h"
 
 #include <boost/foreach.hpp>
 
@@ -22,6 +25,12 @@ LocalPlanner::LocalPlanner(Context *context)
     m_abort(false)
 {
   Object::init();
+  
+  // TODO: add pointer to brain instance through constructor
+  m_brains = new SoldierBrains(this);
+  
+  m_currState = new BrainState("NULL");
+  m_currAction = new BrainAction(NULL, "NULL");
 }
     
 LocalPlanner::~LocalPlanner()
@@ -153,8 +162,16 @@ void LocalPlanner::worldUpdated(const GameState &state)
   
   Map *map = m_context->getMap();
   Vector3f origin = m_gameState.player.origin;
+
+  // The bot is doing nothing - ask the brains what to do :-)
+  if (m_currAction->getName() == "NULL") {
+    // TODO implement interact and execute
+  }
   
-  // TODO Decide if we need to change states
+  // The bot has completed an action, learn from it!
+  if (m_currAction->getName() != "NULL" && m_currAction->complete()) {
+    // TODO implement learn
+  }
   
   // Detect when we hit water or lava via raycasting
   if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {

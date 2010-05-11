@@ -70,6 +70,11 @@ public:
     virtual void processPlanning() = 0;
     
     /**
+     * Has the state reached a final state?
+     */
+    virtual bool complete() = 0;
+    
+    /**
      * Returns this state's priority.
      */
     inline int getPriority() const { return m_priority; }
@@ -119,6 +124,9 @@ private:
     
     // Priority
     int m_priority;
+    
+    // End of state
+    bool m_complete;
 };
 
 }

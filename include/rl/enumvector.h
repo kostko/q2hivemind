@@ -10,6 +10,8 @@
 
 #include <vector>
 
+namespace HiveMind {
+
 /**
  * An enumerable vector - its components take only 
  * a finite number of possible values.
@@ -19,17 +21,21 @@
 class EnumVector {
 public:
     /**
-     * Constructor.
-     *
-     * @param components components[i] is the number of states that the i-th component can take.
-     *                   Note: this also means that the values of component i go from 0 to components[i]-1!
+     * Constructor
      */ 
-     EnumVector(std::vector<int> &components);
+     EnumVector() {}
      
      /**
       * Destructor.
       */
-     ~EnumVector();
+     ~EnumVector() {}
+     
+     /**
+      * Init.
+      * @param components components[i] is the number of states that the i-th component can take.
+      *                   Note: this also means that the values of component i go from 0 to components[i]-1!
+      */
+     void init(std::vector<int> &components);
      
      /**
       * This vector's ID.
@@ -66,5 +72,7 @@ private:
     std::vector<int> m_data;         // Data holder.
     std::vector<int> m_components;   // Element i of m_components represents how many states the i-th component can take.
 };
+
+}
 
 #endif

@@ -11,54 +11,68 @@
 #include <vector>
 
 #include "rl/enumvector.h"
+#include "rl/action.h"
+#include "rl/brainstate.h"
 
 using namespace std;
 
-typedef EnumVector State;
-typedef EnumVector Action;
+namespace HiveMind {
+
 
 class StateSpace {
 public:
-  /**
-   * Constructor.
-   */
-  StateSpace(vector<int> &stateComponents, vector<int> &actionComponents);
-  
-  /**
-   * Destructor.
-   */
-  ~StateSpace();
-  
-  /**
-   * Q value for state and action.
-   */
-  double& at(State *state, Action *action);
-  
-  /**
-   * Maximum possible Q value for state and some action.
-   */
-  double max(State *state);
-  
-  /**
-   * Number of actions.
-   */
-  int actions() const { return m_action->permutations(); }
+    /**
+     * Constructor.
+     */
+    StateSpace(vector<int> &stateComponents, vector<int> &actionComponents);
+    
+    /**
+     * Destructor.
+     */
+    ~StateSpace();
+    
+    /**
+     * Q value for state and action.
+     */
+    double& at(BrainState *state, BrainAction *action);
+    
+    /**
+     * Maximum possible Q value for state and some action.
+     */
+    double max(BrainState *state);
+    
+    /**
+     * Number of actions.
+     */
+    int actions() const { return m_action->permutations(); }
 
-  /**
-   * Number of states.
-   */
-  int states() const { return m_state->permutations(); }
-  
-  /**
-   * Sum of all elements.
-   */
-  double sum();
+    /**
+     * Number of states.
+     */
+    int states() const { return m_state->permutations(); }
+    
+    /**
+     * State components def.
+     */
+    void getStateComponents(std::vector<int> &components);
+
+    /**
+     * Action components def.
+     */
+    void getActionComponents(std::vector<int> &components);
+    
+    /**
+     * Sum of all elements.
+     */
+    double sum();
   
 private:
-  State  *m_state;           // These two vectors define the space
-  Action *m_action;
-  vector<double> m_data;     // The actual vector of Q values
+    BrainState  *m_state;           // These two vectors define the space
+    BrainAction *m_action;
+    vector<double> m_data;          // The actual vector of Q values
 };
+
+}
 
 #endif
 

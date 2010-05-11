@@ -16,6 +16,7 @@ WanderState::WanderState(Context *context)
     m_nextPoint(-1),
     m_speed(0),
     m_markInvalidOnNone(false),
+    m_complete(false),
     m_lastLink(NULL)
 {
   Object::init();
@@ -115,6 +116,7 @@ void WanderState::processFrame()
       // We have reached our destination
       getLogger()->info("Destination reached.");
       m_nextPoint = -2; // XXX
+      m_complete = true;
       return;
     } else {
       m_moveTarget = m_moveDestination = getNextDestination();
@@ -206,6 +208,11 @@ void WanderState::processPlanning()
       }
     }
   }
+}
+
+bool WanderState::complete()
+{
+  return m_complete;
 }
 
 }

@@ -12,8 +12,12 @@
 #include <math.h>
 #include <time.h>
 
-#include "rl/enumvector.h"
 #include "rl/statespace.h"
+#include "object.h"
+
+namespace HiveMind {
+
+class LocalPlanner;
 
 /**
  * Some constants of the Boltzmann "soft-max" control policy.
@@ -21,7 +25,7 @@
 #define GAMMA              0.6
 #define MAX_Q_TEMPERATURE  1.0 / 2
 #define MIN_Q_TEMPERATURE  1.0 / 50
-#define CEILING            100000
+#define CEILING            1000
 
 /**
  * Random -> [0,1).
@@ -33,64 +37,102 @@
  *
  * Concept taken from: http://www.compapp.dcu.ie/~humphrys/Notes/RL/Code/index.html
  */ 
-class Brains {
+class Brains : public Object {
 public:
-  /**
-   * Constructor.
-   */
-  Brains(vector<int> &stateComponents, vector<int> &actionComponents);
-
-  /**
-   * Destructor.
-   */
-  ~Brains();
-
-  /**
-   * What really defines the "brain" is the reward function.
-   */
-  virtual double reward(State *prevState, State *currState) { return 0; }
-  
     /**
-   * Update Q function.
-   */ 
-  void updateQ(State *prevState, Action *action, State *currState);
-  
-  /**
-   * Suggests a random action.
-   */
-  Action *randomAction();
-  
-  /**
-   * Suggest an action using the soft-max policy.
-   */
-  Action *suggestBoltz(State *state, double temperature);
+     * Constructor.
+     */
+    Brains(HiveMind::LocalPlanner *planner);
 
-  /**
-   * Suggest a "reasonable" action.
-   */
-  Action *suggestAction(State *state);
+    /**
+     * Destructor.
+     */
+    ~Brains();
+    
+    void init(vector<int> &stateComponents, vector<int> &actionComponents);
+    
+    /**
+     * Interact with the world (selects the next action).
+     */
+    void interact(BrainState *currState, BrainAction *currAction);
+    
+    /**
+     * Learn from the transition.
+     */
+    void learn(BrainState *beforeState, BrainAction *action);
+    
+    /**
+     * Set brain mode.
+     */
+    void setBrainMode(bool learn);
+    
+    /**
+     * State space.
+     */
+    StateSpace *getQ();
   
-  /**
-   * Use what the agent has learned (no exploration).
-   */
-  Action *exploit(State *state);
-   
+protected:
+    /**
+     * What really defines the "brain" is the reward function.
+     */
+    virtual double reward(BrainState *prevState, BrainState *currState) { return 0; }
+    
+    /**
+     * Observe my current state.
+     */
+    virtual BrainState *observe() { return 0; }
+    
+    /**
+     * Execute the given action.
+     */
+    virtual void execute(BrainAction *action) {}
+
+    LocalPlanner *m_localPlanner;
 private:
-  /**
-   * Computes the sigma sum - used for soft-max policy.
-   */
-  double computeSigma(State *state, double temperature);
-  
-  /**
-   * Returns a "reasonable" temperature
-   */
-  double computeReasonableTemp();
+    /**
+     * Update Q function.
+     */ 
+    void updateQ(BrainState *prevState, BrainAction *action, BrainState *currState);
+    
+    /**
+     * Suggests a random action.
+     */
+    BrainAction *randomAction();
+    
+    /**
+     * Suggest an action using the soft-max policy.
+     */
+    BrainAction *suggestBoltz(BrainState *state, double temperature);
 
-  StateSpace *m_Q;            // Q-values
-  StateSpace *m_numQ;         // Count the number of times we have visited each (s,a) 
-  
-  Action *m_suggestedAction;  // The action our brain suggests
-  Action *m_tempAction;       // To avoid constant allocations
+    /**
+     * Suggest a "reasonable" action.
+     */
+    BrainAction *suggestAction(BrainState *state);
+    
+    /**
+     * Use what the agent has learned (no exploration).
+     */
+    BrainAction *exploit(BrainState *state);
+
+    /**
+     * Computes the sigma sum - used for soft-max policy.
+     */
+    double computeSigma(BrainState *state, double temperature);
+    
+    /**
+     * Returns a "reasonable" temperature
+     */
+    double computeReasonableTemp();
+
+    bool m_learn;               // Brain mode
+    
+    StateSpace *m_Q;            // Q-values
+    StateSpace *m_numQ;         // Count the number of times we have visited each (s,a) 
+    
+    BrainAction *m_suggestedAction;  // The action our brain suggests
+    BrainAction *m_tempAction;       // To avoid constant allocations
 };
+
+}
 
 #endif

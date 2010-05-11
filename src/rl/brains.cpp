@@ -4,18 +4,17 @@
  * Copyright (C) 2010 by Jernej Kos <kostko@unimatrix-one.org>
  * Copyright (C) 2010 by Anze Vavpetic <anze.vavpetic@gmail.com>
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
- */
+ */ 
+#include "planner/local.h"
 #include "rl/brains.h"
 
-Brains::Brains(vector<int> &stateComponents, vector<int> &actionComponents)
+namespace HiveMind {
+
+Brains::Brains(LocalPlanner *planner)
+  : m_localPlanner(planner),
+    m_learn(true)
 {
-  m_Q = new StateSpace(stateComponents, actionComponents);
-  m_numQ = new StateSpace(stateComponents, actionComponents);
-  m_suggestedAction = new Action(actionComponents);
-  m_tempAction = new Action(actionComponents);
-  
-  // Initialize seed
-  srand(time(0));
+  Object::init();
 }
 
 Brains::~Brains()
@@ -26,15 +25,68 @@ Brains::~Brains()
   delete m_tempAction;
 }
 
-Action *Brains::randomAction()
+void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
+{
+  m_Q = new StateSpace(stateComponents, actionComponents);
+  m_numQ = new StateSpace(stateComponents, actionComponents);
+
+  m_suggestedAction = new BrainAction();
+  m_suggestedAction->init(actionComponents);
+
+  m_tempAction = new BrainAction();
+  m_tempAction->init(actionComponents);
+  
+  // Initialize seed
+  srand(time(0));
+}
+
+void Brains::interact(BrainState *currState, BrainAction *currAction)
+{
+  // Check in what state am I before the action
+  *currState = *observe();
+  
+  if (m_learn) {
+    *currAction = *randomAction();
+  }
+  else {
+    *currAction = *exploit(currState);
+  }
+  
+  // Execute my chosen action
+  execute(currAction);
+}
+
+void Brains::learn(BrainState *beforeState, BrainAction *action)
+{
+  // Observe my new state
+  BrainState *newState = observe();
+  
+  // If I am learning try to learn from this move
+  if (m_learn)
+    updateQ(beforeState, action, newState);
+}
+
+void Brains::setBrainMode(bool learn)
+{
+  m_learn = learn;
+}
+
+StateSpace *Brains::getQ()
+{
+  return m_Q;
+}
+
+BrainAction *Brains::randomAction()
 {  
   int actionID = (int)(random() * m_Q->actions());
   m_suggestedAction->from(actionID);
   
+  // TODO: a map ID -> State which executes the action
+  
   return m_suggestedAction;
 }
 
-void Brains::updateQ(State *prevState, Action *action, State *currState)
+void Brains::updateQ(BrainState *prevState, BrainAction *action, BrainState *currState)
 {
   double total = reward(prevState, currState) + (GAMMA * m_Q->max(currState));
   
@@ -48,7 +100,7 @@ void Brains::updateQ(State *prevState, Action *action, State *currState)
   m_Q->at(prevState, action) = (1-ALPHA) * m_Q->at(prevState, action) + ALPHA * total;
 }
 
-double Brains::computeSigma(State *state, double temperature)
+double Brains::computeSigma(BrainState *state, double temperature)
 {
   int p = m_Q->actions();
   double sigma = 0;
@@ -61,7 +113,7 @@ double Brains::computeSigma(State *state, double temperature)
   return sigma;
 }
 
-Action *Brains::suggestBoltz(State *state, double temperature)
+BrainAction *Brains::suggestBoltz(BrainState *state, double temperature)
 {
   double sigma = computeSigma(state, temperature);
   double prob = random();
@@ -79,7 +131,7 @@ Action *Brains::suggestBoltz(State *state, double temperature)
   return m_suggestedAction;
 }
 
-Action *Brains::suggestAction(State *state)
+BrainAction *Brains::suggestAction(BrainState *state)
 {
   return suggestBoltz(state, computeReasonableTemp());
 }
@@ -98,8 +150,9 @@ double Brains::computeReasonableTemp()
   }
 }
 
-Action *Brains::exploit(State *state)
+BrainAction *Brains::exploit(BrainState *state)
 {
   return suggestBoltz(state, MIN_Q_TEMPERATURE);
 }
 
+}

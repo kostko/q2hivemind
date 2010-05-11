@@ -16,7 +16,8 @@ State::State(Context *context, const std::string &name)
   : m_name(name),
     m_context(context),
     m_planner(context->getLocalPlanner()),
-    m_priority(1)
+    m_priority(1),
+    m_complete(false)
 {
 }
 

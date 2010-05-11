@@ -7,18 +7,17 @@
  */
 #include "rl/enumvector.h"
 
-EnumVector::EnumVector(std::vector<int> &components)
-  : m_components(components),
-    m_data(components.size(), 0)
+namespace HiveMind {
+
+void EnumVector::init(std::vector<int> &components)
 {
+  m_components = std::vector<int>(components);
+  m_data = std::vector<int>(components.size(), 0);
+
   // Compute the number of possible permutations
   m_p = 1;
   for (int i = 0; i < m_components.size(); i++)
-    m_p = m_p * m_components[i];
-}
-
-EnumVector::~EnumVector()
-{
+    m_p = m_p * m_components[i];  
 }
 
 int EnumVector::id()
@@ -62,4 +61,6 @@ EnumVector& EnumVector::operator=(EnumVector &other)
   m_p = other.m_p;
   
   return *this;
+}
+
 }

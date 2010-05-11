@@ -11,12 +11,16 @@
 #include "object.h"
 #include "planner/state.h"
 #include "network/gamestate.h"
+#include "rl/statespace.h"
 
 #include <list>
 #include <boost/thread.hpp>
 #include <boost/any.hpp>
 
 namespace HiveMind {
+
+class Brains;
+class BrainAction;
 
 /**
  * A transition request.
@@ -159,6 +163,11 @@ private:
     
     // Abort request flag
     bool m_abort;
+    
+    // AI
+    Brains *m_brains;
+    BrainState *m_currState;
+    BrainAction *m_currAction;
 };
 
 }
