@@ -15,9 +15,10 @@ WanderState::WanderState(Context *context)
   : State(context, "wander"),
     m_nextPoint(-1),
     m_speed(0),
+    m_minDistance(-1),
     m_markInvalidOnNone(false),
-    m_complete(false),
-    m_lastLink(NULL)
+    m_lastLink(NULL),
+    m_complete(false)
 {
   Object::init();
 }

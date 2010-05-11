@@ -18,6 +18,62 @@ namespace HiveMind {
 
 class Context;
 class MapPrivate;
+class MapLink;
+
+// A list of map links
+typedef std::list<MapLink*> LinkList;
+
+/**
+ * Holds additional face information used for building a path
+ * finding graph.
+ */
+class MapFace {
+public:
+    /**
+     * Class constructor.
+     */
+    MapFace();
+    
+    /**
+     * Adds an outgoing link to this face.
+     *
+     * @param link A valid link instance
+     */
+    void addLink(MapLink *link);
+    
+    /**
+     * Returns the list of links going out of this face.
+     */
+    inline LinkList &links() { return m_links; }
+    
+    /**
+     * Sets face type.
+     *
+     * @param type Type flags
+     */
+    inline void setType(long type) { m_type = type; }
+    
+    /**
+     * Returns this face's type.
+     */
+    inline long getType() const { return m_type; }
+    
+    /**
+     * Returns this face's origin coordinates.
+     */
+    inline Vector3f getOrigin() const { return m_origin; }
+    
+    /**
+     * Sets this face's origin coordinates.
+     *
+     * @param origin Coordinates
+     */
+    inline void setOrigin(const Vector3f &origin) { m_origin = origin; }
+private:
+    long m_type;
+    Vector3f m_origin;
+    LinkList m_links; 
+};
 
 /**
  * Map link.
@@ -27,7 +83,7 @@ public:
     /**
      * Class constructor.
      */
-    MapLink();
+    MapLink(int face, const Vector3f &origin);
     
     /**
      * Updates last visited timestamp to current time.
@@ -53,16 +109,30 @@ public:
     inline timestamp_t getLastVisited() const { return m_lastVisited; }
     
     /**
+     * Returns true if this link is valid.
+     */
+    inline bool isValid() const { return m_valid; }
+    
+    /**
+     * Returns destination face.
+     */
+    inline int getFace() const { return m_face; }
+    
+    /**
+     * Returns link origin coordinates. These are interpolated between the
+     * two faces.
+     */
+    inline Vector3f getOrigin() const { return m_origin; }
+    
+    /**
      * Invalidates this link.
      */
-    inline void invalidate() { valid = false; }
-public:
-    // FIXME
-    unsigned short face;
-    bool valid;
-    char pad;
-    Vector3f origin;
+    inline void invalidate() { m_valid = false; }
 private:
+    int m_face;
+    bool m_valid;
+    Vector3f m_origin;
+
     // Link properties
     timestamp_t m_lastVisited;
     float m_cost;
@@ -246,6 +316,8 @@ protected:
      * @return Fractional intersection distance
      */
     float intersectTree(const Vector3f &start, const Vector3f &end, int node, float min, float max, int mask) const;
+    
+    MapLink *createLink(int face, int n, int k);
 private:
     // Context
     Context *m_context;

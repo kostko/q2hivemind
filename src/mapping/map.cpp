@@ -14,6 +14,8 @@
 #include <fcntl.h>
 
 #include <vector>
+#include <set>
+#include <queue>
 #include <algorithm>
 
 #include <boost/foreach.hpp>
@@ -46,10 +48,8 @@ public:
     model_t *models;
     
     // Computed map info
-    xface_t *xfaces;
-    // FIXME std::vector<MapLink> links;
-    int linkCount;
-    MapLink *links;
+    std::vector<MapFace*> xfaces;
+    std::vector<MapLink*> links;
     edgeface_t *edgefaces;
     int edgefriendCount;
     int *edgefriends;
@@ -64,9 +64,17 @@ public:
     int path[256];
 };
 
-MapLink::MapLink()
+MapFace::MapFace()
+  : m_origin(0, 0, 0)
+{
+}
+
+MapLink::MapLink(int face, const Vector3f &origin)
   : m_cost(1.0),
-    m_lastVisited(0)
+    m_lastVisited(0),
+    m_face(face),
+    m_valid(true),
+    m_origin(origin)
 {
 }
 
@@ -78,6 +86,14 @@ void MapLink::updateVisited()
 void MapLink::applyCost(float cost)
 {
   m_cost *= cost;
+}
+
+void MapFace::addLink(MapLink *link)
+{
+  if (link == NULL)
+    return;
+  
+  m_links.push_back(link);
 }
 
 Map::Map(Context *context, const std::string &name)
@@ -241,10 +257,10 @@ bool Map::load()
 
 MapLink *Map::getLink(int linkId) const
 {
-  if (linkId < 0 || linkId >= d->linkCount)
+  if (linkId < 0 || linkId >= d->links.size())
     return NULL;
   
-  return &d->links[linkId];
+  return d->links[linkId];
 }
 
 // XXX use eigen2
@@ -320,10 +336,29 @@ private:
   bool m_key1;
 };
 
+MapLink *Map::createLink(int face, int n, int k)
+{
+  int faceId = (int) d->edgefaces[n].face[face];
+  if (faceId < 0)
+    return NULL;
+  
+  // Create a new map link
+  MapLink *link = new MapLink(
+    faceId,
+    Vector3f(
+      (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2,
+      (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2,
+      (d->vertices[d->edges[k].v[0]].origin[2] + d->vertices[d->edges[k].v[1]].origin[2]) / 2
+    )
+  );
+  
+  d->links.push_back(link);
+  return link;
+}
+
 bool Map::link()
 {
   // Initialize structures
-  d->links = (MapLink*) malloc(65536 * sizeof(MapLink));
   d->edgefriends = (int*) malloc(65536 * sizeof(int));
   d->edgefaces = (edgeface_t*) malloc(d->edgeCount * sizeof(edgeface_t));
   d->xedges = (xedge_t*) malloc(d->edgeCount * sizeof(xedge_t));
@@ -377,25 +412,23 @@ bool Map::link()
     return false;
   
   // Now come the faces
-  d->xfaces = (xface_t*) malloc(d->faceCount * sizeof(xface_t));
   for (int i = 0; i < d->faceCount; i++) {
-    d->xfaces[i].type = 0;
+    MapFace *face = new MapFace();
+    long type = 0;
     
     if (d->planes[d->faces[i].planenum].normal[2] > 0.7 && d->faces[i].side == 0) {
-      d->xfaces[i].type |= 0x00000001;
+      type |= 0x00000001;
     } else {
-      d->xfaces[i].type &= 0xfffffffe;
+      type &= 0xfffffffe;
     }
     
     if (d->planes[d->faces[i].planenum].normal[2] == 0.0) {
-      d->xfaces[i].type |= 0x00000002;
+      type |= 0x00000002;
     } else {
-      d->xfaces[i].type &= 0xfffffffd;
+      type &= 0xfffffffd;
     }
     
-    d->xfaces[i].origin[0] = 0.0;
-    d->xfaces[i].origin[1] = 0.0;
-    d->xfaces[i].origin[2] = 0.0;
+    face->setType(type);
     float f = 1.0 / (float) d->faces[i].numedges;
     for (int j = 0; j < d->faces[i].numedges; j++) {
       int k = d->surfedges[j + d->faces[i].firstedge];
@@ -408,9 +441,13 @@ bool Map::link()
         v = d->edges[k].v[1];
       }
       
-      d->xfaces[i].origin[0] += d->vertices[v].origin[0] * f;
-      d->xfaces[i].origin[1] += d->vertices[v].origin[1] * f;
-      d->xfaces[i].origin[2] += d->vertices[v].origin[2] * f;
+      // Update face origin
+      face->setOrigin(face->getOrigin() + f*Vector3f(
+        d->vertices[v].origin[0],
+        d->vertices[v].origin[1],
+        d->vertices[v].origin[2]
+      ));
+      
       if (d->edgefaces[k].face[0] == -1) {
         d->edgefaces[k].face[0] = i;
       } else if (d->edgefaces[k].face[1] == -1) {
@@ -421,19 +458,13 @@ bool Map::link()
       }
     }
     
-    d->xfaces[i].firstlink = 0;
-    d->xfaces[i].numlinks = 0;
+    d->xfaces.push_back(face);
   }
   
   // Now finally create the links
-  d->linkCount = 0;
-  
   for (int m = 0; m < d->modelCount; m++) {
     for (int i = 0; i < d->models[m].numfaces; i++) {
-      d->xfaces[i].firstlink = d->linkCount;
-      d->xfaces[i].numlinks = 0;
-      
-      if (d->xfaces[i].type & 0x00000001) {
+      if (d->xfaces[i]->getType() & 0x00000001) {
         for (int j = 0; j < d->faces[i].numedges; j++) {
           int k = d->surfedges[j + d->faces[i].firstedge];
           if (k < 0) {
@@ -442,15 +473,10 @@ bool Map::link()
           
           if (d->edgefaces[k].face[0] == i) {
             if (d->edgefaces[k].face[1] != -1) {
-              if (d->xfaces[d->edgefaces[k].face[1]].type & 0x00000001) {
-                d->links[d->linkCount].face = (unsigned short) d->edgefaces[k].face[1];
-                d->links[d->linkCount].origin[0] = (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2;
-                d->links[d->linkCount].origin[1] = (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2;
-                d->links[d->linkCount].origin[2] = (d->vertices[d->edges[k].v[0]].origin[2] + d->vertices[d->edges[k].v[1]].origin[2]) / 2;
-                d->links[d->linkCount].valid = true;
-                d->xfaces[i].numlinks++;
-                d->linkCount++;
-              } else if (d->xfaces[d->edgefaces[k].face[1]].type & 0x00000002) {
+              if (d->xfaces[d->edgefaces[k].face[1]]->getType() & 0x00000001) {
+                // Create a new link
+                d->xfaces[i]->addLink(createLink(1, k, k));
+              } else if (d->xfaces[d->edgefaces[k].face[1]]->getType() & 0x00000002) {
                 if (!checkWall(d->edgefaces[k].face[1], i, k)) {
                   return false;
                 }
@@ -458,15 +484,10 @@ bool Map::link()
             }
           } else if (d->edgefaces[k].face[1] == i) {
             if (d->edgefaces[k].face[0] != -1) {
-              if (d->xfaces[d->edgefaces[k].face[0]].type & 0x00000001) {
-                d->links[d->linkCount].face = (unsigned short) d->edgefaces[k].face[0];
-                d->links[d->linkCount].origin[0] = (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2;
-                d->links[d->linkCount].origin[1] = (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2;
-                d->links[d->linkCount].origin[2] = (d->vertices[d->edges[k].v[0]].origin[2] + d->vertices[d->edges[k].v[1]].origin[2]) / 2;
-                d->links[d->linkCount].valid = true;
-                d->xfaces[i].numlinks++;
-                d->linkCount++;
-              } else if (d->xfaces[d->edgefaces[k].face[0]].type & 0x00000002) {
+              if (d->xfaces[d->edgefaces[k].face[0]]->getType() & 0x00000001) {
+                // Create a new link
+                d->xfaces[i]->addLink(createLink(0, k, k));
+              } else if (d->xfaces[d->edgefaces[k].face[0]]->getType() & 0x00000002) {
                 if (!checkWall(d->edgefaces[k].face[0], i, k)) {
                   return false;
                 }
@@ -477,49 +498,27 @@ bool Map::link()
             return false;
           }
           
-          if (d->linkCount == 65535) {
-            getLogger()->warning("Link table overflow.");
-            return false;
-          }
-          
           for (int l = 0; l < d->xedges[k].numfriends; l++) {
             int n = d->edgefriends[d->xedges[k].firstfriend + l];
             
             if (d->edgefaces[n].face[0] != -1) {
-              if (d->xfaces[d->edgefaces[n].face[0]].type & 0x00000001) {
+              if (d->xfaces[d->edgefaces[n].face[0]]->getType() & 0x00000001) {
                 // Change n to k
-                d->links[d->linkCount].face = (unsigned short) d->edgefaces[n].face[0];
-                d->links[d->linkCount].origin[0] = (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2;
-                d->links[d->linkCount].origin[1] = (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2;
-                d->links[d->linkCount].origin[2] = (d->vertices[d->edges[k].v[0]].origin[2] + d->vertices[d->edges[k].v[1]].origin[2]) / 2;
-                d->links[d->linkCount].valid = true;
-                d->xfaces[i].numlinks++;
-                d->linkCount++;
-              } else if (d->xfaces[d->edgefaces[n].face[0]].type & 0x00000002) {
+                d->xfaces[i]->addLink(createLink(0, n, k));
+              } else if (d->xfaces[d->edgefaces[n].face[0]]->getType() & 0x00000002) {
                 if (!checkWall(d->edgefaces[n].face[0], i, n)) {
                   return false;
                 }
               }
             } else if (d->edgefaces[n].face[1] != -1) {
-              if (d->xfaces[d->edgefaces[n].face[1]].type & 0x00000001) {
+              if (d->xfaces[d->edgefaces[n].face[1]]->getType() & 0x00000001) {
                 // Change n to k
-                d->links[d->linkCount].face = (unsigned short) d->edgefaces[n].face[1];
-                d->links[d->linkCount].origin[0] = (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2;
-                d->links[d->linkCount].origin[1] = (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2;
-                d->links[d->linkCount].origin[2] = (d->vertices[d->edges[k].v[0]].origin[2] + d->vertices[d->edges[k].v[1]].origin[2]) / 2;
-                d->links[d->linkCount].valid = true;
-                d->xfaces[i].numlinks++;
-                d->linkCount++;
-              } else if (d->xfaces[d->edgefaces[n].face[1]].type & 0x00000002) {
+                d->xfaces[i]->addLink(createLink(1, n, k));
+              } else if (d->xfaces[d->edgefaces[n].face[1]]->getType() & 0x00000002) {
                 if (!checkWall(d->edgefaces[n].face[1], i, n)) {
                   return false;
                 }
               }
-            }
-            
-            if (d->linkCount == 65535) {
-              getLogger()->warning("Link table overflow.");
-              return false;
             }
           }
         }
@@ -527,14 +526,8 @@ bool Map::link()
     }
   }
   
-  // Disable links with unset faces
-  for (int i = 0; i < d->linkCount; i++) {
-    if (d->links[i].face >= d->faceCount)
-      d->links[i].valid = false;
-  }
-  
   // We are done linking the map
-  getLogger()->info(format("Linked map and produced %d links.") % d->linkCount);
+  getLogger()->info(format("Linked map and produced %d links.") % d->links.size());
   
   return true;
 }
@@ -607,7 +600,9 @@ bool Map::findFriends()
 
 bool Map::findFriends2(int start, int end)
 {
-  int first, last, edge, edge2;
+  int first = 0;
+  int last = 0;
+  int edge, edge2;
   unsigned short key2 = 0;
   
   for (int i = start; i < end; i++) {
@@ -715,34 +710,21 @@ bool Map::checkWall(int wall, int face, int edge)
     float height = heightBetween(edge, k);
     if (edgeOverlap(edge, k) && height <= 24.0) {
       if (d->edgefaces[k].face[0] == wall) {
-        if (d->xfaces[d->edgefaces[k].face[1]].type & 0x00000001 && d->edgefaces[k].face[1] != face) {
-          // Change k to edge
-          d->links[d->linkCount].face = (unsigned short) d->edgefaces[k].face[1];
-          d->links[d->linkCount].origin[0] = (d->vertices[d->edges[edge].v[0]].origin[0] + d->vertices[d->edges[edge].v[1]].origin[0]) / 2;
-          d->links[d->linkCount].origin[1] = (d->vertices[d->edges[edge].v[0]].origin[1] + d->vertices[d->edges[edge].v[1]].origin[1]) / 2;
-          d->links[d->linkCount].origin[2] = (d->vertices[d->edges[edge].v[0]].origin[2] + d->vertices[d->edges[edge].v[1]].origin[2]) / 2;
-          d->links[d->linkCount].valid = true;
-          d->xfaces[face].numlinks++;
-          d->linkCount++;
+        if (d->edgefaces[k].face[1] != -1) {
+          if (d->xfaces[d->edgefaces[k].face[1]]->getType() & 0x00000001 && d->edgefaces[k].face[1] != face) {
+            // Change k to edge
+            d->xfaces[face]->addLink(createLink(1, k, edge));
+          }
         }
       } else if (d->edgefaces[k].face[1] == wall) {
-        if (d->xfaces[d->edgefaces[k].face[0]].type & 0x00000001 && d->edgefaces[k].face[0] != face) {
-          // Change k to edge
-          d->links[d->linkCount].face = (unsigned short) d->edgefaces[k].face[0];
-          d->links[d->linkCount].origin[0] = (d->vertices[d->edges[edge].v[0]].origin[0] + d->vertices[d->edges[edge].v[1]].origin[0]) / 2;
-          d->links[d->linkCount].origin[1] = (d->vertices[d->edges[edge].v[0]].origin[1] + d->vertices[d->edges[edge].v[1]].origin[1]) / 2;
-          d->links[d->linkCount].origin[2] = (d->vertices[d->edges[edge].v[0]].origin[2] + d->vertices[d->edges[edge].v[1]].origin[2]) / 2;
-          d->links[d->linkCount].valid = true;
-          d->xfaces[face].numlinks++;
-          d->linkCount++;
+        if (d->edgefaces[k].face[0] != -1) {
+          if (d->xfaces[d->edgefaces[k].face[0]]->getType() & 0x00000001 && d->edgefaces[k].face[0] != face) {
+            // Change k to edge
+            d->xfaces[face]->addLink(createLink(0, k, edge));
+          }
         }
       } else {
         getLogger()->warning("Neither face links back to original.");
-        return false;
-      }
-      
-      if (d->linkCount == 65535) {
-        getLogger()->warning("Link table overflow.");
         return false;
       }
     }
@@ -754,32 +736,15 @@ bool Map::checkWall(int wall, int face, int edge)
       // Change k to n
       if (edgeOverlap(edge, n) && height <= 24.0) {
         if (d->edgefaces[n].face[0] != -1) {
-          if (d->xfaces[d->edgefaces[n].face[0]].type & 0x00000001) {
+          if (d->xfaces[d->edgefaces[n].face[0]]->getType() & 0x00000001) {
             // Change n to edge
-            d->links[d->linkCount].face = (unsigned short) d->edgefaces[n].face[0];
-            d->links[d->linkCount].origin[0] = (d->vertices[d->edges[edge].v[0]].origin[0] + d->vertices[d->edges[edge].v[1]].origin[0]) / 2;
-            d->links[d->linkCount].origin[1] = (d->vertices[d->edges[edge].v[0]].origin[1] + d->vertices[d->edges[edge].v[1]].origin[1]) / 2;
-            d->links[d->linkCount].origin[2] = (d->vertices[d->edges[edge].v[0]].origin[2] + d->vertices[d->edges[edge].v[1]].origin[2]) / 2;
-            d->links[d->linkCount].valid = true;
-            d->xfaces[face].numlinks++;
-            d->linkCount++;
+            d->xfaces[face]->addLink(createLink(0, n, edge));
           }
         } else if (d->edgefaces[n].face[1] != -1) {
-          if (d->xfaces[d->edgefaces[n].face[1]].type & 0x00000001) {
+          if (d->xfaces[d->edgefaces[n].face[1]]->getType() & 0x00000001) {
             // Change k to edge
-            d->links[d->linkCount].face = (unsigned short) d->edgefaces[k].face[1];
-            d->links[d->linkCount].origin[0] = (d->vertices[d->edges[edge].v[0]].origin[0] + d->vertices[d->edges[edge].v[1]].origin[0]) / 2;
-            d->links[d->linkCount].origin[1] = (d->vertices[d->edges[edge].v[0]].origin[1] + d->vertices[d->edges[edge].v[1]].origin[1]) / 2;
-            d->links[d->linkCount].origin[2] = (d->vertices[d->edges[edge].v[0]].origin[2] + d->vertices[d->edges[edge].v[1]].origin[2]) / 2;
-            d->links[d->linkCount].valid = true;
-            d->xfaces[face].numlinks++;
-            d->linkCount++;
+            d->xfaces[face]->addLink(createLink(1, k, edge));
           }
-        }
-      
-        if (d->linkCount == 65535) {
-          getLogger()->warning("Link table overflow.");
-          return false;
         }
       }
     }
@@ -846,7 +811,7 @@ int Map::findFaceId(const Vector3f &pos) const
   for (int i = firstFace; i < lastFace; i++) {
     int face = d->leaffaces[i];
     
-    if (d->xfaces[face].type & 0x00000001) {
+    if (d->xfaces[face]->getType() & 0x00000001) {
       int firstEdge = d->faces[face].firstedge;
       int lastEdge = d->faces[face].numedges + firstEdge;
       hits = 0;
@@ -916,6 +881,11 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     return false;
   }
   
+  /*std::set<MapFace> closed;
+  std::priority_queue<int, */
+  
+  // --------------------------------
+  
   // Initialize distances
   for (int i = 0; i < d->faceCount; i++) {
     d->dist[i] = -1;
@@ -945,27 +915,25 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     for (int i = 0; i < d->s_listnum[depth - 1]; i++) {
       int face = d->s_lists[depth - 1][i];
       if (face >= d->faceCount || face < 0) {
-        getLogger()->error("Face out of bounds!");
+        getLogger()->error("Face out of bounds (1)!");
         return false;
       }
       
-      for (int j = 0; j < d->xfaces[face].numlinks; j++) {
-        int link = d->xfaces[face].firstlink + j;
-        if (link >= d->linkCount || link < 0) {
-          getLogger()->error("Link out of bounds!");
-          return false;
-        }
+      LinkList links = d->xfaces[face]->links();
+      for (LinkList::const_iterator j = links.begin(); j != links.end(); ++j) {
+        MapLink *link = *j;
         
-        // Skip links marked as invalid
-        if (!d->links[link].valid)
+        // Skip invalidated links
+        if (!link->isValid())
           continue;
         
-        int face2 = d->links[link].face;
+        int face2 = link->getFace();
         if (face2 >= d->faceCount || face2 < 0) {
-          getLogger()->error("Face out of bounds!");
+          getLogger()->error("Face out of bounds (2)!");
           return false;
         }
         
+        // Check goal condition
         if (face2 == endFace) {
           found = true;
         }
@@ -990,17 +958,22 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     return true;
   
   // Reconstruct the path
+  std::vector<MapLink*> tmp; 
   int face2 = endFace;
   int face;
+  tmp.resize(depth);
+  
   for (int i = depth - 1; i >= 0; i--) {
     found = false;
     for (int j = 0; !found; j++) {
       face = d->s_lists[i][j];
-      for (int k = 0; k < d->xfaces[face].numlinks; k++) {
-        int link = d->xfaces[face].firstlink + k;
-        if (d->links[link].face == face2) {
+      LinkList links = d->xfaces[face]->links();
+      for (LinkList::const_iterator k = links.begin(); k != links.end(); ++k) {
+        MapLink *link = *k;
+        if (link->getFace() == face2) {
           found = true;
-          d->path[i] = link;
+          tmp[i] = link;
+          break;
         }
       }
     }
@@ -1013,20 +986,12 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
   path->links.resize(path->length / 2);
   
   // + 24.0 is for player height
-  path->points[0][0] = d->xfaces[startFace].origin[0];
-  path->points[0][1] = d->xfaces[startFace].origin[1];
-  path->points[0][2] = d->xfaces[startFace].origin[2] + 24.0;
+  path->points[0] = d->xfaces[startFace]->getOrigin() + Vector3f(0, 0, 24.0);
   
   for (int i = 0; i < depth; i++) {
-    path->points[2*i+1][0] = d->links[d->path[i]].origin[0];
-    path->points[2*i+1][1] = d->links[d->path[i]].origin[1];
-    path->points[2*i+1][2] = d->links[d->path[i]].origin[2] + 24.0;
-    
-    path->points[2*i+2][0] = d->xfaces[d->links[d->path[i]].face].origin[0];
-    path->points[2*i+2][1] = d->xfaces[d->links[d->path[i]].face].origin[1];
-    path->points[2*i+2][2] = d->xfaces[d->links[d->path[i]].face].origin[2] + 24.0;
-    
-    path->links[i] = &d->links[d->path[i]];
+    path->points[2*i+1] = tmp[i]->getOrigin() + Vector3f(0, 0, 24.0);
+    path->points[2*i+2] = d->xfaces[tmp[i]->getFace()]->getOrigin() + Vector3f(0, 0, 24.0);
+    path->links[i] = tmp[i];
   }
   
   path->points[path->length - 1] = end + Vector3f(0., 0., 24.);
@@ -1035,6 +1000,7 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
 
 bool Map::randomPath(const Vector3f &start, MapPath *path)
 {
+#if 0
   // Sanity check start position
   if (findLeafId(start) == 0) {
     getLogger()->warning("Start position is outside map!");
@@ -1126,6 +1092,8 @@ bool Map::randomPath(const Vector3f &start, MapPath *path)
   }
   
   return true;
+#endif
+  return false;
 }
 
 bool Map::intersectLeaf(int leaf, int mask) const

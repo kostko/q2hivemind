@@ -114,6 +114,7 @@ private:
     bool m_markInvalidOnNone;
     MapLink *m_lastLink;
     
+    // State completed flag
     bool m_complete;
 };
 

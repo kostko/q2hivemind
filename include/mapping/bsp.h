@@ -161,13 +161,6 @@ typedef struct {
 } area_t;
 
 typedef struct {
-  long type;
-  unsigned short firstlink;
-  unsigned short numlinks;
-  vec3_t origin;
-} xface_t;
-
-typedef struct {
   unsigned char pitch;
   unsigned char yaw;
   unsigned short key;
