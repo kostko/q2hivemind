@@ -86,8 +86,9 @@ public:
      * @param destination Destination vector pointer
      * @param target Target vector pointer
      * @param fire Fire flag pointer
+     * @param jump Jump flag pointer
      */
-    void getNextTarget(Vector3f *destination, Vector3f *target, bool *fire) const;
+    void getNextTarget(Vector3f *destination, Vector3f *target, bool *fire, bool *jump) const;
 protected:
     /**
      * Returns the bot's context.
@@ -110,6 +111,7 @@ protected:
     Vector3f m_moveDestination;
     Vector3f m_moveTarget;
     bool m_moveFire;
+    bool m_moveJump;
     
     // Current and last game state
     GameState *m_gameState;

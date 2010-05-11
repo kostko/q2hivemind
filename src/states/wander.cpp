@@ -79,9 +79,10 @@ void WanderState::processFrame()
   timestamp_t now = Timing::getCurrentTimestamp();
   Vector3f origin = m_gameState->player.origin;
   
-  // By default we stand still and do not fire
+  // By default we stand still and do not fire or jump
   m_moveTarget = m_moveDestination = origin;
   m_moveFire = false;
+  m_moveJump = false;
   
   // Check if we got stuck
   if (m_speed > 0) {
@@ -160,6 +161,7 @@ void WanderState::processFrame()
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
+          // TODO increase cost, so we don't fall again?
           recomputePath(true);
         } else {
           // Probably found an invalid link

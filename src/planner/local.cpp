@@ -105,7 +105,8 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
 
   // Get destination and target coordinates from current state
   Vector3f destination, target;
-  m_currentState->getNextTarget(&destination, &target, fire);
+  bool jump;
+  m_currentState->getNextTarget(&destination, &target, fire, &jump);
   
   // Compute orientation and velocity vectors for given target
   Vector3f delta = target - m_gameState.player.origin;
@@ -126,7 +127,7 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   if (vl > 0) {
     (*velocity)[0] = 400.0 * vx/vl;
     (*velocity)[1] = 400.0 * vy/vl;
-    (*velocity)[2] = 0.0; // No jumping:)
+    (*velocity)[2] = jump ? 400.0 : 0.0;
   }
 }
     

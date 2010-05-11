@@ -25,11 +25,12 @@ State::~State()
 {
 }
 
-void State::getNextTarget(Vector3f *destination, Vector3f *target, bool *fire) const
+void State::getNextTarget(Vector3f *destination, Vector3f *target, bool *fire, bool *jump) const
 {
   *destination = m_moveDestination;
   *target = m_moveTarget;
   *fire = m_moveFire;
+  *jump = m_moveJump;
 }
 
 }
