@@ -32,7 +32,7 @@ public:
     /**
      * Class constructor.
      */
-    MapFace();
+    MapFace(int index);
     
     /**
      * Adds an outgoing link to this face.
@@ -69,7 +69,21 @@ public:
      * @param origin Coordinates
      */
     inline void setOrigin(const Vector3f &origin) { m_origin = origin; }
+    
+    /**
+     * Return face's index.
+     */
+    inline int getIndex() const { return m_index; }
+    
+    /**
+     * Heuristic function that returns a distance estimate between
+     * this face and goal face.
+     *
+     * @param goal Goal face instance
+     */
+    inline float heuristic(const MapFace *goal) const { return (m_origin - goal->getOrigin()).norm(); }
 private:
+    int m_index;
     long m_type;
     Vector3f m_origin;
     LinkList m_links; 
@@ -83,7 +97,7 @@ public:
     /**
      * Class constructor.
      */
-    MapLink(int face, const Vector3f &origin);
+    MapLink(MapFace *face, const Vector3f &origin);
     
     /**
      * Updates last visited timestamp to current time.
@@ -116,7 +130,7 @@ public:
     /**
      * Returns destination face.
      */
-    inline int getFace() const { return m_face; }
+    inline MapFace *getFace() const { return m_face; }
     
     /**
      * Returns link origin coordinates. These are interpolated between the
@@ -129,7 +143,7 @@ public:
      */
     inline void invalidate() { m_valid = false; }
 private:
-    int m_face;
+    MapFace *m_face;
     bool m_valid;
     Vector3f m_origin;
 

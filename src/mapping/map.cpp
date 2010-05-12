@@ -55,21 +55,16 @@ public:
     int *edgefriends;
     xedge_t *xedges;
     std::vector<int> sortededges;
-    
-    // Path finding structures
-    // XXX this here is rubbish and should be removed/changed
-    int *dist;
-    int s_lists[256][256];
-    int s_listnum[256];
-    int path[256];
 };
 
-MapFace::MapFace()
-  : m_origin(0, 0, 0)
+MapFace::MapFace(int index)
+  : m_index(index),
+    m_type(0),
+    m_origin(0, 0, 0)
 {
 }
 
-MapLink::MapLink(int face, const Vector3f &origin)
+MapLink::MapLink(MapFace *face, const Vector3f &origin)
   : m_cost(1.0),
     m_lastVisited(0),
     m_face(face),
@@ -237,8 +232,6 @@ bool Map::load()
           lseek(fh, pakDirEntries[i].offset + mapHeader.models.offset, 0);
           read(fh, d->models, length);
           
-          d->dist = (int*) malloc(d->faceCount * sizeof(int));
-          
           // Map loading is done
           getLogger()->info(format("Found and loaded map %s from PAK %s.") % m_name % pak);
           free(pakDirEntries);
@@ -318,7 +311,7 @@ float distFromVect(vec3_t u,vec3_t v) {
 	return (float)sqrt(x*x+y*y+z*z);
 }
 
-// Comparison function
+// Edge comparison function
 class edge_compare : public std::binary_function<int, int, bool>
 {
 public:
@@ -344,7 +337,7 @@ MapLink *Map::createLink(int face, int n, int k)
   
   // Create a new map link
   MapLink *link = new MapLink(
-    faceId,
+    d->xfaces[faceId],
     Vector3f(
       (d->vertices[d->edges[k].v[0]].origin[0] + d->vertices[d->edges[k].v[1]].origin[0]) / 2,
       (d->vertices[d->edges[k].v[0]].origin[1] + d->vertices[d->edges[k].v[1]].origin[1]) / 2,
@@ -413,7 +406,7 @@ bool Map::link()
   
   // Now come the faces
   for (int i = 0; i < d->faceCount; i++) {
-    MapFace *face = new MapFace();
+    MapFace *face = new MapFace(d->xfaces.size());
     long type = 0;
     
     if (d->planes[d->faces[i].planenum].normal[2] > 0.7 && d->faces[i].side == 0) {
@@ -875,127 +868,103 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     return false;
   }
   
-  int startFace = findFaceId(start);
-  int endFace = findFaceId(end);
-  if (startFace == -1 || endFace == -1) {
+  int startFaceId = findFaceId(start);
+  int endFaceId = findFaceId(end);
+  if (startFaceId == -1 || endFaceId == -1) {
     return false;
   }
   
-  /*std::set<MapFace> closed;
-  std::priority_queue<int, */
+  MapFace *startFace = d->xfaces[startFaceId];
+  MapFace *endFace = d->xfaces[endFaceId];
   
-  // --------------------------------
+  // Convenience data type for comparisons
+  typedef std::pair<float, MapFace*> CostMapFace;
+  typedef std::pair<MapFace*, MapLink*> FaceLink;
   
-  // Initialize distances
-  for (int i = 0; i < d->faceCount; i++) {
-    d->dist[i] = -1;
-  }
-  
-  d->s_lists[0][0] = startFace;
-  d->s_listnum[0] = 1;
-  if (startFace >= d->faceCount || startFace < 0) {
-    getLogger()->error("Start face out of bounds!");
-    return false;
-  }
-  
-  d->dist[startFace] = 0;
+  boost::unordered_map<MapFace*, float> costF, costG;
+  std::priority_queue<CostMapFace, std::vector<CostMapFace>, std::greater<CostMapFace> > open;
+  boost::unordered_map<MapFace*, bool> openMap;
+  boost::unordered_map<MapFace*, bool> closed;
+  boost::unordered_map<MapFace*, FaceLink> reversePath;
   bool found = false;
-  int depth = 0;
   
-  // XXX this search is fucking stupid, we should upgrade it to A* and define
-  //     some cool heuristic (euclidian distance should suffice)
+  // Initialize A* search
+  costG[startFace] = 0;
+  costF[startFace] = startFace->heuristic(endFace);
+  open.push(CostMapFace(costF[startFace], startFace));
+  openMap[startFace] = true;
   
-  while (!found) {
-    depth++;
-    if (depth >= 250) {
-      return false;
+  while (!open.empty()) {
+    CostMapFace cmf = open.top();
+    MapFace *face = cmf.second;
+    open.pop();
+    openMap.erase(face);
+    
+    // Check goal condition
+    if (face == endFace) {
+      found = true;
+      break;
     }
     
-    d->s_listnum[depth] = 0;
-    for (int i = 0; i < d->s_listnum[depth - 1]; i++) {
-      int face = d->s_lists[depth - 1][i];
-      if (face >= d->faceCount || face < 0) {
-        getLogger()->error("Face out of bounds (1)!");
-        return false;
+    closed[face] = true;
+    
+    // Check all links
+    BOOST_FOREACH(MapLink *link, face->links()) {
+      MapFace *neigh = link->getFace();
+      if (closed.find(neigh) != closed.end() || !link->isValid())
+        continue;
+      
+      bool better = false;
+      float score = costG[face] + link->getCost() * (face->getOrigin() - neigh->getOrigin()).norm();
+      if (openMap.find(neigh) == openMap.end()) {
+        better = true;
+      } else if (score < costG[neigh]) {
+        better = true;
       }
       
-      LinkList links = d->xfaces[face]->links();
-      for (LinkList::const_iterator j = links.begin(); j != links.end(); ++j) {
-        MapLink *link = *j;
-        
-        // Skip invalidated links
-        if (!link->isValid())
-          continue;
-        
-        int face2 = link->getFace();
-        if (face2 >= d->faceCount || face2 < 0) {
-          getLogger()->error("Face out of bounds (2)!");
-          return false;
-        }
-        
-        // Check goal condition
-        if (face2 == endFace) {
-          found = true;
-        }
-        
-        if (d->dist[face2] == -1) {
-          d->dist[face2] = depth;
-          int index = d->s_listnum[depth];
-          if (index >= 256) {
-            getLogger()->error(format("Too many faces at depth %d!") % depth);
-            return false;
-          }
-          
-          d->s_lists[depth][index] = face2;
-          d->s_listnum[depth]++;
-        }
+      if (better) {
+        reversePath[neigh] = FaceLink(face, link);
+        costG[neigh] = score;
+        costF[neigh] = score + neigh->heuristic(endFace);
+        open.push(CostMapFace(costF[neigh], neigh));
+        openMap[neigh] = true;
       }
     }
   }
   
-  path->length = depth*2 + 2;
-  if (!full)
-    return true;
-  
-  // Reconstruct the path
-  std::vector<MapLink*> tmp; 
-  int face2 = endFace;
-  int face;
-  tmp.resize(depth);
-  
-  for (int i = depth - 1; i >= 0; i--) {
-    found = false;
-    for (int j = 0; !found; j++) {
-      face = d->s_lists[i][j];
-      LinkList links = d->xfaces[face]->links();
-      for (LinkList::const_iterator k = links.begin(); k != links.end(); ++k) {
-        MapLink *link = *k;
-        if (link->getFace() == face2) {
-          found = true;
-          tmp[i] = link;
-          break;
-        }
+  // When a path has been found, reconstruct it
+  if (found) {
+    Vector3f playerHeight(0, 0, 24.);
+    MapFace *face = endFace;
+    path->points.clear();
+    path->links.clear();
+    path->points.push_back(end + playerHeight);
+    
+    while (face != startFace) {
+      path->points.push_back(face->getOrigin() + playerHeight);
+      
+      if (reversePath.find(face) != reversePath.end()) {
+        FaceLink fl = reversePath[face];
+        path->points.push_back(fl.second->getOrigin() + playerHeight);
+        path->links.push_back(fl.second);
+        face = fl.first;
+      } else {
+        return false;
       }
     }
     
-    face2 = face;
+    // Insert origin face
+    path->points.push_back(startFace->getOrigin() + playerHeight);
+    
+    // Reverse everything
+    std::reverse(path->points.begin(), path->points.end());
+    std::reverse(path->links.begin(), path->links.end());
+    
+    path->length = path->points.size();
+    return true;
   }
   
-  // Allocate sufficient space
-  path->points.resize(path->length);
-  path->links.resize(path->length / 2);
-  
-  // + 24.0 is for player height
-  path->points[0] = d->xfaces[startFace]->getOrigin() + Vector3f(0, 0, 24.0);
-  
-  for (int i = 0; i < depth; i++) {
-    path->points[2*i+1] = tmp[i]->getOrigin() + Vector3f(0, 0, 24.0);
-    path->points[2*i+2] = d->xfaces[tmp[i]->getFace()]->getOrigin() + Vector3f(0, 0, 24.0);
-    path->links[i] = tmp[i];
-  }
-  
-  path->points[path->length - 1] = end + Vector3f(0., 0., 24.);
-  return true;
+  return false;
 }
 
 bool Map::randomPath(const Vector3f &start, MapPath *path)
