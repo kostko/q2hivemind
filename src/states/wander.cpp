@@ -162,7 +162,8 @@ void WanderState::processFrame()
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
-          // TODO increase cost, so we don't fall again?
+          if (getCurrentLink()->getCost() < 16.0)
+            getCurrentLink()->applyCost(2.0);
           recomputePath(true);
         } else {
           // Probably found an invalid link
