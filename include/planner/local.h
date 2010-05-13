@@ -168,7 +168,6 @@ private:
     
     // Background processing thread
     boost::thread m_workerThread;
-    boost::mutex m_stateMutex;
     boost::mutex m_requestMutex;
     
     // Current and last game state

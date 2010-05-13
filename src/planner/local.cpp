@@ -221,25 +221,22 @@ void LocalPlanner::process()
       }
       
       if (rq.isValid()) {
-        {
-          boost::lock_guard<boost::mutex> g(m_stateMutex);
-          if (m_currentState) {
-            // When current state has not yet finished, let's stack it
-            if (!m_currentState->isComplete()) {
-              getLogger()->info(format("State %s interrupted by %s state.")  % m_currentState->getName() % rq.state);
-              m_stateStack.push_back(m_currentState);
-            } else {
-              m_currentState->goodbye();
-            }
+        if (m_currentState) {
+          // When current state has not yet finished, let's stack it
+          if (!m_currentState->isComplete()) {
+            getLogger()->info(format("State %s interrupted by %s state.")  % m_currentState->getName() % rq.state);
+            m_stateStack.push_back(m_currentState);
+          } else {
+            m_currentState->goodbye();
           }
-          
-          m_currentState = m_states[rq.state];
-          m_currentState->m_complete = false;
-          
-          // Log state switch
-          getLogger()->info(format("Switching to %s state.") % m_currentState->getName());
-          m_currentState->initialize(rq.metadata, rq.restored);
         }
+        
+        m_currentState = m_states[rq.state];
+        m_currentState->m_complete = false;
+        
+        // Log state switch
+        getLogger()->info(format("Switching to %s state.") % m_currentState->getName());
+        m_currentState->initialize(rq.metadata, rq.restored);
       }
       
       // Remove requests from the list
