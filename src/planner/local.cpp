@@ -238,9 +238,7 @@ void LocalPlanner::process()
           
           // Log state switch
           getLogger()->info(format("Switching to %s state.") % m_currentState->getName());
-          
-          if (!rq.restored)
-            m_currentState->initialize(rq.metadata);
+          m_currentState->initialize(rq.metadata, rq.restored);
         }
       }
       

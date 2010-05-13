@@ -49,7 +49,7 @@ void SwimState::checkInterruption()
   }
 }
 
-void SwimState::initialize(const boost::any &metadata)
+void SwimState::initialize(const boost::any &metadata, bool restored)
 {
   getLogger()->info("Now entering swim state.");
 }

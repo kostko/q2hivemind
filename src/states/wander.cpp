@@ -26,16 +26,16 @@ WanderState::~WanderState()
 {
 }
 
-void WanderState::initialize(const boost::any &metadata)
+void WanderState::initialize(const boost::any &metadata, bool restored)
 {
-  // TODO: Need to check why initialize does not get called on WanderState after switching from SwimState!
-    
   getLogger()->info("Now entering wander state.");
+  
   m_nextPoint = -1;
   m_speed = 0;
   m_minDistance = -1;
   m_markInvalidOnNone = false;
   m_lastLink = NULL;
+  
   // TODO Check metadata if it contains a destination
 }
 
