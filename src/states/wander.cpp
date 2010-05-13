@@ -28,8 +28,14 @@ WanderState::~WanderState()
 
 void WanderState::initialize(const boost::any &metadata)
 {
+  // TODO: Need to check why initialize does not get called on WanderState after switching from SwimState!
+    
   getLogger()->info("Now entering wander state.");
-  
+  m_nextPoint = -1;
+  m_speed = 0;
+  m_minDistance = -1;
+  m_markInvalidOnNone = false;
+  m_lastLink = NULL;
   // TODO Check metadata if it contains a destination
 }
 
@@ -194,6 +200,7 @@ void WanderState::processPlanning()
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
     //if (map->randomPath(p, &m_currentPath))
+    //if (map->findPath(p, Vector3f(390.0,380.0,485), &m_currentPath, true)) {
     if (map->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
       travelToPoint(0);

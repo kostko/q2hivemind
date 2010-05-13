@@ -14,7 +14,8 @@ namespace HiveMind {
 
 SwimState::SwimState(Context *context)
   : State(context, "swim"),
-    m_firstInWater(0)
+    m_firstInWater(0),
+    m_lastInWater(0)
 {
   Object::init();
 }
@@ -27,10 +28,10 @@ void SwimState::checkInterruption()
 {
   Map *map = getContext()->getMap();
   Vector3f origin = m_gameState->player.origin;
-  timestamp_t now = Timing::getCurrentTimestamp();
   
   // Detect when we hit water or lava via raycasting
   if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {
+    timestamp_t now = Timing::getCurrentTimestamp();
     if (!m_firstInWater)
       m_firstInWater = now;
     
@@ -71,10 +72,21 @@ void SwimState::processFrame()
     
   // Detect when we get out of water to transition to some other state down the stack
   if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) > 0.5) {
-    m_complete = true;
-    transitionDown();
+    timestamp_t now = Timing::getCurrentTimestamp();
+    if (!m_lastInWater)
+      m_lastInWater = now;
+    
+    if (now - m_lastInWater > 1000) {
+      // We have been out of the water at least 1 second
+      
+      m_complete = true;
+      m_lastInWater = 0;
+      transitionDown();      
+    }
+  } else {
+    // Reset swim timer
+    m_lastInWater = 0;
   }
-
 
 }
 
