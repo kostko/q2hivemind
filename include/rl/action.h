@@ -43,7 +43,7 @@ public:
     /**
      * Returns the state that executes the action.
      */
-    State *executionState();
+    inline State *executionState() { return m_executionState; }
     
     /**
      * Is the action complete?

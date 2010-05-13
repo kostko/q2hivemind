@@ -35,17 +35,11 @@ void BrainAction::init(std::vector<int> &components)
   EnumVector::init(components);
 }
 
-State *BrainAction::executionState()
-{
-  return m_executionState;
-}
-
 bool BrainAction::complete()
 { 
   if (m_executionState != NULL) {
     return m_executionState->complete();
-  }
-  else {
+  } else {
     return true;
   }
 }

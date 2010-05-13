@@ -14,7 +14,7 @@ Brains::Brains(LocalPlanner *planner)
   : m_localPlanner(planner),
     m_learn(true)
 {
-  Object::init();
+  Object::init(); 
 }
 
 Brains::~Brains()
@@ -30,40 +30,36 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
   m_Q = new StateSpace(stateComponents, actionComponents);
   m_numQ = new StateSpace(stateComponents, actionComponents);
 
-  m_suggestedAction = new BrainAction();
-  m_suggestedAction->init(actionComponents);
-
-  m_tempAction = new BrainAction();
-  m_tempAction->init(actionComponents);
+  m_suggestedAction = newBrainAction();
+  m_tempAction = newBrainAction();
+  
+  m_currAction = newBrainAction("NULL");
+  m_currState = newBrainState("NULL");
   
   // Initialize seed
   srand(time(0));
 }
 
-void Brains::interact(BrainState *currState, BrainAction *currAction)
+void Brains::interact()
 {
   // Check in what state am I before the action
-  *currState = *observe();
+  *m_currState = *observe();
   
   if (m_learn) {
-    *currAction = *randomAction();
-  }
-  else {
-    *currAction = *exploit(currState);
+    *m_currAction = *randomAction();
+  } else {
+    *m_currAction = *exploit(m_currState);
   }
   
   // Execute my chosen action
-  execute(currAction);
-}
-
-void Brains::learn(BrainState *beforeState, BrainAction *action)
-{
+  execute(m_currAction);
+  
   // Observe my new state
   BrainState *newState = observe();
   
   // If I am learning try to learn from this move
   if (m_learn)
-    updateQ(beforeState, action, newState);
+    updateQ(m_currState, m_currAction, newState);
 }
 
 void Brains::setBrainMode(bool learn)
@@ -76,12 +72,30 @@ StateSpace *Brains::getQ()
   return m_Q;
 }
 
+BrainState *Brains::newBrainState(std::string name)
+{
+  vector<int> comps;
+  getQ()->getStateComponents(comps);
+  BrainState *bs = new BrainState(name);
+  bs->init(comps);
+  
+  return bs;
+}
+
+BrainAction *Brains::newBrainAction(std::string name)
+{
+  vector<int> comps;
+  getQ()->getStateComponents(comps);
+  BrainAction *ba = new BrainAction(name);
+  ba->init(comps);
+  
+  return ba;
+}
+
 BrainAction *Brains::randomAction()
 {  
   int actionID = (int)(random() * m_Q->actions());
   m_suggestedAction->from(actionID);
-  
-  // TODO: a map ID -> State which executes the action
   
   return m_suggestedAction;
 }
@@ -143,8 +157,7 @@ double Brains::computeReasonableTemp()
 
   if (total > CEILING) {
     return MIN_Q_TEMPERATURE;
-  } 
-  else {
+  } else {
     double e = total / CEILING;
     return MIN_Q_TEMPERATURE + (1-e) * (MAX_Q_TEMPERATURE - MIN_Q_TEMPERATURE);
   }

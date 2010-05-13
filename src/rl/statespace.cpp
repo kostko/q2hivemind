@@ -69,8 +69,9 @@ double StateSpace::sum()
 {
   double sum = 0;
 
-  for (int i = 0; i < m_data.size(); i++)
+  for (int i = 0; i < m_data.size(); i++) {
     sum += m_data[i];
+  }
     
   return sum;
 }

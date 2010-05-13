@@ -60,7 +60,7 @@ public:
      /**
       * Element access by index.
       */
-     int& operator[](int i);
+     inline int& operator[](int i) { return m_data[i]; }
      
      /**
       * Assignment operator.

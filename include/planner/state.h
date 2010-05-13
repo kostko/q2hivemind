@@ -72,7 +72,7 @@ public:
     /**
      * Has the state reached a final state?
      */
-    virtual bool complete() = 0;
+    inline bool complete() { return m_complete; };
     
     /**
      * Returns this state's priority.

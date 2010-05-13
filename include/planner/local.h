@@ -127,6 +127,11 @@ public:
      * @param priority Optional priority
      */
     void requestTransition(const std::string &state, int priority = 1);
+    
+    /**
+     * Returns the game state object.
+     */
+    GameState *gameState();
 protected:
     /**
      * Main processing loop for the local planner.
@@ -166,8 +171,6 @@ private:
     
     // AI
     Brains *m_brains;
-    BrainState *m_currState;
-    BrainAction *m_currAction;
 };
 
 }

@@ -214,11 +214,6 @@ void WanderState::processPlanning()
   }
 }
 
-bool WanderState::complete()
-{
-  return m_complete;
-}
-
 }
 
 

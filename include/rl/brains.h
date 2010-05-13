@@ -52,14 +52,9 @@ public:
     void init(vector<int> &stateComponents, vector<int> &actionComponents);
     
     /**
-     * Interact with the world (selects the next action).
+     * Interact with the world (selects the next action) and learns from it.
      */
-    void interact(BrainState *currState, BrainAction *currAction);
-    
-    /**
-     * Learn from the transition.
-     */
-    void learn(BrainState *beforeState, BrainAction *action);
+    void interact();
     
     /**
      * Set brain mode.
@@ -70,7 +65,17 @@ public:
      * State space.
      */
     StateSpace *getQ();
-  
+    
+    /**
+     * Get new empty BrainState object.
+     */
+    BrainState *newBrainState(std::string name = "");
+    
+    /**
+     * Get new empty BrainAction object.
+     */
+    BrainAction *newBrainAction(std::string name = "");
+      
 protected:
     /**
      * What really defines the "brain" is the reward function.
@@ -88,6 +93,12 @@ protected:
     virtual void execute(BrainAction *action) {}
 
     LocalPlanner *m_localPlanner;
+    
+    BrainAction *m_currAction;
+    BrainAction *m_tempAction;       // To avoid constant allocations
+
+    BrainState *m_currState;
+    BrainState *m_tempState;         // To avoid constant allocations
 private:
     /**
      * Update Q function.
@@ -129,8 +140,7 @@ private:
     StateSpace *m_Q;            // Q-values
     StateSpace *m_numQ;         // Count the number of times we have visited each (s,a) 
     
-    BrainAction *m_suggestedAction;  // The action our brain suggests
-    BrainAction *m_tempAction;       // To avoid constant allocations
+    BrainAction *m_suggestedAction;  // The action our brain suggest
 };
 
 }

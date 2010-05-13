@@ -16,8 +16,9 @@ void EnumVector::init(std::vector<int> &components)
 
   // Compute the number of possible permutations
   m_p = 1;
-  for (int i = 0; i < m_components.size(); i++)
+  for (int i = 0; i < m_components.size(); i++) {
     m_p = m_p * m_components[i];  
+  }
 }
 
 int EnumVector::id()
@@ -47,11 +48,6 @@ void EnumVector::from(int id)
 void EnumVector::getComponents(std::vector<int> &components)
 {
   components.swap(m_components);
-}
-
-int& EnumVector::operator[](int i)
-{
-  return m_data[i];
 }
 
 EnumVector& EnumVector::operator=(EnumVector &other)

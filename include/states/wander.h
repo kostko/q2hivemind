@@ -62,11 +62,6 @@ public:
      */
     virtual void processPlanning();
     
-    /**
-     * Is the action finished?
-     */
-    virtual bool complete();
-    
 protected:
     /**
      * Returns the current destination vector.

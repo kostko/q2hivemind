@@ -10,7 +10,77 @@
 
 #include "rl/brains.h"
 
+// Maximum number of frags
+#define MAX_FRAGS 5    // TODO: get information from server
+
 namespace HiveMind {
+
+// Number of possible component values
+enum StateComponentSize {
+    N_ACTIONS = 5,
+    N_STATE0 = 3,
+    N_STATE1 = 9,
+    N_STATE2 = 2,
+    N_STATE3 = 2,
+    N_STATE4 = MAX_FRAGS + 2
+};
+
+// Index to vector
+enum ComponentToIndex {
+    HEALTH,
+    WEAPON,
+    AMMO,
+    ENEMY,
+    FRAGS
+};
+
+// Action enumerator
+enum Actions { 
+    SHOOT_AT, 
+    FIND_AMMO, 
+    FIND_HEALTH, 
+    FIND_BETTER_WEAPON, 
+    RUNAWAY 
+};
+
+// State component for health
+enum State0  { 
+    LOW_HEALTH, 
+    MID_HEALTH, 
+    HIGH_HEALTH 
+};
+
+// State component for weapon
+enum State1 { 
+    BLASTER, 
+    SHOTGUN, 
+    SUPER_SHOTGUN, 
+    MACHINEGUN, 
+    CHAINGUN, 
+    GRENADE_LAUNCHER, 
+    ROCKET_LAUNCHER,
+    RAILGUN,
+    BFG,
+    HAND_GRENADES,
+    HYPER_BLASTER
+};
+
+// State component for ammo
+enum State2 {
+    LOW_AMMO,
+    HIGH_AMMO
+};
+
+// State component for enemy
+enum State3 {
+    VISIBLE,
+    NOT_VISIBLE
+};
+
+// State component for frags
+enum State4 {
+    NEGATIVE_FRAGS = MAX_FRAGS + 1,
+};
 
 /**
  * Implements a basic brain behaviour.
@@ -42,6 +112,9 @@ private:
      * Execute the given action.
      */
     virtual void execute(BrainAction *action);
+
+    // Weapon string to enum number map    
+    boost::unordered_map<std::string, int> m_weaponMap;
 };
 
 }
