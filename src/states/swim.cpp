@@ -62,14 +62,20 @@ void SwimState::processFrame()
 {
   Map *map = getContext()->getMap();
   Vector3f origin = m_gameState->player.origin;
-  
-  // TODO implement swimming :)
-  
-  // TODO when we are done swimming, transition back to previous state, this
-  //      code does it immediately, so as we are still in the water this will
-  //      cause this state to be reentered in about one second
-  m_complete = true;
-  transitionDown();
+
+  m_moveJump = true;
+
+  // TODO: change this so the location is not hardcoded
+  Vector3f dest = Vector3f(320.000000, 456.000000, 552.000000);
+  m_moveTarget = m_moveDestination = dest;
+    
+  // Detect when we get out of water to transition to some other state down the stack
+  if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) > 0.5) {
+    m_complete = true;
+    transitionDown();
+  }
+
+
 }
 
 void SwimState::processPlanning()
