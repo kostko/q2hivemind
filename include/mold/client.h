@@ -57,7 +57,7 @@ public:
      * @param type Message type
      * @param msg Message to deliver
      */
-    void deliver(int type, google::protobuf::Message *msg);
+    void deliver(int type, google::protobuf::Message *msg, const std::string &destinationId = "");
     
     /**
      * Closes connection with the bus.

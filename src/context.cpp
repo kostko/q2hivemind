@@ -79,6 +79,7 @@ void Context::execute()
   while (!m_abort) {
     // Process frame update from Quake II server, update planner
     GameState state = m_connection->getGameState();
+    m_globalPlanner->worldUpdated(state);
     m_localPlanner->worldUpdated(state);
     
     // Request next move from local planner

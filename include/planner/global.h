@@ -9,6 +9,8 @@
 #define HM_PLANNER_GLOBAL_H
 
 #include "object.h"
+#include "timing.h"
+#include "network/gamestate.h"
 
 namespace HiveMind {
 
@@ -19,12 +21,19 @@ namespace MOLD {
 }
 
 class Context;
+class Directory;
 
 /**
  * Global planner.
  */
 class GlobalPlanner : public Object {
 public:
+    // Out of age bot collection interval
+    enum { bot_collect_interval = 30000 };
+    
+    // Bot update emission interval
+    enum { bot_update_interval = 250 };
+    
     /**
      * Class constructor.
      *
@@ -41,6 +50,18 @@ public:
      * Start the global planner.
      */
     void start();
+    
+    /**
+     * Called on each frame after the world might have updated.
+     *
+     * @param state State of the world
+     */
+    void worldUpdated(const GameState &state);
+    
+    /**
+     * Returns the bot directory.
+     */
+    inline Directory *getDirectory() const { return m_directory; }
 protected:
     /**
      * Called when a message is received via MOLD.
@@ -51,6 +72,13 @@ protected:
 private:
     // Context
     Context *m_context;
+    
+    // Bot directory
+    Directory *m_directory;
+    timestamp_t m_lastCollection;
+    
+    // Updates
+    timestamp_t m_lastBotUpdate;
 };
 
 }

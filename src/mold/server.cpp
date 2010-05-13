@@ -69,6 +69,7 @@ void Connection::handleReadBody(const boost::system::error_code &error)
     // Parse body and deliver message
     if (m_readMessage.parseBody()) {
       m_clientId = m_readMessage.getProtocolMessage().sourceid();
+      m_server->nameConnection(m_clientId, shared_from_this());
       m_server->deliver(m_readMessage);
     } else {
       // Failed to parse body, log this and ignore message
@@ -140,17 +141,36 @@ void Server::handleAccept(ConnectionPtr connection, const boost::system::error_c
 
 void Server::deliver(const Message &msg)
 {
-  std::for_each(
-    m_connections.begin(),
-    m_connections.end(),
-    boost::bind(&Connection::deliver, _1, boost::ref(msg))
-  );
+  if (msg.getProtocolMessage().has_destinationid()) {
+    // Targeted message
+    std::string id = msg.getProtocolMessage().destinationid();
+    if (m_connectionMap.find(id) == m_connectionMap.end()) {
+      getLogger()->warning("Silently dropping targeted message to unknown destination!");
+      return;
+    }
+    
+    ConnectionPtr conn = m_connectionMap.at(id);
+    conn->deliver(msg);
+  } else {
+    // Broadcast message
+    std::for_each(
+      m_connections.begin(),
+      m_connections.end(),
+      boost::bind(&Connection::deliver, _1, boost::ref(msg))
+    );
+  }
 }
 
 void Server::remove(ConnectionPtr connection)
 {
   m_connections.erase(connection);
+  m_connectionMap.erase(connection->getClientId());
   getLogger()->info("MOLD client has disconnected.");
+}
+
+void Server::nameConnection(const std::string &name, ConnectionPtr connection)
+{
+  m_connectionMap[name] = connection;
 }
 
 }

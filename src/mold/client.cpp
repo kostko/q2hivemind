@@ -31,12 +31,15 @@ Client::Client(Context *context, boost::asio::io_service &service, tcp::resolver
   ); 
 }
 
-void Client::deliver(int type, google::protobuf::Message *msg)
+void Client::deliver(int type, google::protobuf::Message *msg, const std::string &destinationId)
 {
   Protocol::Message packet;
   packet.set_sourceid(m_context->getBotId());
   packet.set_timestamp(static_cast<unsigned int>(std::time(0)));
   packet.set_type(static_cast<Protocol::Message::PacketType>(type));
+  if (!destinationId.empty())
+    packet.set_destinationid(destinationId);
+  
   std::ostringstream body(std::ostringstream::out);
   msg->SerializeToOstream(&body);
   packet.set_data(body.str());

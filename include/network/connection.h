@@ -83,6 +83,11 @@ public:
     GameState getGameState() const;
     
     /**
+     * Returns the player entity identifier.
+     */
+    inline int getPlayerEntityId() const { return m_playerNum; }
+    
+    /**
      * Returns true if the connection is currently established.
      */
     inline bool isConnected() const { return m_connected; }

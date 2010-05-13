@@ -15,12 +15,14 @@ namespace HiveMind {
 
 class Context;
 class Directory;
+class GlobalPlanner;
 
 /**
  * Represents a bot entry in the directory.
  */
 class Bot {
 friend class Directory;
+friend class GlobalPlanner;
 public:
     /**
      * Class constructor.
@@ -46,14 +48,24 @@ public:
     inline int getFragCount() const { return m_fragCount; }
     
     /**
-     * Sets the number of frags for this bot.
-     */
-    inline void setFragCount(int count) { m_fragCount = count; }
-    
-    /**
      * Returns this bot's last known origin.
      */
     inline Vector3f getOrigin() const { return m_origin; }
+    
+    /**
+     * Returns the age of this directory entry.
+     */
+    inline timestamp_t getAge() const { return Timing::getCurrentTimestamp() - m_lastUpdate; } 
+protected:
+    /**
+     * Sets this bot's entity identifier.
+     */
+    inline void setEntityId(int entityId) { m_entityId = entityId; }
+    
+    /**
+     * Sets the number of frags for this bot.
+     */
+    inline void setFragCount(int count) { m_fragCount = count; }
     
     /**
      * Sets this bot's last known origin.
@@ -64,11 +76,6 @@ public:
      * Updates last update time for this entry.
      */
     inline void updateTime() { m_lastUpdate = Timing::getCurrentTimestamp(); }
-protected:
-    /**
-     * Sets this bot's entity identifier.
-     */
-    inline void setEntityId(int entityId) { m_entityId = entityId; }
 private:
     // Bot name and attributes
     std::string m_name;
@@ -84,6 +91,7 @@ private:
  * Bot team directory.
  */
 class Directory : public Object {
+friend class GlobalPlanner;
 public:
     /**
      * Class constructor.
@@ -92,6 +100,28 @@ public:
      */
     Directory(Context *context);
     
+    /**
+     * Find a bot identified by its unique name.
+     *
+     * @param id Unique bot identifier
+     * @return A valid Bot instance or NULL
+     */
+    Bot *getBotByName(const std::string &id) const;
+    
+    /**
+     * Find a bot identified by its entity identifier.
+     *
+     * @param entityId Entity identifier
+     * @return A valid Bot instance or NULL
+     */
+    Bot *getBotByEntityId(int entityId) const;
+    
+    /**
+     * Returns true if the specified entity identifier represents
+     * a friend (a bot registered with the system).
+     */
+    inline bool isFriend(int entityId) const { return getBotByEntityId(entityId) != NULL; }
+protected:
     /**
      * Registers a new bot with the directory.
      *
@@ -118,20 +148,10 @@ public:
     void updateEntityId(const std::string &id, int entityId);
     
     /**
-     * Find a bot identified by its unique name.
-     *
-     * @param id Unique bot identifier
-     * @return A valid Bot instance or NULL
+     * Performs a garbage collection of bots that have not sent their
+     * updates for more than 10 seconds.
      */
-    Bot *getBotByName(const std::string &id);
-    
-    /**
-     * Find a bot identified by its entity identifier.
-     *
-     * @param entityId Entity identifier
-     * @return A valid Bot instance or NULL
-     */
-    Bot *getBotByEntityId(int entityId);
+    void collect();
 private:
     // Context
     Context *m_context;

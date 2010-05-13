@@ -46,6 +46,7 @@ bool Message::parseHeader()
     return false;
   
   m_data = static_cast<char*>(realloc(m_data, header_size + m_bodyLength));
+  return true;
 }
 
 bool Message::parseBody()

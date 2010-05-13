@@ -76,6 +76,11 @@ public:
      * Returns the TCP socket used by this connection.
      */
     inline tcp::socket &getSocket() { return m_socket; }
+    
+    /**
+     * Returns this connection's client identifier (if any).
+     */
+    inline std::string getClientId() const { return m_clientId; }
 private:
     // Server
     Server *m_server;
@@ -121,6 +126,12 @@ public:
      * @param connection Connection instance
      */    
     void remove(ConnectionPtr connection);
+    
+    /**
+     * Names an existing connection so messages with destination
+     * identifiers set can be delivered to it.
+     */
+    void nameConnection(const std::string &name, ConnectionPtr connection);
 protected:
     /**
      * Connection accept handler.
@@ -136,6 +147,7 @@ private:
     
     // Established connections
     std::set<ConnectionPtr> m_connections;
+    boost::unordered_map<std::string, ConnectionPtr> m_connectionMap;
 };
 
 // Shared pointer for server class
