@@ -146,6 +146,27 @@ void LocalPlanner::requestTransition(const std::string &state, int priority)
   requestTransition(rq);
 }
 
+void LocalPlanner::transitionDown()
+{
+  if (m_stateStack.empty()) {
+    // When there is no state to transition into, we request transition to
+    // wander state, so the bot will simply wander around
+    requestTransition("wander");
+  } else {
+    // Pop state from stack and request transition into it
+    State *state = m_stateStack.back();
+    m_stateStack.pop_back();
+    
+    TransitionRequest rq;
+    rq.state = state->getName();
+    rq.priority = 1;
+    rq.restored = true;
+    requestTransition(rq);
+    
+    getLogger()->info(format("Requesting return to %s.") % state->getName());
+  }
+}
+
 void LocalPlanner::start()
 {
   // Initialize the background worker thread
@@ -163,13 +184,13 @@ void LocalPlanner::worldUpdated(const GameState &state)
 
   // Let the brain process what to do
   // TODO m_brains->interact();
-
-  // Detect when we hit water or lava via raycasting
-  if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {
-    getLogger()->warning("We are sinking, I repeat we are sinking!");
-    
-    // TODO Some proper reaction? We should probably try to find a path out
-    //      and if that doesn't work, enter PANIC state:-))
+  
+  // Go through all states and check if any would like to interrupt
+  typedef std::pair<std::string, State*> StatePair;
+  BOOST_FOREACH(StatePair element, m_states) {
+    State *state = element.second;
+    if (state != m_currentState)
+      state->checkInterruption();
   }
   
   // Perform current state frame processing
@@ -188,30 +209,43 @@ void LocalPlanner::process()
     }
     
     // Process state transition requests
-    int bestPriority = m_currentState ? m_currentState->getPriority() : 0;
-    TransitionRequest rq;
-    BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
-      if (p.priority > bestPriority && (!m_currentState || p.state != m_currentState->getName())) {
-        rq = p;
-        bestPriority = p.priority;
+    {
+      boost::lock_guard<boost::mutex> g(m_requestMutex);
+      int bestPriority = m_currentState ? m_currentState->getPriority() : 0;
+      TransitionRequest rq;
+      BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
+        if (p.priority >= bestPriority && (!m_currentState || p.state != m_currentState->getName())) {
+          rq = p;
+          bestPriority = p.priority;
+        }
       }
-    }
-    
-    if (rq.isValid()) {
-      {
-        boost::lock_guard<boost::mutex> g(m_stateMutex);
-        if (m_currentState)
-          m_currentState->goodbye();
-        
-        m_currentState = m_states[rq.state];
-        m_currentState->initialize(rq.metadata);
+      
+      if (rq.isValid()) {
+        {
+          boost::lock_guard<boost::mutex> g(m_stateMutex);
+          if (m_currentState) {
+            // When current state has not yet finished, let's stack it
+            if (!m_currentState->isComplete()) {
+              getLogger()->info(format("State %s interrupted by %s state.")  % m_currentState->getName() % rq.state);
+              m_stateStack.push_back(m_currentState);
+            } else {
+              m_currentState->goodbye();
+            }
+          }
+          
+          m_currentState = m_states[rq.state];
+          m_currentState->m_complete = false;
+          
+          // Log state switch
+          getLogger()->info(format("Switching to %s state.") % m_currentState->getName());
+          
+          if (!rq.restored)
+            m_currentState->initialize(rq.metadata);
+        }
       }
       
       // Remove requests from the list
-      {
-        boost::lock_guard<boost::mutex> g(m_requestMutex);
-        m_transitionRequests.clear();
-      }
+      m_transitionRequests.clear();
     }
     
     // Perform current state planning processing

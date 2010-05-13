@@ -61,7 +61,6 @@ public:
      * context.
      */
     virtual void processPlanning();
-    
 protected:
     /**
      * Returns the current destination vector.
@@ -108,9 +107,6 @@ private:
     // For checking invalid links
     bool m_markInvalidOnNone;
     MapLink *m_lastLink;
-    
-    // State completed flag
-    bool m_complete;
 };
 
 }

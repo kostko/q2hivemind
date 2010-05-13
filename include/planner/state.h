@@ -70,9 +70,18 @@ public:
     virtual void processPlanning() = 0;
     
     /**
+     * This method should implement state specific interruption
+     * requests, so the state can interrupt other states when
+     * needed. This method is called in main thread context.
+     *
+     * Default implementation does nothing.
+     */
+    virtual void checkInterruption() {};
+    
+    /**
      * Has the state reached a final state?
      */
-    inline bool complete() { return m_complete; };
+    inline bool isComplete() const { return m_complete; };
     
     /**
      * Returns this state's priority.
@@ -106,6 +115,12 @@ protected:
      * @param priority Priority
      */
     inline void setPriority(int priority) { m_priority = priority; }
+    
+    /**
+     * Requests the local planner to transition into a lower state down the
+     * state stack.
+     */
+    void transitionDown();
 protected:
     // Next move
     Vector3f m_moveDestination;
@@ -116,6 +131,9 @@ protected:
     // Current and last game state
     GameState *m_gameState;
     GameState *m_lastGameState;
+    
+    // End of state
+    bool m_complete;
 private:
     // Unique state name
     std::string m_name;
@@ -126,9 +144,6 @@ private:
     
     // Priority
     int m_priority;
-    
-    // End of state
-    bool m_complete;
 };
 
 }

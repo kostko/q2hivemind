@@ -35,13 +35,17 @@ public:
     
     // Metadata (state-specific)
     boost::any metadata;
+    
+    // Has this state been restored
+    bool restored;
 
     /**
      * Constructs an invalid request.
      */
     TransitionRequest()
       : state(""),
-        priority(0)
+        priority(0),
+        restored(false)
     {}
 
     /**
@@ -129,6 +133,11 @@ public:
     void requestTransition(const std::string &state, int priority = 1);
     
     /**
+     * Transitions down the state stack.
+     */
+    void transitionDown();
+    
+    /**
      * Returns the game state object.
      */
     GameState *gameState();
@@ -148,6 +157,7 @@ private:
     
     // State registry
     boost::unordered_map<std::string, State*> m_states;
+    std::list<State*> m_stateStack;
     State *m_currentState;
     
     // Transition requests are aggregated and ranked, the highest ranking

@@ -38,7 +38,7 @@ void BrainAction::init(std::vector<int> &components)
 bool BrainAction::complete()
 { 
   if (m_executionState != NULL) {
-    return m_executionState->complete();
+    return m_executionState->isComplete();
   } else {
     return true;
   }

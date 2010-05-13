@@ -6,6 +6,7 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "planner/state.h"
+#include "planner/local.h"
 #include "context.h"
 
 #include <list>
@@ -31,6 +32,11 @@ void State::getNextTarget(Vector3f *destination, Vector3f *target, bool *fire, b
   *target = m_moveTarget;
   *fire = m_moveFire;
   *jump = m_moveJump;
+}
+
+void State::transitionDown()
+{
+  m_planner->transitionDown();
 }
 
 }

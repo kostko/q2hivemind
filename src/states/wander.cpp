@@ -17,8 +17,7 @@ WanderState::WanderState(Context *context)
     m_speed(0),
     m_minDistance(-1),
     m_markInvalidOnNone(false),
-    m_lastLink(NULL),
-    m_complete(false)
+    m_lastLink(NULL)
 {
   Object::init();
 }
