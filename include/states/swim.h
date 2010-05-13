@@ -71,6 +71,7 @@ public:
 private:
     // Swim check
     timestamp_t m_firstInWater;
+    timestamp_t m_lastInWater;
 };
 
 }
