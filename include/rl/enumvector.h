@@ -67,7 +67,7 @@ public:
       */
      EnumVector& operator=(EnumVector &other);
      
-private:
+//private:
     int m_p;                         // Number of possible vectors.
     std::vector<int> m_data;         // Data holder.
     std::vector<int> m_components;   // Element i of m_components represents how many states the i-th component can take.

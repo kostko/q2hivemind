@@ -25,8 +25,8 @@ LocalPlanner::LocalPlanner(Context *context)
     m_abort(false)
 {
   Object::init();
-  
-  // TODO: add pointer to brain instance through constructor
+
+  // Setup brains
   m_brains = new SoldierBrains(this);
 }
     
@@ -117,7 +117,7 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   float vy = -delta[0] * (float) sin(-yaw) - delta[1] * (float) cos(-yaw);
   float vl = sqrt(vx*vx + vy*vy);
   
-  (*orientation)[0] = pitch;
+  (*orientation)[0] = -pitch;
   (*orientation)[1] = yaw;
   (*orientation)[2] = 0.0;
   
@@ -169,6 +169,9 @@ void LocalPlanner::transitionDown()
 
 void LocalPlanner::start()
 {
+  // Init the brains
+  m_brains->init();
+
   // Initialize the background worker thread
   m_workerThread = boost::thread(&LocalPlanner::process, this);
 }
@@ -181,9 +184,6 @@ void LocalPlanner::worldUpdated(const GameState &state)
   
   Map *map = m_context->getMap();
   Vector3f origin = m_gameState.player.origin;
-
-  // Let the brain process what to do
-  // TODO m_brains->interact();
   
   // Go through all states and check if any would like to interrupt
   typedef std::pair<std::string, State*> StatePair;
@@ -242,19 +242,17 @@ void LocalPlanner::process()
       // Remove requests from the list
       m_transitionRequests.clear();
     }
-    
+
+    // Let the brain process what to do
+    m_brains->interact();
+
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
-    
+
     // Sleep some 200ms
     usleep(200000);
   }
-}
-
-GameState *LocalPlanner::gameState() 
-{
-  return &m_gameState;
 }
 
 }

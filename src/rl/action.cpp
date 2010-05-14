@@ -11,13 +11,15 @@
 namespace HiveMind {
 
 BrainAction::BrainAction()
+  : m_executionState(NULL),
+    m_name("")
 {
-  BrainAction("");
 }
 
 BrainAction::BrainAction(const std::string &name)
+  : m_executionState(NULL),
+    m_name(name)
 {
-  BrainAction(NULL, name);
 }
 
 BrainAction::BrainAction(State *executionState, const std::string &name)

@@ -14,21 +14,30 @@ namespace HiveMind {
 SoldierBrains::SoldierBrains(HiveMind::LocalPlanner *planner)
   : Brains(planner)
 {
-  vector<int> stateComps;
+}
+
+SoldierBrains::~SoldierBrains()
+{
+}
+
+void SoldierBrains::init()
+{
+  std::vector<int> stateComps;
   stateComps.push_back(N_STATE0);
   stateComps.push_back(N_STATE1);
   stateComps.push_back(N_STATE2);
   stateComps.push_back(N_STATE3);
   stateComps.push_back(N_STATE4);
-  
-  vector<int> actionComps;
+
+  std::vector<int> actionComps;
   actionComps.push_back(N_ACTIONS);
-  
+
   Brains::init(stateComps, actionComps);
-  
+
+  // Init the weapon to ID map
   std::string head = "models/weapons/";
   std::string tail = "/tris.md2";
-  
+
   m_weaponMap[head + "v_blast" + tail]  = BLASTER;
   m_weaponMap[head + "v_chain" + tail]  = CHAINGUN;
   m_weaponMap[head + "v_bfg" + tail]    = BFG;
@@ -40,12 +49,21 @@ SoldierBrains::SoldierBrains(HiveMind::LocalPlanner *planner)
   m_weaponMap[head + "v_shotg" + tail]  = SHOTGUN;
   m_weaponMap[head + "v_blast2" + tail] = SUPER_SHOTGUN;
   m_weaponMap[head + "v_rocket" + tail] = ROCKET_LAUNCHER;
-  
-  getLogger()->info("Brains initialized.");
-}
 
-SoldierBrains::~SoldierBrains()
-{
+  // Init the action ID to State map
+  m_actionStateMap[WANDER]   = m_localPlanner->getStateFromName("wander");
+  m_actionStateMap[SHOOT_AT] = m_localPlanner->getStateFromName("shoot");
+
+ // TODO
+ // m_actionStateMap[FIND_AMMO] = NULL;
+ // m_actionStateMap[FIND_HEALTH] = NULL;
+ // m_actionStateMap[FIND_BETTER_WEAPON] = NULL;
+ // m_actionStateMap[RUNAWAY] = NULL;
+
+  // Initial execution state
+  m_currAction->setExecutionState(m_actionStateMap[WANDER]);
+
+  getLogger()->info("Brains initialized.");
 }
 
 double SoldierBrains::reward(BrainState *prevState, BrainState *currState)
@@ -71,7 +89,7 @@ double SoldierBrains::reward(BrainState *prevState, BrainState *currState)
 
 BrainState *SoldierBrains::observe()
 {
-  GameState *gs = m_localPlanner->gameState();
+  GameState *gs = m_localPlanner->getGameState();
   
   // Health
   int health = gs->player.health;
@@ -141,9 +159,10 @@ BrainState *SoldierBrains::observe()
 void SoldierBrains::execute(BrainAction *action)
 {
   // TODO Determine which physical state executes the needed action
-
+  State *executionState = m_actionStateMap[action->id()];
   *m_currAction = *action;
-  m_localPlanner->requestTransition(action->executionState()->getName());
+  m_currAction->setExecutionState(executionState);
+  m_localPlanner->requestTransition(m_currAction->executionState()->getName());
 }
 
 }

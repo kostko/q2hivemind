@@ -83,7 +83,15 @@ public:
      * Has the state reached a final state?
      */
     inline bool isComplete() const { return m_complete; };
-    
+
+    /**
+     * Should we learn from this transition?
+     *
+     * For example if we switch to shoot state for 0.5 seconds we
+     * don't acknowledge it as a useful transition.
+     */
+    inline bool shouldLearn() const { return m_shouldLearn; }
+
     /**
      * Returns this state's priority.
      */
@@ -135,6 +143,9 @@ protected:
     
     // End of state
     bool m_complete;
+
+    // Learn from this state transition
+    bool m_shouldLearn;
 private:
     // Unique state name
     std::string m_name;

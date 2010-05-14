@@ -6,6 +6,7 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "rl/enumvector.h"
+#include <iostream>
 
 namespace HiveMind {
 
@@ -47,7 +48,7 @@ void EnumVector::from(int id)
 
 void EnumVector::getComponents(std::vector<int> &components)
 {
-  components.swap(m_components);
+  components.assign(m_components.begin(), m_components.end());
 }
 
 EnumVector& EnumVector::operator=(EnumVector &other)

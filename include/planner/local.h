@@ -131,16 +131,26 @@ public:
      * @param priority Optional priority
      */
     void requestTransition(const std::string &state, int priority = 1);
-    
+
     /**
      * Transitions down the state stack.
      */
     void transitionDown();
-    
+
     /**
      * Returns the game state object.
      */
-    GameState *gameState();
+    inline GameState *getGameState() { return &m_gameState; }
+
+    /**
+     * Get context.
+     */
+    inline Context *getContext() { return m_context; }
+
+    /**
+     * Get state object from name.
+     */
+    inline State *getStateFromName(const std::string name) { return m_states[name]; }
 protected:
     /**
      * Main processing loop for the local planner.

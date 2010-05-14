@@ -44,6 +44,11 @@ public:
      * Returns the state that executes the action.
      */
     inline State *executionState() { return m_executionState; }
+
+    /**
+     *  Sets the execution state.
+     */
+    inline void setExecutionState(State *execState) { m_executionState = execState; }
     
     /**
      * Is the action complete?
@@ -54,6 +59,11 @@ public:
      * Action name.
      */
     inline std::string getName() const { return m_name; }
+
+    /**
+     * Set action name.
+     */
+    inline void setName(const std::string &name) { m_name = name; }
 private:
   State *m_executionState;    // The state in which the bot executes this action
   std::string m_name;

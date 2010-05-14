@@ -7,6 +7,7 @@
  */ 
 #include "planner/local.h"
 #include "rl/brains.h"
+#include "logger.h"
 
 namespace HiveMind {
 
@@ -22,7 +23,10 @@ Brains::~Brains()
   delete m_Q;
   delete m_numQ;
   delete m_suggestedAction;
+  delete m_currState;
+  delete m_currAction;
   delete m_tempAction;
+  delete m_tempState;
 }
 
 void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
@@ -31,10 +35,12 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
   m_numQ = new StateSpace(stateComponents, actionComponents);
 
   m_suggestedAction = newBrainAction();
-  m_tempAction = newBrainAction();
   
   m_currAction = newBrainAction("NULL");
+  m_tempAction = newBrainAction();
+
   m_currState = newBrainState("NULL");
+  m_tempState = newBrainState();
   
   // Initialize seed
   srand(time(0));
@@ -42,24 +48,43 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
 
 void Brains::interact()
 {
-  // Check in what state am I before the action
-  *m_currState = *observe();
-  
-  if (m_learn) {
-    *m_currAction = *randomAction();
-  } else {
-    *m_currAction = *exploit(m_currState);
+  // If there's an action in progress, just continue.
+  if (m_currAction->executionState() != NULL && !m_currAction->complete()) {
+      return;
   }
-  
-  // Execute my chosen action
-  execute(m_currAction);
-  
-  // Observe my new state
-  BrainState *newState = observe();
-  
-  // If I am learning try to learn from this move
-  if (m_learn)
-    updateQ(m_currState, m_currAction, newState);
+
+  // Doing nothing - select a new action.
+  if (m_currAction->getName() == "NULL") {
+    // Check in what state am I before the action
+    *m_currState = *observe();
+    
+    if (m_learn) {
+      *m_currAction = *suggestAction(m_currState);
+    } else {
+      *m_currAction = *exploit(m_currState);
+    }
+    
+    // Execute my chosen action
+    execute(m_currAction);
+  }
+
+  // Just completed an action - learn.
+  else {
+    // Observe my new state
+    BrainState *newState = observe();
+
+    // Should we learn from this action?
+    bool useful = m_currAction->executionState()->shouldLearn();
+
+    // If I am learning try to learn from this move
+    if (m_learn && useful) {
+      getLogger()->info("Learning from state transition.");
+      updateQ(m_currState, m_currAction, newState);
+    }
+
+    // Null the current action
+    m_currAction->setName("NULL");
+  }  
 }
 
 void Brains::setBrainMode(bool learn)
@@ -78,7 +103,7 @@ BrainState *Brains::newBrainState(std::string name)
   getQ()->getStateComponents(comps);
   BrainState *bs = new BrainState(name);
   bs->init(comps);
-  
+
   return bs;
 }
 

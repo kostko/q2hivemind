@@ -15,9 +15,11 @@
 
 namespace HiveMind {
 
+class State;
+
 // Number of possible component values
 enum StateComponentSize {
-    N_ACTIONS = 5,
+    N_ACTIONS = 2,
     N_STATE0 = 3,
     N_STATE1 = 9,
     N_STATE2 = 2,
@@ -36,11 +38,12 @@ enum ComponentToIndex {
 
 // Action enumerator
 enum Actions { 
-    SHOOT_AT, 
+    WANDER,
+    SHOOT_AT,
     FIND_AMMO, 
     FIND_HEALTH, 
     FIND_BETTER_WEAPON, 
-    RUNAWAY 
+    RUNAWAY
 };
 
 // State component for health
@@ -97,6 +100,10 @@ public:
      */
     ~SoldierBrains();
 
+    /**
+     * Init the brain.
+     */
+    void init();
 private:
     /**
      * What really defines the "brain" is the reward function.
@@ -115,6 +122,9 @@ private:
 
     // Weapon string to enum number map    
     boost::unordered_map<std::string, int> m_weaponMap;
+
+    // Action ID to State map
+    boost::unordered_map<int, State*> m_actionStateMap;
 };
 
 }
