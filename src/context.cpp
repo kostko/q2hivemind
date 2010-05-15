@@ -20,6 +20,7 @@
 #include "states/wander.h"
 #include "states/swim.h"
 #include "states/shoot.h"
+#include "states/respawn.h"
 
 // MOLD message bus
 #include "mold/server.h"
@@ -85,6 +86,7 @@ void Context::execute()
   m_localPlanner->registerState(new WanderState(this));
   m_localPlanner->registerState(new SwimState(this));
   m_localPlanner->registerState(new ShootState(this));
+  m_localPlanner->registerState(new RespawnState(this));
   m_localPlanner->start();
   
   // Create and start global planner
