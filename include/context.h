@@ -27,6 +27,8 @@ class Map;
 class LocalPlanner;
 class GlobalPlanner;
 class Dispatcher;
+class Grid;
+class DynamicMapper;
 
 class Context : public Object {
 public:
@@ -35,8 +37,9 @@ public:
      *
      * @param id Unique bot identifier
      * @param gamedir Quake 2 resource directory
+     * @param datadir Hivemind learned data directory
      */
-    Context(const std::string &id, const std::string &gamedir);
+    Context(const std::string &id, const std::string &gamedir, const std::string &datadir);
     
     /**
      * Class destructor.
@@ -47,6 +50,11 @@ public:
      * Returns the Quake 2 resource directory location.
      */
     inline std::string getGameDir() const { return m_gamedir; }
+    
+    /**
+     * Returns the learned data directory location.
+     */
+    inline std::string getDataDir() const { return m_datadir; }
     
     /**
      * Returns this bot's identifier.
@@ -63,6 +71,16 @@ public:
      * Returns the current map instance.
      */
     inline Map *getMap() const { return m_map; }
+    
+    /**
+     * Returns the mapping grid.
+     */
+    inline Grid *getGrid() const { return m_grid; }
+    
+    /**
+     * Returns the dynamic mapper.
+     */
+    inline DynamicMapper *getDynamicMapper() const { return m_dynamicMapper; }
     
     /**
      * Returns the local planner instance for this bot.
@@ -116,12 +134,15 @@ private:
     // Unique bot identifier and game directory
     std::string m_botId;
     std::string m_gamedir;
+    std::string m_datadir;
     
     // Connection to Quake 2 server
     Connection *m_connection;
     
     // Current map
     Map *m_map;
+    Grid *m_grid;
+    DynamicMapper *m_dynamicMapper;
     
     // Abort request flag
     bool m_abort;

@@ -9,6 +9,9 @@
 #include "logger.h"
 #include "network/connection.h"
 #include "mapping/map.h"
+#include "mapping/grid.h"
+#include "mapping/exporters.h"
+#include "mapping/dynamic.h"
 #include "planner/local.h"
 #include "planner/global.h"
 #include "dispatcher.h"
@@ -24,9 +27,10 @@
 
 namespace HiveMind {
 
-Context::Context(const std::string &id, const std::string &gamedir)
+Context::Context(const std::string &id, const std::string &gamedir, const std::string &datadir)
   : m_botId(id),
     m_gamedir(gamedir),
+    m_datadir(datadir),
     m_connection(NULL),
     m_map(NULL),
     m_abort(false),
@@ -58,6 +62,12 @@ void Context::connectTo(const std::string &host, unsigned int port)
   if (!m_map->open())
     getLogger()->error("Map open has failed, aborting now.");
   
+  // Create dynamic mapping grid and load learned grid data
+  m_grid = new Grid(m_map);
+  std::string mn = std::string(basename(m_connection->getMapName().c_str()));
+  mn = mn.substr(0, mn.find("."));
+  m_grid->importGrid(getDataDir() + "/grid-" + mn + ".hm");
+  
   // Enter the game
   m_connection->begin();
 }
@@ -66,6 +76,9 @@ void Context::execute()
 {
   if (!m_connection || !m_connection->isOnline() || !m_map)
     getLogger()->error("Unable to start bot processing loop as we are not initialized!");
+  
+  // Create the dynamic mapper
+  m_dynamicMapper = new DynamicMapper(this);
   
   // Create and start local planner
   m_localPlanner = new LocalPlanner(this);
@@ -81,6 +94,7 @@ void Context::execute()
   while (!m_abort) {
     // Process frame update from Quake II server, update planner
     GameState state = m_connection->getGameState();
+    m_dynamicMapper->worldUpdated(state);
     m_globalPlanner->worldUpdated(state);
     m_localPlanner->worldUpdated(state);
     

@@ -210,7 +210,7 @@ public:
      * @param full Should a full path be returned or not
      * @return True when the path was found
      */
-    bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true);
+    bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true) const;
     
     /**
      * Generates a random path from a specific location. This still

@@ -854,8 +854,12 @@ int Map::findFaceId(const Vector3f &pos) const
   return -1;
 }
 
-bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full)
+bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full) const
 {
+  // Clear previous path
+  path->points.clear();
+  path->links.clear();
+  
   // Sanity check start position
   if (findLeafId(start) == 0) {
     getLogger()->warning("Start position is outside map!");
@@ -903,6 +907,8 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
     // Check goal condition
     if (face == endFace) {
       found = true;
+      if (!full)
+        return true;
       break;
     }
     
@@ -936,8 +942,6 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
   if (found) {
     Vector3f playerHeight(0, 0, 24.);
     MapFace *face = endFace;
-    path->points.clear();
-    path->links.clear();
     path->points.push_back(end + playerHeight);
     
     while (face != startFace) {

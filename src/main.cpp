@@ -27,6 +27,7 @@ int main(int argc, char **argv)
     ("help", "show help message")
     ("mold-server", po::value<std::string>(), "run MOLD message bus server")
     ("mold-client", po::value<std::string>(), "connect to MOLD message bus")
+    ("data-dir", po::value<std::string>()->default_value("data"), "learned data directory")
     ("quake2-server", po::value<std::string>()->default_value("::1"), "connection to specified quake2 server")
     ("quake2-dir", po::value<std::string>()->default_value("/usr/share/games/quake2"), "specify quake2 directory")
     ("bot-id", po::value<std::string>(), "override bot id (must be unique)")
@@ -57,7 +58,7 @@ int main(int argc, char **argv)
   }
   
   // Create a context
-  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>());
+  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>(), vm["data-dir"].as<std::string>());
   
   // Start MOLD server when requested
   if (vm.count("mold-server")) {

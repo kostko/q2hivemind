@@ -50,6 +50,7 @@ void LocalPlanner::registerState(State *state)
 void LocalPlanner::sideAdjust(Vector3f *delta) const
 {
   Map *map = m_context->getMap();
+  float yaw = Algebra::yawFromVect(*delta);
   float t = sqrt((*delta)[0] * (*delta)[0] + (*delta)[1] * (*delta)[1]);
   if (t == 0)
     return;
@@ -58,7 +59,6 @@ void LocalPlanner::sideAdjust(Vector3f *delta) const
   
   Vector3f a(0.0, 0.0, 0.0);
   Vector3f p = m_gameState.player.origin;
-  float yaw = Algebra::yawFromVect(*delta);
   
   for (int i = -8; i <= 8; i++) {
     float angle = yaw + (float) i * (M_PI/32.0);
