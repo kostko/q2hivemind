@@ -39,7 +39,7 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
     m_deltaFrame(0xffffffff),
     m_cs(&(m_gamestates[0])),
     m_ds(&(m_gamestates[16])),
-    m_spawn(&(m_gamestates[0])),
+    m_spawn(&(m_gamestates[16])),
     m_lastInventoryUpdate(0),
     m_currentUpdate(0),
     m_lastUpdateTime(0)
@@ -842,10 +842,10 @@ int Connection::processPacket(char *buffer, size_t length)
           }
           
           m_cs->entities[entity].setVisible(true);
-          if (mask & 0x00000800) m_cs->entities[entity].modelIndex =  READ_CHAR;
+          if (mask & 0x00000800) m_cs->entities[entity].modelIndex = READ_CHAR;
           if (mask & 0x00100000) m_cs->entities[entity].modelIndex2 = READ_CHAR;
           if (mask & 0x00200000) m_cs->entities[entity].modelIndex3 = READ_CHAR;
-          if (mask & 0x00400000) m_cs->entities[entity].modelIndex4 =  READ_CHAR;
+          if (mask & 0x00400000) m_cs->entities[entity].modelIndex4 = READ_CHAR;
           if (mask & 0x00000010) m_cs->entities[entity].framenum = READ_CHAR;
           if (mask & 0x00020000) {
             m_cs->entities[entity].framenum = *((short*) (buffer + i));
