@@ -6,6 +6,7 @@ add_subdirectory(planner)
 add_subdirectory(states)
 add_subdirectory(rl)
 add_subdirectory(brains)
+add_subdirectory(eann)
 
 set(hivemind_src
 algebra.cpp
@@ -28,6 +29,7 @@ target_link_libraries(hivemind
   states
   rl
   brains
+  eann
 
   # External libraries
   ${PROTOBUF_LIBRARY}

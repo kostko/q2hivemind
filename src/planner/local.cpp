@@ -28,6 +28,14 @@ LocalPlanner::LocalPlanner(Context *context)
 
   // Setup brains
   m_brains = new SoldierBrains(this);
+  
+  // Setup sensors
+  m_sensors[0] = DistanceSensor(context);
+  m_sensors[0].setAngle(45);
+  m_sensors[1] = DistanceSensor(context);
+  m_sensors[1].setAngle(0);
+  m_sensors[2] = DistanceSensor(context);
+  m_sensors[2].setAngle(-45);
 }
     
 LocalPlanner::~LocalPlanner()
@@ -90,7 +98,7 @@ void LocalPlanner::sideAdjust(Vector3f *delta) const
   *delta += t*b;
 }
 
-void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire) const
+void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire)
 {
   *orientation = Vector3f(0, 0, 0);
   *velocity = Vector3f(0, 0, 0);
@@ -109,6 +117,11 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   Vector3f delta = target - m_gameState.player.origin;
   float pitch = Algebra::pitchFromVect(delta);
   float yaw = Algebra::yawFromVect(delta);
+  
+  // Update all sensors
+  for (int i = 0; i < 3; i++) {
+    m_sensors[i].update(m_gameState, yaw);
+  }
   
   delta = destination - m_gameState.player.origin;
   sideAdjust(&delta);

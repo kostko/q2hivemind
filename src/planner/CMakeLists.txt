@@ -4,6 +4,7 @@ local.cpp
 state.cpp
 global.cpp
 directory.cpp
+sensors.cpp
 )
 
 add_library(planner STATIC ${planner_src})

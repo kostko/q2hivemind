@@ -10,6 +10,7 @@
 
 #include "object.h"
 #include "planner/state.h"
+#include "planner/sensors.h"
 #include "network/gamestate.h"
 #include "rl/statespace.h"
 
@@ -107,7 +108,7 @@ public:
      * @param velocity Velocity vector pointer
      * @param fire Fire flag pointer
      */
-    void getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire) const;
+    void getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire);
     
     /**
      * Request a transition to the specified state. This doesn't
@@ -190,6 +191,9 @@ private:
     
     // AI
     Brains *m_brains;
+    
+    // Sensors
+    DistanceSensor m_sensors[3];
 };
 
 }
