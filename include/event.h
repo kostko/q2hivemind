@@ -27,11 +27,6 @@ public:
       Invalid = 0,
       BotKilled,
       BotLocationUpdate,
-      MapLinkUpdate,
-      LocationMetadataAdd,
-      LocationMetadataClear,
-      EntityAppeared,
-      EntityDisappeared,
       
       // This represents any event and should be the last one
       Any
@@ -99,68 +94,6 @@ public:
 private:
     // Current bot origin
     Vector3f m_origin;
-};
-
-class MapLinkUpdateEvent : public Event {
-public:
-    /**
-     * Class constructor.
-     *
-     * @param linkId Link identifier
-     */
-   MapLinkUpdateEvent(int linkId);
-   
-   /**
-    * Sets the validity for this link.
-    */
-   inline void setValid(bool valid) { m_valid = valid; }
-   
-   /**
-    * Returns the validity of this link.
-    */
-   inline bool isValid() const { return m_valid; }
-private:
-    // Link identifier
-    int m_linkId;
-    bool m_valid;
-};
-
-class LocationMetadataAddEvent : public Event {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
-    /**
-     * Class constructor.
-     */
-    LocationMetadataAddEvent(const Vector3f &location);
-};
-
-class LocationMetadataClearEvent : public Event {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
-    /**
-     * Class constructor.
-     */
-    LocationMetadataClearEvent(const Vector3f &location);
-};
-
-class EntityAppearedEvent : public Event {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
-    /**
-     * Class constructor.
-     */
-    EntityAppearedEvent(int entityId, const Vector3f &origin);
-};
-
-class EntityDisappearedEvent : public Event {
-public:
-    /**
-     * Class constructor.
-     */
-    EntityDisappearedEvent(int entityId);
 };
 
 }

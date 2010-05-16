@@ -41,11 +41,6 @@ public:
     boost::signals2::signal<void (Event *event)> signalAnyEvent;
     boost::signals2::signal<void (BotKilledEvent *event)> signalBotKilled;
     boost::signals2::signal<void (BotLocationUpdateEvent *event)> signalBotLocationUpdate;
-    boost::signals2::signal<void (MapLinkUpdateEvent *event)> signalMapLinkUpdate;
-    boost::signals2::signal<void (LocationMetadataAddEvent *event)> signalLocationMetadataAdd;
-    boost::signals2::signal<void (LocationMetadataClearEvent *event)> signalLocationMetadataClear;
-    boost::signals2::signal<void (EntityAppearedEvent *event)> signalEntityAppeared;
-    boost::signals2::signal<void (EntityDisappearedEvent *event)> signalEntityDisappeared;
 private:
     // Context
     Context *m_context;

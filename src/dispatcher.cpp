@@ -33,11 +33,6 @@ void Dispatcher::emit(Event *event)
   switch (event->getType()) {
     case Event::BotKilled: signalBotKilled(static_cast<BotKilledEvent*>(event)); break;
     case Event::BotLocationUpdate: signalBotLocationUpdate(static_cast<BotLocationUpdateEvent*>(event)); break;
-    case Event::MapLinkUpdate: signalMapLinkUpdate(static_cast<MapLinkUpdateEvent*>(event)); break;
-    case Event::LocationMetadataAdd: signalLocationMetadataAdd(static_cast<LocationMetadataAddEvent*>(event)); break;
-    case Event::LocationMetadataClear: signalLocationMetadataClear(static_cast<LocationMetadataClearEvent*>(event)); break;
-    case Event::EntityAppeared: signalEntityAppeared(static_cast<EntityAppearedEvent*>(event)); break;
-    case Event::EntityDisappeared: signalEntityDisappeared(static_cast<EntityDisappearedEvent*>(event)); break;
     default: break;
   }
   
