@@ -55,19 +55,6 @@ public:
      */
     virtual void processFrame();
     
-    /**
-     * This method should implement state specific processing in
-     * planning mode. This method is called in planner thread
-     * context.
-     */
-    virtual void processPlanning();
-    
-    /**
-     * This method should implement state specific interruption
-     * requests, so the state can interrupt other states when
-     * needed. This method is called in main thread context.
-     */
-    virtual void checkInterruption();
 };
 
 }

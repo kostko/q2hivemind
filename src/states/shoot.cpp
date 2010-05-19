@@ -78,11 +78,6 @@ void ShootState::processFrame()
   m_moveFire = true;
 }
 
-void ShootState::processPlanning()
-{
-  m_targetId = getClosestEnemy();
-}
-
 int ShootState::getClosestEnemy()
 {
   // Select a (the closest) target to shoot at

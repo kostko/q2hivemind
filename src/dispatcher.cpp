@@ -36,7 +36,6 @@ void Dispatcher::emit(Event *event)
   switch (event->getType()) {
     case Event::BotKilled: signalBotKilled(static_cast<BotKilledEvent*>(event)); break;
     case Event::BotLocationUpdate: signalBotLocationUpdate(static_cast<BotLocationUpdateEvent*>(event)); break;
-    case Event::FallenInWater: signalBotFallenInWater(static_cast<FallenInWaterEvent*>(event)); break;
     case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
     default: break;
   }

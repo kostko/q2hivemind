@@ -162,36 +162,39 @@ void LocalPlanner::requestTransition(const std::string &state, int priority)
 void LocalPlanner::addEligibleState(State *state) {
   timestamp_t now = Timing::getCurrentTimestamp();
   
-  if (m_eligibleStates.find(state) == m_eligibleStates.end()) {
-    m_eligibleStates.insert(state);
-    getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
-  }
+  m_eligibleStates.insert(state);
+  getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
+  
 }
 
 void LocalPlanner::pruneEligibleStates() {
   timestamp_t now = Timing::getCurrentTimestamp();
 
-  std::set<State*>::iterator i = m_eligibleStates.begin();
-  while (i != m_eligibleStates.end())
-  {
+  std::list<State*> pruneList;
 
+  BOOST_FOREACH(State *state, m_eligibleStates) {
     // some states are not to be pruned
-    if ((*i)->getEligibilityTime() == -1) {
-      ++i;
+    if (state->getEligibilityTime() == -1)
       continue;
+
+    int delta = now - state->getEventStart();
+
+    // prune state if it is too old
+    if (delta > state->getEligibilityTime()) {
+      getLogger()->info(format("Pruning %s from eligible states set.") % state->getName());
+
+      pruneList.push_back(state);
+
+      // if we are in the state that needs to be pruned, mark state as completed and call brains
+      if (state == m_currentState) {
+        m_currentState->m_complete = true;
+        m_brains->interact();
+      }
     }
+  }
 
-    int delta = now - (*i)->getEventStart();
-
-    // prune state if it is too old 
-    if (delta > (*i)->getEligibilityTime()) {
-      getLogger()->info(format("Pruning %s from eligible states set.") % (*i)->getName());
-      
-      m_eligibleStates.erase(i);
-    }
-
-    ++i;
-
+  BOOST_FOREACH(State *state, pruneList) {
+    m_eligibleStates.erase(state);
   }
 
 }

@@ -26,8 +26,7 @@ public:
     enum Type {
       Invalid = 0,
       BotKilled,
-      BotLocationUpdate,
-      FallenInWater,
+      BotLocationUpdate,      
       OpponentSpotted,
       
       // This represents any event and should be the last one
@@ -96,14 +95,6 @@ public:
 private:
     // Current bot origin
     Vector3f m_origin;
-};
-
-class FallenInWaterEvent : public Event {
-public:
-    /**
-     * Class constructor.
-     */
-    FallenInWaterEvent();
 };
 
 class OpponentSpottedEvent : public Event {

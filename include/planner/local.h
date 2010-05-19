@@ -145,6 +145,11 @@ public:
     inline Context *getContext() { return m_context; }
 
     /**
+     * Get brains.
+     */
+    inline Brains *getBrains() { return m_brains; }
+
+    /**
      * Get state object from name.
      */
     inline State *getStateFromName(const std::string name) { return m_states[name]; }

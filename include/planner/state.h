@@ -69,8 +69,10 @@ public:
      * This method should implement state specific processing in
      * planning mode. This method is called in planner thread
      * context.
+     *
+     * Default implementation does nothing.
      */
-    virtual void processPlanning() = 0;
+    virtual void processPlanning() {};
 
     /**
      * This method should implement state specific event
