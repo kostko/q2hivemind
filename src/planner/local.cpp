@@ -274,7 +274,7 @@ void LocalPlanner::process()
     }
 
     // Let the brain process what to do
-    //m_brains->interact();
+    m_brains->interact();
 
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
