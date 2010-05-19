@@ -13,7 +13,7 @@
 namespace HiveMind {
 
 RespawnState::RespawnState(Context *context)
-  : State(context, "respawn")
+  : State(context, "respawn", 1000)
 {
   Object::init();
 }
@@ -22,6 +22,7 @@ RespawnState::~RespawnState()
 {
 }
 
+// DEPRECATED
 void RespawnState::checkInterruption()
 {
   int health = m_gameState->player.health;

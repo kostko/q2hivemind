@@ -13,12 +13,14 @@
 
 namespace HiveMind {
 
-State::State(Context *context, const std::string &name)
+State::State(Context *context, const std::string &name, int eligibilityTime)
   : m_name(name),
     m_context(context),
     m_planner(context->getLocalPlanner()),
     m_priority(1),
-    m_complete(false)
+    m_complete(false),
+    m_eligibilityTime(eligibilityTime),
+    m_eventStart(0)
 {
 }
 

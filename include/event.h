@@ -27,6 +27,8 @@ public:
       Invalid = 0,
       BotKilled,
       BotLocationUpdate,
+      FallenInWater,
+      OpponentSpotted,
       
       // This represents any event and should be the last one
       Any
@@ -87,6 +89,32 @@ public:
      */
     BotLocationUpdateEvent(const Vector3f &origin);
     
+    /**
+     * Returns the bot's location.
+     */
+    inline Vector3f getOrigin() const { return m_origin; }
+private:
+    // Current bot origin
+    Vector3f m_origin;
+};
+
+class FallenInWaterEvent : public Event {
+public:
+    /**
+     * Class constructor.
+     */
+    FallenInWaterEvent();
+};
+
+class OpponentSpottedEvent : public Event {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param origin Current bot origin
+     */
+    OpponentSpottedEvent(const Vector3f &origin);
+
     /**
      * Returns the bot's location.
      */

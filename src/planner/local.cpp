@@ -180,6 +180,43 @@ void LocalPlanner::transitionDown()
   }
 }
 
+void LocalPlanner::addEligibleState(State *state) {
+  timestamp_t now = Timing::getCurrentTimestamp();
+  
+  if (m_eligibleStates.find(state) == m_eligibleStates.end()) {
+    m_eligibleStates.insert(state);
+    getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
+  }
+}
+
+void LocalPlanner::pruneEligibleStates() {
+  timestamp_t now = Timing::getCurrentTimestamp();
+
+  std::set<State*>::iterator i = m_eligibleStates.begin();
+  while (i != m_eligibleStates.end())
+  {
+
+    // some states are not to be pruned
+    if ((*i)->getEligibilityTime() == -1) {
+      ++i;
+      continue;
+    }
+
+    int delta = now - (*i)->getEventStart();
+
+    // prune state if it is too old 
+    if (delta > (*i)->getEligibilityTime()) {
+      getLogger()->info(format("Pruning %s from eligible states set.") % (*i)->getName());
+      
+      m_eligibleStates.erase(i);
+    }
+
+    ++i;
+
+  }
+
+}
+
 void LocalPlanner::start()
 {
   // Init the brains
@@ -203,8 +240,10 @@ void LocalPlanner::worldUpdated(const GameState &state)
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
     if (state != m_currentState)
-      state->checkInterruption();
+      state->checkEvent();
   }
+
+  pruneEligibleStates();
   
   // Perform current state frame processing
   if (m_currentState)
@@ -257,7 +296,7 @@ void LocalPlanner::process()
     }
 
     // Let the brain process what to do
-    m_brains->interact();
+    //m_brains->interact();
 
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)

@@ -15,6 +15,7 @@
 #include "rl/statespace.h"
 
 #include <list>
+#include <set>
 #include <boost/thread.hpp>
 #include <boost/any.hpp>
 
@@ -152,6 +153,16 @@ public:
      * Get state object from name.
      */
     inline State *getStateFromName(const std::string name) { return m_states[name]; }
+
+    /**
+     * Add eligible state to m_eligibleStates.
+     */
+    void addEligibleState(State *state);
+
+    /**
+     * Prune too old states from m_eligibleStates.
+     */
+    void pruneEligibleStates();
 protected:
     /**
      * Main processing loop for the local planner.
@@ -194,6 +205,11 @@ private:
     
     // Sensors
     DistanceSensor m_sensors[3];
+
+    // Eligible states to make transitions to.
+    // This set should always be up-to-date for the current situation, so the Brains
+    // will choose only from states that are eligible for the current situation.
+    std::set<State*> m_eligibleStates;
 };
 
 }

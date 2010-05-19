@@ -7,6 +7,8 @@
  */
 #include "dispatcher.h"
 #include "logger.h"
+#include "states/swim.h"
+#include <boost/signals2.hpp>
 
 namespace HiveMind {
 
@@ -17,6 +19,7 @@ Dispatcher::Dispatcher(Context *context)
   
   // Log our initialization
   getLogger()->info("Event dispatcher initialized.");
+
 }
 
 void Dispatcher::emit(Event *event)
@@ -33,6 +36,8 @@ void Dispatcher::emit(Event *event)
   switch (event->getType()) {
     case Event::BotKilled: signalBotKilled(static_cast<BotKilledEvent*>(event)); break;
     case Event::BotLocationUpdate: signalBotLocationUpdate(static_cast<BotLocationUpdateEvent*>(event)); break;
+    case Event::FallenInWater: signalBotFallenInWater(static_cast<FallenInWaterEvent*>(event)); break;
+    case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
     default: break;
   }
   

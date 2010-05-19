@@ -28,6 +28,8 @@ std::string Event::getTypeAsString() const
   switch (m_type) {
     case BotKilled: return "BotKilled";
     case BotLocationUpdate: return "BotLocationUpdate";
+    case FallenInWater: return "FallenInWater";
+    case OpponentSpotted: return "OpponentSpotted";
     default: return "Invalid";
   }
 }
@@ -39,6 +41,17 @@ BotKilledEvent::BotKilledEvent()
 
 BotLocationUpdateEvent::BotLocationUpdateEvent(const Vector3f &origin)
   : Event(BotLocationUpdate),
+    m_origin(origin)
+{
+}
+
+FallenInWaterEvent::FallenInWaterEvent()
+  : Event(FallenInWater)
+{
+}
+
+OpponentSpottedEvent::OpponentSpottedEvent(const Vector3f& origin)
+  : Event(OpponentSpotted),
     m_origin(origin)
 {
 }

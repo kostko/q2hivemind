@@ -41,6 +41,9 @@ public:
     boost::signals2::signal<void (Event *event)> signalAnyEvent;
     boost::signals2::signal<void (BotKilledEvent *event)> signalBotKilled;
     boost::signals2::signal<void (BotLocationUpdateEvent *event)> signalBotLocationUpdate;
+    boost::signals2::signal<void (FallenInWaterEvent *event)> signalBotFallenInWater;
+    boost::signals2::signal<void (OpponentSpottedEvent *event)> signalOpponentSpotted;
+
 private:
     // Context
     Context *m_context;

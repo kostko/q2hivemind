@@ -9,11 +9,12 @@
 #include "logger.h"
 #include "context.h"
 #include "mapping/grid.h"
+#include "planner/local.h"
 
 namespace HiveMind {
 
 WanderState::WanderState(Context *context)
-  : State(context, "wander"),
+  : State(context, "wander", -1),
     m_nextPoint(-1),
     m_speed(0),
     m_minDistance(-1),
@@ -21,6 +22,7 @@ WanderState::WanderState(Context *context)
     m_lastLink(NULL)
 {
   Object::init();
+  getLocalPlanner()->addEligibleState(this);
 }
 
 WanderState::~WanderState()

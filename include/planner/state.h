@@ -29,9 +29,11 @@ public:
     /**
      * Class constructor.
      *
+     * @param context Context context
      * @param name State name
+     * @param eligibilityTime int Time before deleted from eligible states set
      */
-    State(Context *context, const std::string &name);
+    State(Context *context, const std::string &name, int eligibilityTime);
     
     /**
      * Class destructor.
@@ -78,6 +80,15 @@ public:
      * Default implementation does nothing.
      */
     virtual void checkInterruption() {};
+
+    /**
+     * This method should implement state specific event
+     * checking, so the state can emit a signal when
+     * needed. This method is called in main thread context.
+     *
+     * Default implementation does nothing.
+     */
+    virtual void checkEvent() {};
     
     /**
      * Has the state reached a final state?
@@ -96,7 +107,17 @@ public:
      * Returns this state's priority.
      */
     inline int getPriority() const { return m_priority; }
-    
+
+    /**
+     * Returns when did trigger event for this state occur.
+     */
+    inline timestamp_t getEventStart() { return m_eventStart; }
+
+    /**
+     * Returns eligibility time.
+     */
+    inline int getEligibilityTime() { return m_eligibilityTime; }
+
     /**
      * Returns the next best move as it has been computed by
      * the state.
@@ -130,6 +151,8 @@ protected:
      * state stack.
      */
     void transitionDown();
+
+    inline void setEventStart(timestamp_t eventStart) { m_eventStart = eventStart; }
 protected:
     // Next move
     Vector3f m_moveDestination;
@@ -156,6 +179,14 @@ private:
     
     // Priority
     int m_priority;
+
+    // When did the trigger event for this state occur
+    timestamp_t m_eventStart;
+
+    // How long should we leave the state in m_eligibleStates (to be a candidate
+    // for transition) before deleting it [in ms]
+    int m_eligibilityTime;
+
 };
 
 }

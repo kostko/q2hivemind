@@ -12,14 +12,16 @@
 #include "planner/directory.h"
 #include "logger.h"
 #include "context.h"
+#include "dispatcher.h"
 #include <limits>
 
 namespace HiveMind {
 
 ShootState::ShootState(Context* context)
-  : State(context, "shoot")
+  : State(context, "shoot", 5000)
 {
   Object::init();
+  context->getDispatcher()->signalOpponentSpotted.connect(boost::bind(&ShootState::makeEligible, this, _1));
 }
 
 ShootState::~ShootState()
@@ -36,6 +38,7 @@ void ShootState::goodbye()
   getLogger()->info("Now leaving shoot state.");
 }
 
+// DEPRECATED
 void ShootState::checkInterruption()
 {
   // Check for possible enemies
@@ -45,6 +48,22 @@ void ShootState::checkInterruption()
     // Remember start time of shoot state request
     m_shootStart = Timing::getCurrentTimestamp();
     getLocalPlanner()->requestTransition("shoot", 50);
+  }
+}
+
+void ShootState::checkEvent()
+{
+  // Check for possible enemies
+  int enemyId = getClosestEnemy();
+
+  if (enemyId != NO_ENEMY) {
+    // Remember start time of shoot state request
+    m_shootStart = Timing::getCurrentTimestamp();
+
+    Vector3f origin = m_gameState->player.origin;
+
+    // Emit a signal
+    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
   }
 }
 
@@ -100,5 +119,14 @@ int ShootState::getClosestEnemy()
   
   return enemyId;
 }
+
+void ShootState::makeEligible(OpponentSpottedEvent *event)
+{
+  timestamp_t now = Timing::getCurrentTimestamp();
+  setEventStart(now);
+
+  getLocalPlanner()->addEligibleState(this);
+}
+
 
 }

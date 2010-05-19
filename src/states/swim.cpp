@@ -9,21 +9,25 @@
 #include "planner/local.h"
 #include "logger.h"
 #include "context.h"
+#include "dispatcher.h"
+#include <boost/signals2.hpp>
 
 namespace HiveMind {
 
 SwimState::SwimState(Context *context)
-  : State(context, "swim"),
+  : State(context, "swim", 3000),
     m_firstInWater(0),
     m_lastInWater(0)
 {
   Object::init();
+  context->getDispatcher()->signalBotFallenInWater.connect(boost::bind(&SwimState::makeEligible, this, _1));
 }
 
 SwimState::~SwimState()
 {
 }
 
+// DEPRECATED
 void SwimState::checkInterruption()
 {
   Map *map = getContext()->getMap();
@@ -41,6 +45,31 @@ void SwimState::checkInterruption()
       
       // Request transition into this state
       getLocalPlanner()->requestTransition("swim", 100);
+      m_firstInWater = 0;
+    }
+  } else {
+    // Reset swim timer
+    m_firstInWater = 0;
+  }
+}
+
+void SwimState::checkEvent()
+{
+  Map *map = getContext()->getMap();
+  Vector3f origin = m_gameState->player.origin;
+
+  // Detect when we hit water or lava via raycasting
+  if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {
+    timestamp_t now = Timing::getCurrentTimestamp();
+    if (!m_firstInWater)
+      m_firstInWater = now;
+
+    if (now - m_firstInWater > 1000) {
+      // We have been in the water at least 1 second
+      getLogger()->warning("We are sinking, I repeat we are sinking!");
+
+      // Emit a signal
+      getContext()->getDispatcher()->emit(new FallenInWaterEvent());
       m_firstInWater = 0;
     }
   } else {
@@ -88,6 +117,14 @@ void SwimState::processFrame()
     m_lastInWater = 0;
   }
 
+}
+
+void SwimState::makeEligible(FallenInWaterEvent *event)
+{
+  timestamp_t now = Timing::getCurrentTimestamp();
+  setEventStart(now);
+
+  getLocalPlanner()->addEligibleState(this);
 }
 
 void SwimState::processPlanning()
