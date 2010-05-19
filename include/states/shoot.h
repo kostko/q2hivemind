@@ -14,6 +14,7 @@
 namespace HiveMind {
 
 class Context;
+class OpponentSpottedEvent;
 
 enum {
     NO_ENEMY = -1,
@@ -63,8 +64,18 @@ public:
      * context.
      */
     virtual void processPlanning();
-    
-    virtual void checkInterruption();
+
+    /**
+     * This method should implement state specific event
+     * checking, so the state can emit a signal when
+     * needed. This method is called in main thread context.
+     */
+    virtual void checkEvent();
+
+    /**
+     * Make this state one of the candidates for transition. This method is called in main thread context.
+     */
+    void makeEligible(OpponentSpottedEvent *event);
 private:
 
     /**

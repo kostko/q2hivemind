@@ -36,11 +36,6 @@ void State::getNextTarget(Vector3f *destination, Vector3f *target, bool *fire, b
   *jump = m_moveJump;
 }
 
-void State::transitionDown()
-{
-  m_planner->transitionDown();
-}
-
 }
 
 

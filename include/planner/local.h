@@ -135,11 +135,6 @@ public:
     void requestTransition(const std::string &state, int priority = 1);
 
     /**
-     * Transitions down the state stack.
-     */
-    void transitionDown();
-
-    /**
      * Returns the game state object.
      */
     inline GameState *getGameState() { return &m_gameState; }
@@ -179,7 +174,6 @@ private:
     
     // State registry
     boost::unordered_map<std::string, State*> m_states;
-    std::list<State*> m_stateStack;
     State *m_currentState;
     
     // Transition requests are aggregated and ranked, the highest ranking

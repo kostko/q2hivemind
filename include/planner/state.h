@@ -71,15 +71,6 @@ public:
      * context.
      */
     virtual void processPlanning() = 0;
-    
-    /**
-     * This method should implement state specific interruption
-     * requests, so the state can interrupt other states when
-     * needed. This method is called in main thread context.
-     *
-     * Default implementation does nothing.
-     */
-    virtual void checkInterruption() {};
 
     /**
      * This method should implement state specific event
@@ -147,11 +138,10 @@ protected:
     inline void setPriority(int priority) { m_priority = priority; }
     
     /**
-     * Requests the local planner to transition into a lower state down the
-     * state stack.
+     * Sets the start of event.
+     * 
+     * @param eventStart timestamp_t
      */
-    void transitionDown();
-
     inline void setEventStart(timestamp_t eventStart) { m_eventStart = eventStart; }
 protected:
     // Next move

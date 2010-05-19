@@ -159,27 +159,6 @@ void LocalPlanner::requestTransition(const std::string &state, int priority)
   requestTransition(rq);
 }
 
-void LocalPlanner::transitionDown()
-{
-  if (m_stateStack.empty()) {
-    // When there is no state to transition into, we request transition to
-    // wander state, so the bot will simply wander around
-    requestTransition("wander");
-  } else {
-    // Pop state from stack and request transition into it
-    State *state = m_stateStack.back();
-    m_stateStack.pop_back();
-    
-    TransitionRequest rq;
-    rq.state = state->getName();
-    rq.priority = 1;
-    rq.restored = true;
-    requestTransition(rq);
-    
-    getLogger()->info(format("Requesting return to %s.") % state->getName());
-  }
-}
-
 void LocalPlanner::addEligibleState(State *state) {
   timestamp_t now = Timing::getCurrentTimestamp();
   
@@ -277,7 +256,6 @@ void LocalPlanner::process()
           // When current state has not yet finished, let's stack it
           if (!m_currentState->isComplete()) {
             getLogger()->info(format("State %s interrupted by %s state.")  % m_currentState->getName() % rq.state);
-            m_stateStack.push_back(m_currentState);
           } else {
             m_currentState->goodbye();
           }

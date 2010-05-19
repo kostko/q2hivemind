@@ -18,6 +18,7 @@
 namespace HiveMind {
 
 class Context;
+class FallenInWaterEvent;
 
 /**
  * Swim state.
@@ -61,13 +62,18 @@ public:
      * context.
      */
     virtual void processPlanning();
-    
+
     /**
-     * This method should implement state specific interruption
-     * requests, so the state can interrupt other states when
+     * This method should implement state specific event
+     * checking, so the state can emit a signal when
      * needed. This method is called in main thread context.
      */
-    virtual void checkInterruption();
+    virtual void checkEvent();
+
+    /**
+     * Make this state one of the candidates for transition. This method is called in main thread context.
+     */
+    void makeEligible(FallenInWaterEvent *event);
 private:
     // Swim check
     timestamp_t m_firstInWater;

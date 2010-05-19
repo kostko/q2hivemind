@@ -27,32 +27,6 @@ SwimState::~SwimState()
 {
 }
 
-// DEPRECATED
-void SwimState::checkInterruption()
-{
-  Map *map = getContext()->getMap();
-  Vector3f origin = m_gameState->player.origin;
-  
-  // Detect when we hit water or lava via raycasting
-  if (map->rayTest(origin, origin + Vector3f(0, 0, 24.0), Map::Lava | Map::Water) < 0.5) {
-    timestamp_t now = Timing::getCurrentTimestamp();
-    if (!m_firstInWater)
-      m_firstInWater = now;
-    
-    if (now - m_firstInWater > 1000) {
-      // We have been in the water at least 1 second
-      getLogger()->warning("We are sinking, I repeat we are sinking!");
-      
-      // Request transition into this state
-      getLocalPlanner()->requestTransition("swim", 100);
-      m_firstInWater = 0;
-    }
-  } else {
-    // Reset swim timer
-    m_firstInWater = 0;
-  }
-}
-
 void SwimState::checkEvent()
 {
   Map *map = getContext()->getMap();
@@ -110,7 +84,7 @@ void SwimState::processFrame()
       
       m_complete = true;
       m_lastInWater = 0;
-      transitionDown();      
+      //transitionDown();
     }
   } else {
     // Reset swim timer
