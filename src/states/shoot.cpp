@@ -104,9 +104,6 @@ int ShootState::getClosestEnemy()
 
 void ShootState::makeEligible(OpponentSpottedEvent *event)
 {
-  timestamp_t now = Timing::getCurrentTimestamp();
-  setEventStart(now);
-
   getLocalPlanner()->addEligibleState(this);
 }
 

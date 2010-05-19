@@ -159,9 +159,9 @@ void LocalPlanner::requestTransition(const std::string &state, int priority)
   requestTransition(rq);
 }
 
-void LocalPlanner::addEligibleState(State *state) {
-  timestamp_t now = Timing::getCurrentTimestamp();
-  
+void LocalPlanner::addEligibleState(State *state) {  
+  state->setEventStart(Timing::getCurrentTimestamp());
+
   m_eligibleStates.insert(state);
   getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
   
@@ -178,6 +178,8 @@ void LocalPlanner::pruneEligibleStates() {
       continue;
 
     int delta = now - state->getEventStart();
+
+    getLogger()->info(format("STATE %s DELTA %d") % state->getName() % delta);
 
     // prune state if it is too old
     if (delta > state->getEligibilityTime()) {
@@ -217,7 +219,7 @@ void LocalPlanner::worldUpdated(const GameState &state)
   Map *map = m_context->getMap();
   Vector3f origin = m_gameState.player.origin;
   
-  // Go through all states and check if any would like to interrupt
+  // Go through all states and check for event triggers
   typedef std::pair<std::string, State*> StatePair;
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
