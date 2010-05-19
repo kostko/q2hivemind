@@ -179,8 +179,6 @@ void LocalPlanner::pruneEligibleStates() {
 
     int delta = now - state->getEventStart();
 
-    getLogger()->info(format("STATE %s DELTA %d") % state->getName() % delta);
-
     // prune state if it is too old
     if (delta > state->getEligibilityTime()) {
       getLogger()->info(format("Pruning %s from eligible states set.") % state->getName());
@@ -223,8 +221,7 @@ void LocalPlanner::worldUpdated(const GameState &state)
   typedef std::pair<std::string, State*> StatePair;
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
-    if (state != m_currentState)
-      state->checkEvent();
+    state->checkEvent();
   }
 
   pruneEligibleStates();
