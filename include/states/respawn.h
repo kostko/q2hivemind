@@ -54,7 +54,16 @@ public:
      * context.
      */
     virtual void processFrame();
-    
+
+    /**
+     * This method should implement state specific event
+     * checking, so the state can emit a signal when
+     * needed. This method is called in main thread context.
+     */
+    virtual void checkEvent();
+private:
+    // Is this state selected
+    bool m_selected;
 };
 
 }

@@ -244,7 +244,7 @@ void LocalPlanner::process()
     // Process state transition requests
     {
       boost::lock_guard<boost::mutex> g(m_requestMutex);
-      int bestPriority = m_currentState ? m_currentState->getPriority() : 0;
+      int bestPriority = 0;
       TransitionRequest rq;
       BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
         if (p.priority >= bestPriority && (!m_currentState || p.state != m_currentState->getName())) {
@@ -287,6 +287,13 @@ void LocalPlanner::process()
   }
 }
 
+void LocalPlanner::clearEligibleStates()
+{
+  // we delete all states except wander state
+  BOOST_FOREACH(State *state, m_eligibleStates) {
+    if (state->getName() != "wander") m_eligibleStates.erase(state);
+  }
+}
 }
 
 

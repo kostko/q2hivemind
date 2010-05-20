@@ -45,6 +45,12 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
 void WanderState::goodbye()
 {
   getLogger()->info("Now leaving wander state.");
+
+  m_nextPoint = -1;
+  m_speed = 0;
+  m_minDistance = -1;
+  m_markInvalidOnNone = false;
+  m_lastLink = NULL;
 }
 
 Vector3f WanderState::getNextDestination() const

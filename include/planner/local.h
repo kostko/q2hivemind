@@ -163,6 +163,11 @@ public:
      * Prune too old states from m_eligibleStates.
      */
     void pruneEligibleStates();
+
+    /**
+     * Clear eligible states set.
+     */
+    void clearEligibleStates();
 protected:
     /**
      * Main processing loop for the local planner.
