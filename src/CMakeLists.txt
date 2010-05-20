@@ -7,20 +7,18 @@ add_subdirectory(states)
 add_subdirectory(rl)
 add_subdirectory(brains)
 add_subdirectory(eann)
+add_subdirectory(fuzzy)
 
-set(hivemind_src
+set(hivemind_core_src
 algebra.cpp
 logger.cpp
 object.cpp
 context.cpp
 event.cpp
 dispatcher.cpp
-main.cpp
 )
 
-add_executable(hivemind ${hivemind_src})
-
-target_link_libraries(hivemind
+set(hivemind_libraries
   # Internal libraries
   mold
   network
@@ -30,10 +28,20 @@ target_link_libraries(hivemind
   rl
   brains
   eann
+  fuzzy
 
   # External libraries
   ${PROTOBUF_LIBRARY}
   ${Boost_LIBRARIES}
   rt
 )
+
+add_library(hivemind_core STATIC ${hivemind_core_src})
+add_dependencies(hivemind_core mold)
+
+add_subdirectory(simulation)
+
+add_executable(hivemind main.cpp)
+target_link_libraries(hivemind hivemind_core ${hivemind_libraries}
+hivemind_core mold)
 

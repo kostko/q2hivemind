@@ -40,7 +40,7 @@ public:
      * the next one. When all the genomes have been evaluated a new
      * generation is evolved and the process starts again.
      */
-    void evaluate();
+    virtual void evaluate();
     
     /**
      * Returns behavioural outputs for the given inputs. Processing is
@@ -71,12 +71,23 @@ public:
      * Unfreeze a previously frozen evolution.
      */
     void unfreeze();
+    
+    /**
+     * Returns true if this behaviour's evolution is currently frozen.
+     */
+    inline bool isFrozen() const { return m_frozen; }
+    
+    /**
+     * Returns the fitness of the currently active genome.
+     */
+    float getFitness();
 protected:
     /**
-     * This method should return the fitness of the active genome
-     * after evaluation has been completed.
+     * Reports the fitness for the currently active genome.
+     *
+     * @param value Fitness value to be set
      */
-    virtual float fitness() = 0;
+    void reportFitness(float value);
 private:
     // ANN and GA
     NeuralNet m_neuralNet;

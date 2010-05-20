@@ -11,6 +11,7 @@
 #include "object.h"
 #include "planner/state.h"
 #include "planner/sensors.h"
+#include "planner/motion.h"
 #include "network/gamestate.h"
 #include "rl/statespace.h"
 
@@ -173,11 +174,6 @@ protected:
      * Main processing loop for the local planner.
      */
     void process();
-    
-    /**
-     * Adjusts delta vector for any obstacles with side movements.
-     */
-    void sideAdjust(Vector3f *delta) const;
 private:
     // Context
     Context *m_context;
@@ -207,8 +203,8 @@ private:
     // AI
     Brains *m_brains;
     
-    // Sensors
-    DistanceSensor m_sensors[3];
+    // Motion controller
+    MotionController m_motionController;
 
     // Eligible states to make transitions to.
     // This set should always be up-to-date for the current situation, so the Brains

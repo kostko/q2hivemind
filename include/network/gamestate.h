@@ -18,8 +18,6 @@ namespace HiveMind {
 
 class Player {
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
   Vector3f angles;
   Vector3f origin;
   Vector3f velocity;
@@ -40,8 +38,6 @@ public:
 
 class Entity {
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
   inline bool isVisible() const { return m_updated; }
   
   void setVisible(bool visible) { m_updated = visible; }
@@ -71,8 +67,6 @@ public:
 
 class InternalPlayer {
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
   Vector3f angles;
   Vector3f origin;
   Vector3f velocity;
@@ -90,8 +84,6 @@ public:
 
 class TimePoint {
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
   timestamp_t timestamp;
   Vector3f origin;
 };

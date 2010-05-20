@@ -5,9 +5,9 @@ state.cpp
 global.cpp
 directory.cpp
 sensors.cpp
+motion.cpp
 )
 
 add_library(planner STATIC ${planner_src})
-add_dependencies(planner mold rl)
-target_link_libraries(planner mold rl)
+add_dependencies(planner mold)
 

@@ -18,6 +18,8 @@ State::State(Context *context, const std::string &name, int eligibilityTime)
     m_context(context),
     m_planner(context->getLocalPlanner()),
     m_priority(1),
+    m_moveDestination(Vector3f::Zero()),
+    m_moveTarget(Vector3f::Zero()),
     m_complete(false),
     m_eligibilityTime(eligibilityTime),
     m_eventStart(0)

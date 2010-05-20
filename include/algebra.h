@@ -18,6 +18,21 @@ float yawFromVect(const Vector3f &delta);
 
 float pitchFromVect(const Vector3f &delta);
 
+inline float randFloat()
+{
+  return rand() / (RAND_MAX + 1.0);
+}
+
+inline float randWeight()
+{
+  return randFloat() - randFloat();
+}
+
+inline int randInt(int x, int y)
+{
+  return rand() % (y - x + 1) + x;
+}
+
 }
 
 }

@@ -136,6 +136,12 @@ protected:
     Genome selectByRoulette();
     
     /**
+     * Transforms the fitness values since they are negative and thus
+     * unsuitable.
+     */
+    void transform();
+    
+    /**
      * Selects N best genomes and copies them into the specified
      * population.
      *

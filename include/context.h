@@ -10,6 +10,7 @@
 
 #include "globals.h"
 #include "object.h"
+#include "network/gamestate.h"
 
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -31,6 +32,7 @@ class Grid;
 class DynamicMapper;
 
 class Context : public Object {
+friend class GlobalPlanner;
 public:
     /**
      * Class constructor.
@@ -60,12 +62,6 @@ public:
      * Returns this bot's identifier.
      */
     inline std::string getBotId() const { return m_botId; }
-    
-    /**
-     * Returns the connection instance associated with this
-     * context.
-     */
-    inline Connection *getConnection() const { return m_connection; }
     
     /**
      * Returns the current map instance.
@@ -130,6 +126,28 @@ public:
      * Returns the MOLD client instance.
      */
     inline MOLD::ClientPtr getMOLDClient() const { return m_moldClient; }
+    
+    /**
+     * Starts the simulation (no network connections are established
+     * as this is supposed to be called from within the game when loaded as
+     * a shared object.
+     *
+     * @param map Map name
+     */
+    void simulationStart(const std::string &map);
+    
+    /**
+     * Simulates a single frame.
+     *
+     * @param state Current game state
+     */
+    void simulateFrame(const GameState &state, Vector3f *orientation, Vector3f *velocity);
+protected:
+    /**
+     * Returns the connection instance associated with this
+     * context.
+     */
+    inline Connection *getConnection() const { return m_connection; }
 private:
     // Unique bot identifier and game directory
     std::string m_botId;
@@ -158,6 +176,9 @@ private:
     boost::thread m_moldClientThread;
     boost::asio::io_service m_moldClientService;
     MOLD::ClientPtr m_moldClient;
+    
+    // Simulator
+    bool m_simulatorInitialized;
 };
 
 }

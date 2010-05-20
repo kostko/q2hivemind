@@ -6,25 +6,16 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "eann/ann.h"
+#include "algebra.h"
 
 #include <boost/foreach.hpp>
 
 namespace HiveMind {
 
-inline float randFloat()
-{
-  return rand() / (RAND_MAX + 1.0);
-}
-
-inline float randWeight()
-{
-  return randFloat() - randFloat();
-}
-
 Neuron::Neuron(int numInputs)
 {
   for (int i = 0; i < numInputs + 1; i++) {
-    weights.push_back(randWeight());
+    weights.push_back(Algebra::randWeight());
   }
 }
 
@@ -82,7 +73,7 @@ std::vector<float> NeuralNet::getWeights() const
 
 int NeuralNet::getNumWeights() const
 {
-  int weights;
+  int weights = 0;
   
   BOOST_FOREACH(NeuronLayer layer, m_layers) {
     BOOST_FOREACH(Neuron neuron, layer.neurons) {

@@ -176,7 +176,7 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
   
   frameTime = Timing::getCurrentTimestamp() - m_lastUpdateTime;
   while (frameTime < 10) {
-    usleep(10000);
+    usleep(1000);
     frameTime = Timing::getCurrentTimestamp() - m_lastUpdateTime;
   }
   m_lastUpdateTime += frameTime;

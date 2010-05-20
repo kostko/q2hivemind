@@ -11,6 +11,8 @@
 #include "mapping/grid.h"
 #include "planner/local.h"
 
+#include <limits>
+
 namespace HiveMind {
 
 WanderState::WanderState(Context *context)
@@ -95,7 +97,7 @@ void WanderState::processFrame()
   Vector3f origin = m_gameState->player.origin;
   
   // By default we stand still and do not fire or jump
-  m_moveTarget = m_moveDestination = origin;
+  m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
   m_moveFire = false;
   m_moveJump = false;
   
@@ -132,12 +134,12 @@ void WanderState::processFrame()
       // We have reached our destination
       getLogger()->info("Destination reached.");
       m_nextPoint = -2; // XXX
-      m_complete = true;
+      //m_complete = true;
       return;
     } else {
       m_moveTarget = m_moveDestination = getNextDestination();
     }
-    
+
     if (m_speed < 10) {
       // Mark this link as bad and request to recompute the path
       getLogger()->warning("We are stuck, but should be following a path!");
@@ -176,16 +178,7 @@ void WanderState::processFrame()
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
-          //if (getCurrentLink()->getCost() < 16.0)
-          //  getCurrentLink()->applyCost(2.0);
           recomputePath(true);
-        } else {
-          // Probably found an invalid link
-          getLogger()->info("Probably found an invalid link.");
-          
-          // TODO maybe this should just increase cost, not remove it completely
-          //getCurrentLink()->invalidate();
-          recomputePath();
         }
         
         return;
@@ -209,24 +202,12 @@ void WanderState::processPlanning()
   // Plan a path if none is currently available
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
-    //if (map->randomPath(p, &m_currentPath))
-    //if (map->findPath(p, Vector3f(390.0,380.0,485), &m_currentPath, true)) {
-    //if (map->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
     if (grid->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
       travelToPoint(0);
     } else {
       getLogger()->info("Path not found.");
       m_nextPoint = -2;
-      
-      // Mark link that lead here as invalid as no path out exists and we don't want
-      // to repeat our mistakes
-      if (m_markInvalidOnNone && m_lastLink) {
-        getLogger()->info("Marking last link as invalid as we fell into some hellhole.");
-        //m_lastLink->invalidate();
-        m_markInvalidOnNone = false;
-        m_lastLink = NULL;
-      }
     }
   }
 }

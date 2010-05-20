@@ -15,6 +15,7 @@
 #include "brains/soldier.h"
 
 #include <boost/foreach.hpp>
+#include <limits>
 
 namespace HiveMind {
 
@@ -22,20 +23,11 @@ LocalPlanner::LocalPlanner(Context *context)
   : m_context(context),
     m_currentState(NULL),
     m_worldUpdated(false),
-    m_abort(false)
+    m_abort(false),
+    m_brains(new SoldierBrains(this)),
+    m_motionController(context)
 {
   Object::init();
-
-  // Setup brains
-  m_brains = new SoldierBrains(this);
-  
-  // Setup sensors
-  m_sensors[0] = DistanceSensor(context);
-  m_sensors[0].setAngle(45);
-  m_sensors[1] = DistanceSensor(context);
-  m_sensors[1].setAngle(0);
-  m_sensors[2] = DistanceSensor(context);
-  m_sensors[2].setAngle(-45);
 }
     
 LocalPlanner::~LocalPlanner()
@@ -55,49 +47,6 @@ void LocalPlanner::registerState(State *state)
   state->m_lastGameState = &m_lastGameState;
 }
 
-void LocalPlanner::sideAdjust(Vector3f *delta) const
-{
-  Map *map = m_context->getMap();
-  float yaw = Algebra::yawFromVect(*delta);
-  float t = sqrt((*delta)[0] * (*delta)[0] + (*delta)[1] * (*delta)[1]);
-  if (t == 0)
-    return;
-  
-  *delta = *delta / t;
-  
-  Vector3f a(0.0, 0.0, 0.0);
-  Vector3f p = m_gameState.player.origin;
-  
-  for (int i = -8; i <= 8; i++) {
-    float angle = yaw + (float) i * (M_PI/32.0);
-    Vector3f b(
-      m_gameState.player.origin[0] + 64.0 * cos(angle),
-      m_gameState.player.origin[1] + 64.0 * sin(angle),
-      0.0
-    );
-    t = 0;
-    
-    for (float height = -16; height < 32; height += 16) {
-      p[2] = m_gameState.player.origin[2] + height;
-      b[2] = p[2];
-      float s = 1.0 - map->rayTest(p, b, Map::Solid);
-      if (s > t)
-        t = s;
-    }
-    
-    a[0] -= t * cos(angle);
-    a[1] -= t * sin(angle);
-  }
-  
-  Vector3f b(
-    cos(yaw + (M_PI/2.0)),
-    sin(yaw + (M_PI/2.0)),
-    0.0
-  );
-  t = a.dot(b);
-  *delta += t*b;
-}
-
 void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire)
 {
   *orientation = Vector3f(0, 0, 0);
@@ -109,38 +58,33 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
     return;
 
   // Get destination and target coordinates from current state
+  Map *map = m_context->getMap();
   Vector3f destination, target;
   bool jump;
   m_currentState->getNextTarget(&destination, &target, fire, &jump);
+  *fire = false;
   
-  // Compute orientation and velocity vectors for given target
-  Vector3f delta = target - m_gameState.player.origin;
+  // If there is no target we simply stay idle
+  if (destination[0] == std::numeric_limits<float>::infinity())
+    return;
+  
+  // Compute orientation and velocity vectors for given destination
+  Vector3f delta = destination - m_gameState.player.origin;
   float pitch = Algebra::pitchFromVect(delta);
   float yaw = Algebra::yawFromVect(delta);
   
-  // Update all sensors
-  for (int i = 0; i < 3; i++) {
-    m_sensors[i].update(m_gameState, yaw);
-  }
-  
-  delta = destination - m_gameState.player.origin;
-  sideAdjust(&delta);
-  
-  float vx = delta[0] * (float) cos(-yaw) - delta[1] * (float) sin(-yaw);
-  float vy = -delta[0] * (float) sin(-yaw) - delta[1] * (float) cos(-yaw);
-  float vl = sqrt(vx*vx + vy*vy);
+  // Request the motion controller to calculate yaw
+  yaw = m_motionController.calculateMotion(m_gameState, yaw);
   
   (*orientation)[0] = -pitch;
   (*orientation)[1] = yaw;
   (*orientation)[2] = 0.0;
   
-  if (vl > 0) {
-    (*velocity)[0] = 400.0 * vx/vl;
-    (*velocity)[1] = 400.0 * vy/vl;
-    (*velocity)[2] = jump ? 400.0 : 0.0;
-  }
+  (*velocity)[0] = 400.0;
+  (*velocity)[1] = 0;
+  (*velocity)[2] = jump ? 400.0 : 0.0;
 }
-    
+
 void LocalPlanner::requestTransition(const TransitionRequest &request)
 {
   if (m_states.find(request.state) == m_states.end())

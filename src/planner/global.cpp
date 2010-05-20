@@ -30,10 +30,13 @@ GlobalPlanner::GlobalPlanner(Context *context)
 {
   Object::init();
   
-  // Connect to message received signal
-  m_context->getMOLDClient()->signalMessageReceived.connect(boost::bind(&GlobalPlanner::moldMessageReceived, this, _1));
+  MOLD::ClientPtr client = m_context->getMOLDClient();
+  if (client) {
+    // Connect to message received signal
+    client->signalMessageReceived.connect(boost::bind(&GlobalPlanner::moldMessageReceived, this, _1));
+  }
 }
-    
+
 GlobalPlanner::~GlobalPlanner()
 {
 }
@@ -41,6 +44,12 @@ GlobalPlanner::~GlobalPlanner()
 void GlobalPlanner::start()
 {
   MOLD::ClientPtr client = m_context->getMOLDClient();
+  if (!client) {
+    // The client might not be available when we are inside the simulation
+    // so in this case we simply ignore this and return
+    return;
+  }
+  
   if (!client->isConnected()) {
     client->signalConnected.connect(boost::bind(&GlobalPlanner::start, this));
     return;
@@ -73,6 +82,12 @@ void GlobalPlanner::worldUpdated(const GameState &state)
 void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
 {
   MOLD::ClientPtr client = m_context->getMOLDClient();
+  if (!client) {
+    // If we are here that means that the client has been destroyed
+    // between updates, this is a problem and should be logged
+    getLogger()->warning("MOLD client not available, but message received!");
+    return;
+  }
   
   switch (msg.type()) {
     case Protocol::Message::CONTROL_ANNOUNCE: {

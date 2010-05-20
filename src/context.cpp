@@ -35,9 +35,13 @@ Context::Context(const std::string &id, const std::string &gamedir, const std::s
     m_connection(NULL),
     m_map(NULL),
     m_abort(false),
-    m_dispatcher(new Dispatcher(this))
+    m_dispatcher(new Dispatcher(this)),
+    m_simulatorInitialized(false)
 {
   Object::init();
+  
+  // Seed random generator
+  srand(time(0));
   
   // Log our unique identifier
   getLogger()->info(format("Hivemind instance unique identifier is: %s") % id);
@@ -47,6 +51,54 @@ Context::~Context()
 {
   delete m_connection;
   delete m_map;
+}
+
+void Context::simulationStart(const std::string &map)
+{
+  // Load maps
+  getLogger()->info(format("Currently playing map: %s") % map);
+  m_map = new Map(this, map);
+  if (!m_map->open())
+    getLogger()->error("Map open has failed, aborting now.");
+  
+  // Create dynamic mapping grid and load learned grid data
+  m_grid = new Grid(m_map);
+  std::string mn = std::string(basename(map.c_str()));
+  mn = mn.substr(0, mn.find("."));
+  m_grid->importGrid(getDataDir() + "/grid-" + mn + ".hm");
+  
+  // Create the dynamic mapper
+  m_dynamicMapper = new DynamicMapper(this);
+  
+  // Create and start local planner
+  m_localPlanner = new LocalPlanner(this);
+  m_localPlanner->registerState(new WanderState(this));
+  m_localPlanner->registerState(new SwimState(this));
+  m_localPlanner->registerState(new ShootState(this));
+  m_localPlanner->registerState(new RespawnState(this));
+  m_localPlanner->start();
+  
+  // Create and start global planner (only so that it is there, it won't
+  // actually do anything in the simulation)
+  m_globalPlanner = new GlobalPlanner(this);
+  m_globalPlanner->start();
+  
+  m_simulatorInitialized = true;
+}
+
+void Context::simulateFrame(const GameState &state, Vector3f *orientation, Vector3f *velocity)
+{
+  if (!m_simulatorInitialized)
+    return;
+  
+  // Process frame update from Quake II, update planner (local only as this
+  // is a simulation)
+  m_dynamicMapper->worldUpdated(state);
+  m_localPlanner->worldUpdated(state);
+  
+  // Request next move from local planner
+  bool fire;
+  m_localPlanner->getBestMove(orientation, velocity, &fire);
 }
 
 void Context::connectTo(const std::string &host, unsigned int port)

@@ -6,6 +6,7 @@
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
 #include "eann/ga.h"
+#include "algebra.h"
 
 #include <algorithm>
 #include <limits>
@@ -13,21 +14,6 @@
 #include <boost/foreach.hpp>
 
 namespace HiveMind {
-
-inline float randFloat()
-{
-  return rand() / (RAND_MAX + 1.0);
-}
-
-inline float randWeight()
-{
-  return randFloat() - randFloat();
-}
-
-inline int randInt(int x, int y)
-{
-  return rand() % (y - x + 1) + x;
-}
 
 Genome::Genome()
   : m_fitness(0)
@@ -43,7 +29,7 @@ Genome::Genome(std::vector<float> weights, float fitness)
 void Genome::setRandomWeights(int count)
 {
   for (int i = 0; i < count; i++) {
-    m_weights.push_back(randWeight());
+    m_weights.push_back(Algebra::randWeight());
   }
 }
 
@@ -65,13 +51,27 @@ GeneticAlgorithm::GeneticAlgorithm(int populationSize, int numWeights, float mut
   }
 } 
 
+void GeneticAlgorithm::transform()
+{
+  // Calculate initial statistics
+  calculateStatistics();
+  
+  float lambda = 10.0;
+  float alpha = std::min(-1.0f / (m_worstFitness - m_averageFitness), (lambda - 1.0f) / (m_bestFitness - m_averageFitness));
+  
+  BOOST_FOREACH(Genome &g, m_population) {
+    g.setFitness(alpha * (g.getFitness() - m_averageFitness) + 1.0);
+  }
+  
+  // Update statistics and sort the bastards
+  calculateStatistics();
+  std::sort(m_population.begin(), m_population.end());
+}
+
 void GeneticAlgorithm::evolve()
 {
-  // Sort population by fitness (for elitism)
-  std::sort(m_population.begin(), m_population.end());
-  
-  // Update best/worst/avg statistics
-  calculateStatistics();
+  // Update best/worst/avg statistics and perform transformations
+  transform();
   
   // Create new population
   std::vector<Genome> newp;
@@ -102,14 +102,14 @@ void GeneticAlgorithm::crossover(const std::vector<float> &mum, const std::vecto
                                  std::vector<float> &child1, std::vector<float> &child2)
 {
   // Return parents as children when we are below crossover rate or parents are the same
-  if (randFloat() > m_crossoverRate || mum == dad) {
+  if (Algebra::randFloat() > m_crossoverRate || mum == dad) {
     child1 = mum;
     child2 = dad;
     return;
   }
   
   // Determine a crossover point
-  int cp = randInt(0, m_numWeights - 1);
+  int cp = Algebra::randInt(0, m_numWeights - 1);
   
   // Create the offspring
   for (int i = 0; i  < cp; i++) {
@@ -119,25 +119,25 @@ void GeneticAlgorithm::crossover(const std::vector<float> &mum, const std::vecto
   
   for (int i = cp; i < mum.size(); i++) {
     child1.push_back(dad[i]);
-    child1.push_back(mum[i]);
+    child2.push_back(mum[i]);
   }
 }
 
 void GeneticAlgorithm::mutate(std::vector<float> &weights)
 {
   BOOST_FOREACH(float &weight, weights) {
-    if (randFloat() < m_mutationRate) {
-      weight += randWeight() * 0.3;
+    if (Algebra::randFloat() < m_mutationRate) {
+      weight += Algebra::randWeight() * 0.3;
     }
   }
 }
 
 Genome GeneticAlgorithm::selectByRoulette()
 {
-  Genome genome;
-  float slice = (float) (randFloat() * m_totalFitness);
+  Genome genome = m_population[m_population.size() - 1];
+  float slice = (float) (Algebra::randFloat() * m_totalFitness);
   float fitness = 0;
-  
+
   BOOST_FOREACH(Genome &g, m_population) {
     fitness += g.getFitness();
     if (fitness >= slice) {
@@ -161,7 +161,7 @@ void GeneticAlgorithm::selectNBest(int n, const int copies, Population &populati
 void GeneticAlgorithm::calculateStatistics()
 {
   m_totalFitness = 0;
-  m_bestFitness = 0;
+  m_bestFitness = -std::numeric_limits<float>::infinity();
   m_worstFitness = std::numeric_limits<float>::infinity();
   m_averageFitness = 0;
   

@@ -26,10 +26,6 @@ void EvolvedBehaviour::evaluate()
     return;
   }
   
-  // Set current genome fitness accoording to behaviour fitness function
-  if (m_currentGenome > -1)
-    m_ga.getPopulation()[m_currentGenome].setFitness(fitness());
-  
   // Switch to the next genome
   m_currentGenome++;
   if (m_currentGenome >= m_ga.getPopulation().size()) {
@@ -41,6 +37,16 @@ void EvolvedBehaviour::evaluate()
   
   // Replace behaviour ANN weights
   m_neuralNet.setWeights(m_ga.getPopulation()[m_currentGenome].getWeights());
+}
+
+float EvolvedBehaviour::getFitness()
+{
+  return m_ga.getPopulation()[m_currentGenome].getFitness();
+}
+
+void EvolvedBehaviour::reportFitness(float value)
+{
+  m_ga.getPopulation()[m_currentGenome].addFitness(value);
 }
 
 std::vector<float> EvolvedBehaviour::behave(const std::vector<float> &inputs)

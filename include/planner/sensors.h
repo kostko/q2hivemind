@@ -20,6 +20,9 @@ class Map;
  */
 class DistanceSensor {
 public:
+    // Parameters
+    enum { step_size = 18 };
+    
     /**
      * Class constructor. This constructs an invalid sensor.
      */
@@ -29,8 +32,11 @@ public:
      * Class constructor.
      *
      * @param context Bot context
+     * @param angle Sensor angle
+     * @param distance Sensing distance (in steps)
+     * @param noisy Should the sensor add random noise to angles
      */
-    DistanceSensor(Context *context);
+    DistanceSensor(Context *context, float angle = 0.0, float distance = 5, bool noisy = true);
     
     /**
      * Updates the sensor.
@@ -45,6 +51,18 @@ public:
      * before any measurements can be optained.
      */
     inline float getMeasurement() const { return m_measure; }
+    
+    /**
+     * Returns the angle against which the measurement has been performed.
+     * This might differ from set angle in case artificial noise is
+     * introduced.
+     */
+    inline float getMeasureAngle() const { return m_measureAngle; }
+    
+    /**
+     * Returns true when this sensor has hit something.
+     */
+    inline bool isHit() const { return m_measure < m_senseDistance; }
     
     /**
      * Sets the sensor's angle.
@@ -67,6 +85,8 @@ private:
     // Sensor orientation angle and max sensing distance
     float m_senseDistance;
     float m_angle;
+    float m_measureAngle;
+    bool m_noisy;
     
     // Latest measurement
     float m_measure;
