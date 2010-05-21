@@ -27,8 +27,8 @@ public:
      */
     enum Type {
       Invalid = 0,
-      BotKilled,
-      BotLocationUpdate,      
+      BotLocationUpdate,
+      BotRespawn,
       OpponentSpotted,
       
       // This represents any event and should be the last one
@@ -71,39 +71,55 @@ private:
     Type m_type;
 };
 
-class BotKilledEvent : public Event {
+/**
+ * Superclass for events that are bot-dependent.
+ */
+class BotEvent : public Event {
 public:
-    /**
-     * Class constructor.
-     */
-    BotKilledEvent();
-};
-
-class BotLocationUpdateEvent : public Event {
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
     /**
      * Class constructor.
      *
-     * @param bot Bot directory entry
-     * @param origin Current bot origin
+     * @param type Actual event type
+     * @param bot Bot directory entry or NULL for local bot
      */
-    BotLocationUpdateEvent(Bot *bot, const Vector3f &origin);
+    BotEvent(Type type, Bot *bot);
     
     /**
      * Returns the bot's directory entry.
      */
     inline Bot *getBot() const { return m_bot; }
+private:
+    // Bot instance
+    Bot *m_bot;
+}; 
+
+class BotLocationUpdateEvent : public BotEvent {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param bot Bot directory entry or NULL for local bot
+     * @param origin Current bot origin
+     */
+    BotLocationUpdateEvent(Bot *bot, const Vector3f &origin);
     
     /**
      * Returns the bot's location.
      */
     inline Vector3f getOrigin() const { return m_origin; }
 private:
-    // Current bot origin
-    Bot *m_bot;
+    // Bot origin
     Vector3f m_origin;
+};
+
+class BotRespawnEvent : public BotEvent {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param bot Bot directory entry or NULL for local bot
+     */
+    BotRespawnEvent(Bot *bot);
 };
 
 class OpponentSpottedEvent : public Event {

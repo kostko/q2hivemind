@@ -40,13 +40,22 @@ void Client::deliver(int type, google::protobuf::Message *msg, const std::string
   if (!destinationId.empty())
     packet.set_destinationid(destinationId);
   
-  std::ostringstream body(std::ostringstream::out);
-  msg->SerializeToOstream(&body);
-  packet.set_data(body.str());
+  if (msg != NULL) {
+    std::ostringstream body(std::ostringstream::out);
+    msg->SerializeToOstream(&body);
+    packet.set_data(body.str());
+  } else {
+    packet.set_data("");
+  }
   
   Message rawMsg;
   rawMsg.encode(packet);
   deliver(rawMsg);
+}
+
+void Client::deliver(int type, const std::string &destinationId)
+{
+  deliver(type, NULL, destinationId);
 }
 
 void Client::deliver(const Message &msg)

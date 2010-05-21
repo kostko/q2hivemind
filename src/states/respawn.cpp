@@ -9,6 +9,7 @@
 #include "planner/local.h"
 #include "logger.h"
 #include "context.h"
+#include "dispatcher.h"
 
 namespace HiveMind {
 
@@ -53,6 +54,10 @@ void RespawnState::checkEvent()
 
   if (!m_selected && health < 0) {
     getLocalPlanner()->requestTransition("respawn", 500);
+    
+    // Emit respawn event
+    BotRespawnEvent event(NULL);
+    getContext()->getDispatcher()->emit(&event);
   }
 }
 

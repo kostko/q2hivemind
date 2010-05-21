@@ -26,22 +26,27 @@ Event::~Event()
 std::string Event::getTypeAsString() const
 {
   switch (m_type) {
-    case BotKilled: return "BotKilled";
     case BotLocationUpdate: return "BotLocationUpdate";
+    case BotRespawn: return "BotRespawn";
     case OpponentSpotted: return "OpponentSpotted";
     default: return "Invalid";
   }
 }
 
-BotKilledEvent::BotKilledEvent()
-  : Event(BotKilled)
+BotEvent::BotEvent(Type type, Bot *bot)
+  : Event(type),
+    m_bot(bot)
 {
 }
 
 BotLocationUpdateEvent::BotLocationUpdateEvent(Bot *bot, const Vector3f &origin)
-  : Event(BotLocationUpdate),
-    m_bot(bot),
+  : BotEvent(BotLocationUpdate, bot),
     m_origin(origin)
+{
+}
+
+BotRespawnEvent::BotRespawnEvent(Bot *bot)
+  : BotEvent(BotRespawn, bot)
 {
 }
 

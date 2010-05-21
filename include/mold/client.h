@@ -60,6 +60,13 @@ public:
     void deliver(int type, google::protobuf::Message *msg, const std::string &destinationId = "");
     
     /**
+     * Dispatches a message to all bus participants.
+     *
+     * @param type Message type
+     */
+    void deliver(int type, const std::string &destinationId = "");
+    
+    /**
      * Closes connection with the bus.
      */
     void disconnect();

@@ -5,6 +5,7 @@ message Message {
   enum PacketType {
     CONTROL_ANNOUNCE = 1;
     EVENT_LOCATION_UPDATE = 2;
+    EVENT_RESPAWNED = 3;
   };
   
   // Source/dest bot identifiers

@@ -39,10 +39,9 @@ public:
 public:
     // Signals (please note that they are delivered in EMITTING THREAD CONTEXT)
     boost::signals2::signal<void (Event *event)> signalAnyEvent;
-    boost::signals2::signal<void (BotKilledEvent *event)> signalBotKilled;
     boost::signals2::signal<void (BotLocationUpdateEvent *event)> signalBotLocationUpdate;
+    boost::signals2::signal<void (BotRespawnEvent *event)> signalBotRespawn;
     boost::signals2::signal<void (OpponentSpottedEvent *event)> signalOpponentSpotted;
-
 private:
     // Context
     Context *m_context;

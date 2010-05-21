@@ -23,6 +23,7 @@ namespace MOLD {
 class Context;
 class Directory;
 class Bot;
+class BotRespawnEvent;
 
 /**
  * Global planner.
@@ -70,6 +71,11 @@ protected:
      * @param msg The received message
      */
     void moldMessageReceived(const MOLD::Protocol::Message &msg);
+    
+    /**
+     * Bot respawned event handler and propagator.
+     */
+    void botRespawned(BotRespawnEvent *event);
     
     /**
      * Searches for a bot in the directory and if one is not

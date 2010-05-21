@@ -29,13 +29,10 @@ void Dispatcher::emit(Event *event)
     return;
   }
   
-  // Log this event
-  getLogger()->info(format("Emitting event %s.") % event->getTypeAsString());
-  
   // Emit proper signals
   switch (event->getType()) {
-    case Event::BotKilled: signalBotKilled(static_cast<BotKilledEvent*>(event)); break;
     case Event::BotLocationUpdate: signalBotLocationUpdate(static_cast<BotLocationUpdateEvent*>(event)); break;
+    case Event::BotRespawn: signalBotRespawn(static_cast<BotRespawnEvent*>(event)); break;
     case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
     default: break;
   }
