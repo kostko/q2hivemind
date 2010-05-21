@@ -22,6 +22,7 @@ namespace MOLD {
 
 class Context;
 class Directory;
+class Bot;
 
 /**
  * Global planner.
@@ -32,7 +33,7 @@ public:
     enum { bot_collect_interval = 30000 };
     
     // Bot update emission interval
-    enum { bot_update_interval = 250 };
+    enum { bot_update_interval = 100 };
     
     /**
      * Class constructor.
@@ -69,6 +70,15 @@ protected:
      * @param msg The received message
      */
     void moldMessageReceived(const MOLD::Protocol::Message &msg);
+    
+    /**
+     * Searches for a bot in the directory and if one is not
+     * found it requests an announcement from it.
+     *
+     * @param msg Message received from the bot
+     * @return A valid Bot directory entry or NULL if there is none
+     */
+    Bot *getBotOrRequestAnnounce(const MOLD::Protocol::Message &msg);
 private:
     // Context
     Context *m_context;
@@ -79,6 +89,7 @@ private:
     
     // Updates
     timestamp_t m_lastBotUpdate;
+    Vector3f m_lastBotOrigin;
 };
 
 }

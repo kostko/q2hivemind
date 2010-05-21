@@ -4,7 +4,7 @@ message Message {
   // Valid packet types
   enum PacketType {
     CONTROL_ANNOUNCE = 1;
-    EVENT = 2;
+    EVENT_LOCATION_UPDATE = 2;
   };
   
   // Source/dest bot identifiers

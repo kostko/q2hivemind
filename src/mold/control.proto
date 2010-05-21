@@ -16,4 +16,14 @@ message Announcement {
   required bool reply = 3;
 };
 
+//
+// Location update events are used to signal bot's current
+// coordinates to other bots in the team.
+//
+message LocationUpdate {
+  // Coordinates
+  required float x = 1;
+  required float y = 2;
+  required float z = 3;
+}
 

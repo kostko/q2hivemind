@@ -66,6 +66,12 @@ void GlobalPlanner::start()
 void GlobalPlanner::worldUpdated(const GameState &state)
 {
   timestamp_t now = Timing::getCurrentTimestamp();
+  MOLD::ClientPtr client = m_context->getMOLDClient();
+  if (!client) {
+    // The client might not be available when we are inside the simulation
+    // so in this case we simply ignore this and return
+    return;
+  }
   
   // Collect out of date bots
   if (now - m_lastCollection > bot_collect_interval) {
@@ -73,10 +79,43 @@ void GlobalPlanner::worldUpdated(const GameState &state)
     m_lastCollection = now;
   }
   
-  // Emit our update
+  // Emit our update (this must always be the server origin not an interpolated one
+  // as interpolated origins might be inside walls or off ledges)
   if (now - m_lastBotUpdate > bot_update_interval) {
-    // TODO
+    Vector3f origin = state.player.serverOrigin;
+    
+    if (origin != m_lastBotOrigin) {
+      // Construct the location update event
+      Protocol::LocationUpdate upd;
+      upd.set_x(origin[0]);
+      upd.set_y(origin[1]);
+      upd.set_z(origin[2]);
+      client->deliver(Protocol::Message::EVENT_LOCATION_UPDATE, &upd);
+      
+      // Reset timer and last bot origin
+      m_lastBotUpdate = now;
+      m_lastBotOrigin = origin;
+    }
   }
+}
+
+Bot *GlobalPlanner::getBotOrRequestAnnounce(const MOLD::Protocol::Message &msg)
+{
+  MOLD::ClientPtr client = m_context->getMOLDClient();
+  Bot *bot = m_directory->getBotByName(msg.sourceid());
+  if (!bot) {
+    // Bot not yet available in our directory, request annoucement first
+    getLogger()->warning(format("Got an event from an unknown bot (%s), requesting annoucement.") % msg.sourceid());
+    
+    // Construct an announcement and send it
+    Protocol::Announcement ann;
+    ann.set_name(m_context->getBotId());
+    ann.set_entityid(m_context->getConnection()->getPlayerEntityId());
+    ann.set_reply(false);
+    client->deliver(Protocol::Message::CONTROL_ANNOUNCE, &ann, msg.sourceid());
+  }
+  
+  return bot;
 }
 
 void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
@@ -99,17 +138,29 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
         
         // Insert new bot into directory
         m_directory->registerBot(ann.name(), ann.entityid());
-        
-        // If this is not a reply, we should announce ourselves to the bot as well
-        if (!ann.reply()) {
-          Protocol::Announcement rply;
-          rply.set_name(m_context->getBotId());
-          rply.set_entityid(m_context->getConnection()->getPlayerEntityId());
-          rply.set_reply(true);
-          client->deliver(Protocol::Message::CONTROL_ANNOUNCE, &rply, ann.name());
-        }
       } else {
-        // Bot is already known, simply update its timestamp
+        // Bot is already known, simply update its timestamp,
+        bot->updateTime();
+      }
+      
+      // If this is not a reply, we should announce ourselves to the bot as well
+      if (!ann.reply()) {
+        Protocol::Announcement rply;
+        rply.set_name(m_context->getBotId());
+        rply.set_entityid(m_context->getConnection()->getPlayerEntityId());
+        rply.set_reply(true);
+        client->deliver(Protocol::Message::CONTROL_ANNOUNCE, &rply, ann.name());
+      }
+      break;
+    }
+    
+    case Protocol::Message::EVENT_LOCATION_UPDATE: {
+      // Location update event
+      Protocol::LocationUpdate upd = message_cast<Protocol::LocationUpdate>(msg);
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        // Update bot's origin and update time
+        bot->setOrigin(Vector3f(upd.x(), upd.y(), upd.z()));
         bot->updateTime();
       }
       break;

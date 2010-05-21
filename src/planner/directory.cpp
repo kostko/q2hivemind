@@ -87,8 +87,8 @@ void Directory::collect()
   
   BOOST_FOREACH(BotPair p, m_names) {
     Bot *bot = p.second;
-    if (bot->getAge() > 10000) {
-      // Collect bots older than 10 seconds
+    if (bot->getAge() > 60000) {
+      // Collect bots older than 60 seconds
       remove.push_back(bot);
     }
   }
