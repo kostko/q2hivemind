@@ -14,6 +14,8 @@
 
 namespace HiveMind {
 
+class Bot;
+
 /**
  * Represents an event that is used for communication between bot
  * components.
@@ -84,9 +86,15 @@ public:
     /**
      * Class constructor.
      *
+     * @param bot Bot directory entry
      * @param origin Current bot origin
      */
-    BotLocationUpdateEvent(const Vector3f &origin);
+    BotLocationUpdateEvent(Bot *bot, const Vector3f &origin);
+    
+    /**
+     * Returns the bot's directory entry.
+     */
+    inline Bot *getBot() const { return m_bot; }
     
     /**
      * Returns the bot's location.
@@ -94,6 +102,7 @@ public:
     inline Vector3f getOrigin() const { return m_origin; }
 private:
     // Current bot origin
+    Bot *m_bot;
     Vector3f m_origin;
 };
 

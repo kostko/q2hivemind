@@ -38,8 +38,9 @@ BotKilledEvent::BotKilledEvent()
 {
 }
 
-BotLocationUpdateEvent::BotLocationUpdateEvent(const Vector3f &origin)
+BotLocationUpdateEvent::BotLocationUpdateEvent(Bot *bot, const Vector3f &origin)
   : Event(BotLocationUpdate),
+    m_bot(bot),
     m_origin(origin)
 {
 }

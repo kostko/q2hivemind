@@ -11,6 +11,8 @@
 #include "mold/client.h"
 #include "planner/directory.h"
 #include "network/connection.h"
+#include "dispatcher.h"
+#include "event.h"
 
 // Protocol buffer messages
 #include "src/mold/control.pb.h"
@@ -162,6 +164,10 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
         // Update bot's origin and update time
         bot->setOrigin(Vector3f(upd.x(), upd.y(), upd.z()));
         bot->updateTime();
+        
+        // Generate an update event
+        BotLocationUpdateEvent event(bot, bot->getOrigin());
+        m_context->getDispatcher()->emit(&event);
       }
       break;
     }
