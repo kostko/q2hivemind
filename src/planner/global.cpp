@@ -86,21 +86,19 @@ void GlobalPlanner::worldUpdated(const GameState &state)
   
   // Emit our update (this must always be the server origin not an interpolated one
   // as interpolated origins might be inside walls or off ledges)
-  if (now - m_lastBotUpdate > bot_update_interval) {
-    Vector3f origin = state.player.serverOrigin;
+  Vector3f origin = state.player.serverOrigin;
+  
+  if (origin != m_lastBotOrigin || now - m_lastBotUpdate > bot_update_interval) {
+    // Construct the location update event
+    Protocol::LocationUpdate upd;
+    upd.set_x(origin[0]);
+    upd.set_y(origin[1]);
+    upd.set_z(origin[2]);
+    client->deliver(Protocol::Message::EVENT_LOCATION_UPDATE, &upd);
     
-    if (origin != m_lastBotOrigin) {
-      // Construct the location update event
-      Protocol::LocationUpdate upd;
-      upd.set_x(origin[0]);
-      upd.set_y(origin[1]);
-      upd.set_z(origin[2]);
-      client->deliver(Protocol::Message::EVENT_LOCATION_UPDATE, &upd);
-      
-      // Reset timer and last bot origin
-      m_lastBotUpdate = now;
-      m_lastBotOrigin = origin;
-    }
+    // Reset timer and last bot origin
+    m_lastBotUpdate = now;
+    m_lastBotOrigin = origin;
   }
 }
 

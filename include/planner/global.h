@@ -34,7 +34,7 @@ public:
     enum { bot_collect_interval = 30000 };
     
     // Bot update emission interval
-    enum { bot_update_interval = 100 };
+    enum { bot_update_interval = 500 };
     
     /**
      * Class constructor.
