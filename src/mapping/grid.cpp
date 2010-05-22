@@ -22,6 +22,8 @@ GridWaypoint::GridWaypoint(const Vector3f &location)
 }
 
 GridNode::GridNode()
+  : m_medium(Unknown),
+    m_type(Normal)
 {
 }
 

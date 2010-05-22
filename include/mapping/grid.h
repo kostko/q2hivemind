@@ -93,6 +93,26 @@ typedef std::set<GridWaypoint> GridWaypointSet;
 class GridNode {
 public:
     /**
+     * Possible mediums for a grid node.
+     */
+    enum Medium {
+      Unknown,
+      Ground,
+      Air,
+      Water
+    };
+    
+    /**
+     * Possible type of this grid node.
+     */
+    enum Type {
+      Normal,
+      SpawnPoint,
+      Item,
+      Weapon
+    };
+    
+    /**
      * Class constructor.
      */
     GridNode();
@@ -139,10 +159,36 @@ public:
      * @param goal Goal node instance
      */
     inline float heuristic(const GridNode *goal) const { return (getLocation() - goal->getLocation()).norm(); }
+    
+    /**
+     * Returns the medium of this grid node.
+     */
+    inline Medium getMedium() const { return m_medium; }
+    
+    /**
+     * Sets this grid node's medium.
+     *
+     * @param medium New medium
+     */
+    inline void setMedium(Medium medium) { m_medium = medium; }
+    
+    /**
+     * Returns the type of this grid node.
+     */
+    inline Type getType() const { return m_type; }
+    
+    /**
+     * Sets this grid node's type.
+     *
+     * @param type New type
+     */
+    inline void setType(Type type) { m_type = type; } 
 private:
     Vector3f m_location;
     GridWaypointSet m_waypoints;
     GridLinkMap m_links;
+    Medium m_medium;
+    Type m_type;
 };
 
 /**
