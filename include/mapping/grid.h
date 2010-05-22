@@ -108,8 +108,7 @@ public:
     enum Type {
       Normal,
       SpawnPoint,
-      Item,
-      Weapon
+      Item
     };
     
     /**
