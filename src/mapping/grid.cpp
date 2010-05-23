@@ -13,7 +13,6 @@
 #include <fstream>
 
 #include <boost/foreach.hpp>
-
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
@@ -70,12 +69,99 @@ inline float waypoint_component(GridWaypoint p, size_t n)
   return p[n];
 }
 
+GridPath::GridPath()
+  : m_currentNode(0),
+    m_pathTree(std::ptr_fun(waypoint_component)),
+    m_destinationReached(false)
+{
+}
+
+void GridPath::add(GridNode *node)
+{
+  GridWaypoint wp(node->getLocation());
+  m_path.push_back(node);
+  m_pathTree.insert(wp);
+  m_waypointMap[wp] = m_path.size() - 1;
+}
+
+// A predicate for determining if a point is visible
+class path_waypoint_visited {
+public:
+  path_waypoint_visited(const Vector3f &location, int currentIndex, const GridWaypointIndexMap &map)
+    : location(location), currentIndex(currentIndex), map(map)
+  {}
+  
+  bool operator()(const GridWaypoint &p) const
+  {
+    float n = location[2] - p[2];
+    if (n < -16 || n > 64)
+      return false;
+    
+    Vector3f v = p.getLocation();
+    v[2] = location[2];
+    return (location - v).norm() < 24.0f && map.at(p) >= currentIndex;
+  }
+private:
+  Vector3f location;
+  int currentIndex;
+  GridWaypointIndexMap map;
+};
+
+bool GridPath::visit(const Vector3f &point)
+{
+  std::pair<GridTree::const_iterator, float> found = m_pathTree.find_nearest_if(
+    GridWaypoint(point),
+    100.0,
+    path_waypoint_visited(point, m_currentNode, m_waypointMap)
+  );
+  
+  if (found.first != m_pathTree.end()) {
+    // Found a point, that means it is visited
+    GridWaypoint wp = *found.first;
+    int pointIndex = m_waypointMap.at(wp);
+    
+    // Check if we have reached the destination
+    if (pointIndex == m_path.size() - 1)
+      m_destinationReached = true;
+    else
+      m_currentNode = pointIndex + 1;
+    
+    return true;
+  }
+  
+  return false;
+}
+
+void GridPath::skip()
+{
+  if (m_currentNode == m_path.size() - 1)
+    m_destinationReached = true;
+  else
+    m_currentNode++;
+}
+
+void GridPath::optimiseTree()
+{
+  m_pathTree.optimise();
+}
+
+void GridPath::clear()
+{
+  m_path.clear();
+  m_pathTree.clear();
+  m_waypointMap.clear();
+  m_destinationReached = false;
+  m_currentNode = 0;
+}
+
 Grid::Grid(Map *map)
   : m_map(map),
     m_tree(std::ptr_fun(waypoint_component))
 {
   Object::init();
-  gen.seed(static_cast<unsigned int> (std::time(0)));
+  
+  // Seed the random generator
+  m_gen.seed(static_cast<unsigned int> (std::time(0)));
 }
 
 Grid::~Grid()
@@ -148,7 +234,7 @@ GridNode *Grid::getNodeByLocation(const Vector3f &loc, bool create)
 {
   GridWaypoint target(loc);
   GridNode *node = NULL;
-  std::pair<Tree::const_iterator, float> found = m_tree.find_nearest(target, cell_radius);
+  std::pair<GridTree::const_iterator, float> found = m_tree.find_nearest(target, cell_radius);
   if (found.first == m_tree.end()) {
     // No existing waypoints found in that location, create a new node
     if (create) {
@@ -171,7 +257,7 @@ GridNode *Grid::getNearestNode(const Vector3f &loc, float radius)
 {
   GridWaypoint target(loc);
   GridNode *node = NULL;
-  std::pair<Tree::const_iterator, float> found = m_tree.find_nearest(target, radius);
+  std::pair<GridTree::const_iterator, float> found = m_tree.find_nearest(target, radius);
   if (found.first != m_tree.end()) {
     GridWaypoint wp = *found.first;
     node = m_waypointMap[wp];
@@ -273,30 +359,31 @@ void Grid::importGrid(const std::string &filename)
   getLogger()->info(format("Imported %d grid nodes, %d grid links and %d waypoints.") % nodeCount % linkCount % waypointCount);
 }
 
-GridNode* Grid::pickNextNode(GridNode *start, std::set<GridNode*> *visitedNodes) {
+GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const
+{
   GridLinkMap links = start->links();
   if (links.size() == 0)
     return NULL;
   
-  int randomElement = rollDie(0, links.size()-1);
+  int randomElement = rollDie(0, links.size() - 1);
   int counter = 0;
 
-  typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
   // Choose random node
+  typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
   BOOST_FOREACH(NodeLinkPair p, links) {
-    if (counter == randomElement && visitedNodes->find(p.first) == visitedNodes->end())
+    if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end())
       return p.first;
     counter++;
   }
 
-  // If randomly chosen node was already visited, let's just pick the first node that has not been visited (don't care for randomness at this point)
+  // If randomly chosen node was already visited, let's just pick the first node that
+  // has not been visited (don't care for randomness at this point)
   BOOST_FOREACH(NodeLinkPair p, links) {
-    //getLogger()->info(format("  %d %s") % counter % p.first);
-    if (visitedNodes->find(p.first) == visitedNodes->end())
+    if (visitedNodes.find(p.first) == visitedNodes.end())
       return p.first;
   }
 
-  //Cycle detected when trying to pick next node in path. We will have to backtrack.
+  // Cycle detected when trying to pick next node in path. We will have to backtrack.
   return NULL;
 }
 
@@ -305,43 +392,52 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
   // Clear previous path
   path->clear();
 
-  GridNode *node = getNearestNode(start);
+  GridNode *startNode = getNearestNode(start); 
+  GridNode *node = startNode;
   GridNode *nextNode;
   std::set<GridNode*> visitedNodes;
 
-  if (node == NULL) {
+  if (startNode == NULL) {
     // Start node is not known so we can't navigate from there
     return false;
   }
 
-  path->push_back(node);
-
   int pathSize = rollDie(100, 200);
+  std::vector<GridNode*> tmp;
  
-  for (int i=0; i<pathSize; i++) {
+  for (int i = 0; i < pathSize; i++) {
     visitedNodes.insert(node);
 
     // Resolve cycle
-    while ((nextNode = pickNextNode(node, &visitedNodes)) == NULL) {
-      // Start backtracking; pop the cycle node from path but leave it in visitedNodes, so it doesn't get entered again
-      path->pop_back();
-      node = path->back();
+    while ((nextNode = pickNextNode(node, visitedNodes)) == NULL) {
+      // Start backtracking; pop the cycle node from path but leave
+      // it in visitedNodes, so it doesn't get entered again
+      tmp.pop_back();
+      node = tmp.back();
 
-      if (path->size() == 0) return false;
+      if (tmp.size() == 0)
+        return false;
     }
-
-    path->push_back(nextNode);
+    
+    tmp.push_back(nextNode);
     node->updateLastVisit();
-
     node = nextNode;
   }
   
+  // Populate the path structure
+  path->add(startNode);
+  BOOST_FOREACH(GridNode *n, tmp) {
+    path->add(n);
+  }
+  
+  path->optimiseTree();
   return true;
 }
 
-int Grid::rollDie(int from, int to) {
+int Grid::rollDie(int from, int to) const
+{
   boost::uniform_int<> dist(from, to);
-  boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
+  boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(m_gen, dist);
   return die();
 }
 
@@ -417,9 +513,10 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, 
   // When a path has been found, reconstruct it
   if (found) {
     GridNode *node = endNode;
+    std::vector<GridNode*> tmp;
     
     while (node != startNode) {
-      path->push_back(node);
+      tmp.push_back(node);
       
       if (reversePath.find(node) != reversePath.end()) {
         NodeLink fl = reversePath[node];
@@ -430,10 +527,13 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, 
     }
     
     // Insert origin face
-    path->push_back(startNode);
+    tmp.push_back(startNode);
     
     // Reverse everything
-    std::reverse(path->begin(), path->end());
+    BOOST_REVERSE_FOREACH(GridNode *node, tmp) {
+      path->add(node);
+    }
+    path->optimiseTree();
     return true;
   }
   

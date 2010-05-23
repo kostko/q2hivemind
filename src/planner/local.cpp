@@ -41,10 +41,6 @@ void LocalPlanner::registerState(State *state)
   
   getLogger()->info(format("Registering new state '%s'...") % state->getName());
   m_states[state->getName()] = state;
-  
-  // Setup pointers
-  state->m_gameState = &m_gameState;
-  state->m_lastGameState = &m_lastGameState;
 }
 
 void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire)
@@ -68,8 +64,8 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
     return;
   
   // Compute orientation and velocity vectors for given destination
-  Vector3f delta = destination - m_gameState.player.origin;
-  Vector3f eye = target - m_gameState.player.origin;
+  Vector3f delta = destination - m_gameState->player.origin;
+  Vector3f eye = target - m_gameState->player.origin;
 
   float pitch = Algebra::pitchFromVect(eye);
   float yaw = Algebra::yawFromVect(eye);
@@ -78,7 +74,7 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
 
   // Use fuzzy logic only when we need to move
   if (move) {
-    yaw = m_motionController.calculateMotion(m_gameState, yaw);
+    yaw = m_motionController.calculateMotion(*m_gameState, yaw);
   }
 
   (*velocity)[0] = move ? 400 : 0;
@@ -108,33 +104,34 @@ void LocalPlanner::requestTransition(const std::string &state, int priority)
   requestTransition(rq);
 }
 
-void LocalPlanner::addEligibleState(State *state) {  
+void LocalPlanner::addEligibleState(State *state)
+{  
   state->setEventStart(Timing::getCurrentTimestamp());
 
   m_eligibleStates.insert(state);
   //getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
-  
 }
 
-void LocalPlanner::pruneEligibleStates() {
+void LocalPlanner::pruneEligibleStates()
+{
   timestamp_t now = Timing::getCurrentTimestamp();
 
   std::list<State*> pruneList;
 
   BOOST_FOREACH(State *state, m_eligibleStates) {
-    // some states are not to be pruned
+    // Some states are not to be pruned
     if (state->getEligibilityTime() == -1)
       continue;
 
     int delta = now - state->getEventStart();
 
-    // prune state if it is too old
+    // Prune state if it is too old
     if (delta > state->getEligibilityTime()) {
       getLogger()->info(format("Pruning %s from eligible states set.") % state->getName());
 
       pruneList.push_back(state);
 
-      // if we are in the state that needs to be pruned, mark state as completed and call brains
+      // If we are in the state that needs to be pruned, mark state as completed and call brains
       if (state == m_currentState) {
         m_currentState->m_complete = true;
         m_brains->interact();
@@ -160,26 +157,25 @@ void LocalPlanner::start()
 void LocalPlanner::worldUpdated(const GameState &state)
 {
   // Update game state
-  m_gameState = state;
-  m_worldUpdated = true;
+  m_gameState = const_cast<GameState*>(&state);
   
   Map *map = m_context->getMap();
-  Vector3f origin = m_gameState.player.origin;
+  Vector3f origin = state.player.origin;
   
   // Go through all states and check for event triggers
   typedef std::pair<std::string, State*> StatePair;
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
+    state->m_gameState = m_gameState;
     state->checkEvent();
   }
-
+  
+  m_worldUpdated = true;
   pruneEligibleStates();
   
   // Perform current state frame processing
   if (m_currentState)
     m_currentState->processFrame();
-  
-  m_lastGameState = state;
 }
 
 void LocalPlanner::process()

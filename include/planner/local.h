@@ -138,7 +138,7 @@ public:
     /**
      * Returns the game state object.
      */
-    inline GameState *getGameState() { return &m_gameState; }
+    inline GameState *getGameState() { return m_gameState; }
 
     /**
      * Get context.
@@ -207,9 +207,8 @@ private:
     boost::thread m_workerThread;
     boost::mutex m_requestMutex;
     
-    // Current and last game state
-    GameState m_gameState;
-    GameState m_lastGameState;
+    // Current game state
+    GameState *m_gameState;
     bool m_worldUpdated;
     
     // Abort request flag

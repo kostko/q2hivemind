@@ -157,9 +157,8 @@ protected:
     bool m_moveFire;
     bool m_moveJump;
     
-    // Current and last game state
+    // Current game state
     GameState *m_gameState;
-    GameState *m_lastGameState;
     
     // End of state
     bool m_complete;

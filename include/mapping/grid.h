@@ -239,10 +239,71 @@ private:
     float m_rank;
 };
 
+// Grid KD tree and waypoint map
+typedef KDTree::KDTree<3, GridWaypoint, std::pointer_to_binary_function<GridWaypoint,size_t,float> > GridTree;
+typedef boost::unordered_map<GridWaypoint, int> GridWaypointIndexMap;
+
 /**
  * A path through the grid.
  */
-typedef std::vector<GridNode*> GridPath;
+class GridPath {
+public:
+    /**
+     * Class constructor.
+     */
+    GridPath();
+    
+    /**
+     * Clears the grid path.
+     */
+    void clear();
+    
+    /**
+     * Returns true when destination has been reached.
+     */
+    inline bool isDestinationReached() const { return m_destinationReached; }
+    
+    /**
+     * Adds a new node at the end of this path.
+     *
+     * @param node A valid GridNode instance
+     */
+    void add(GridNode *node);
+    
+    /**
+     * Skips the current node.
+     */
+    void skip();
+    
+    /**
+     * Returns the GridNode that is our next destination point.
+     */
+    inline GridNode *getCurrent() const { return m_path.at(m_currentNode); }
+    
+    /**
+     * Checks if we have visited any control points.
+     *
+     * @param point Our current origin
+     * @return True if a control point has been reached, false otherwise
+     */
+    bool visit(const Vector3f &point);
+    
+    /**
+     * Returns the number of hops in this path.
+     */
+    inline size_t size() const { return m_path.size(); }
+    
+    /**
+     * Performs internal tree datastructure optimsiation.
+     */
+    void optimiseTree();
+private:
+    int m_currentNode;
+    std::vector<GridNode*> m_path;
+    GridTree m_pathTree;
+    GridWaypointIndexMap m_waypointMap;
+    bool m_destinationReached;
+};
 
 /**
  * Grid exporter interface.
@@ -380,17 +441,6 @@ public:
      * @return True when path was found, false otherwise
      */
     bool computeRandomPath(const Vector3f &start, GridPath *path);
-
-
-    /**
-     * Returns a node that is linked from start node.
-     * 
-     * @param start Start GridNode
-     * @param visitedNodes Set of nodes that have been visited in this path construction
-     * @return GridNode when successive node is found or NULL if successive node cannot be found 
-     *         (if there is no link from start node or if all nodes from start node have been visited already = cycle)
-     */
-    GridNode* pickNextNode(GridNode *start, std::set<GridNode*> *visitedNodes);
 protected:
     /**
      * Attempts to find a node for a location. If no suitable node
@@ -405,17 +455,27 @@ protected:
     /**
      * A helper method to generate a random number.
      */
-    int rollDie(int from, int to);
+    int rollDie(int from, int to) const;
+    
+    /**
+     * Returns a node that is linked from start node.
+     * 
+     * @param start Start GridNode
+     * @param visitedNodes Set of nodes that have been visited in this path construction
+     * @return GridNode when successive node is found or NULL if successive node cannot be found 
+     *         (if there is no link from start node or if all nodes from start node have been visited already = cycle)
+     */
+    GridNode* pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const;
 private:
     // Static geometry map
     Map *m_map;
     
     // Lookup data structures
-    typedef KDTree::KDTree<3, GridWaypoint, std::pointer_to_binary_function<GridWaypoint,size_t,float> > Tree;
-    Tree m_tree;
+    GridTree m_tree;
     boost::unordered_map<GridWaypoint, GridNode*> m_waypointMap;
-
-    boost::mt19937 gen;
+    
+    // Random generator
+    mutable boost::mt19937 m_gen;
 };
 
 }

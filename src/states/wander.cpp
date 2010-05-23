@@ -18,7 +18,7 @@ namespace HiveMind {
 
 WanderState::WanderState(Context *context)
   : State(context, "wander", -1),
-    m_nextPoint(-1),
+    m_hasNextPoint(false),
     m_speed(0),
     m_minDistance(-1)
 {
@@ -34,7 +34,7 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
 {
   getLogger()->info("Now entering wander state.");
   
-  m_nextPoint = -1;
+  m_hasNextPoint = false;
   m_speed = 0;
   m_minDistance = -1;
   
@@ -50,32 +50,20 @@ void WanderState::goodbye()
   recomputePath();
 }
 
-Vector3f WanderState::getNextDestination() const
-{
-  return m_currentPath[m_nextPoint]->getLocation();
-}
-
 float WanderState::getDistanceToDestination() const
 {
-  return (getNextDestination() - m_gameState->player.origin).norm();
+  return (m_currentPath.getCurrent()->getLocation() - m_gameState->player.origin).norm();
 }
 
-void WanderState::travelToPoint(int index)
+void WanderState::resetPointStatistics()
 {
-  m_nextPoint = index;
   m_minDistance = -1;
-  
-  // Log some information about our destination
-  Vector3f p = m_gameState->player.origin;
-  getLogger()->info(format("My position is %f,%f,%f.") % p[0] % p[1] % p[2]);
-  p = getNextDestination();
-  getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
 }
 
 void WanderState::recomputePath()
 {
   m_speed = -1;
-  m_nextPoint = -1;
+  m_hasNextPoint = false;
   m_lastTries = 0;
 }
 
@@ -105,7 +93,7 @@ void WanderState::processFrame()
 {
   // Check for interesting items while wandering
   //checkForItems();
-
+  
   Map *map = getContext()->getMap();
   timestamp_t now = Timing::getCurrentTimestamp();
   Vector3f origin = m_gameState->player.origin;
@@ -119,42 +107,34 @@ void WanderState::processFrame()
   if (m_speed > 0) {
     int delta = now - m_lastFrameUpdate;
     if (delta > 0)
-      m_speed = 0.05*(1000 * (origin - m_lastGameState->player.origin).norm()/delta + 19.0*m_speed);
+      m_speed = 0.05*(1000 * (origin - m_lastOrigin).norm()/delta + 19.0*m_speed);
     
     m_lastFrameUpdate += delta;
   } else {
     m_lastFrameUpdate = now;
     m_speed = 400.0;
+    m_lastOrigin = origin;
   }
   
   // Follow current path
-  if (m_nextPoint > -1) {
-    for (int i = m_currentPath.size() - 2; i >= m_nextPoint; i--) {
-      float n = m_gameState->player.origin[2] - m_currentPath[i]->getLocation()[2];
-      if (n < -16 || n > 64)
-        continue;
-      
-      Vector3f v = m_currentPath[i]->getLocation();
-      v[2] = origin[2];
-      if ((origin - v).norm() < 24.0) {
-        // Consider this point visited when we come close enough
-        getLogger()->info(format("Got it. Next point is %d.") % (i + 1));
-        travelToPoint(i + 1);
-        m_lastTries = 0;
-        break;
-      }
+  if (m_hasNextPoint) {
+    // Visit current location and check if we got to a point
+    if (m_currentPath.visit(origin)) {
+      Vector3f p = m_currentPath.getCurrent()->getLocation();
+      getLogger()->info(format("Got it. Next point is %f %f %f.") % p[0] % p[1] % p[2]); 
+      m_lastTries = 0;
+      resetPointStatistics();
     }
     
-    if (m_nextPoint == m_currentPath.size() - 1) {
+    if (m_currentPath.isDestinationReached()) {
       // We have reached our destination
       getLogger()->info("Destination reached.");
 
       // We want to find the next random path the next time we will go into this state
-      m_nextPoint = -1;
-      //m_complete = true;
+      m_hasNextPoint = false;
       return;
     } else {
-      m_moveTarget = m_moveDestination = getNextDestination();
+      m_moveTarget = m_moveDestination = m_currentPath.getCurrent()->getLocation();
     }
 
     if (m_speed < 10) {
@@ -188,7 +168,8 @@ void WanderState::processFrame()
         if (diff > 25 && diffZ <= 24) {
           // Probably circling a waypoint
           getLogger()->info("Probably circling a waypoint. Marking it as reached.");
-          travelToPoint(m_nextPoint + 1);
+          m_currentPath.skip();
+          resetPointStatistics();
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
@@ -196,7 +177,8 @@ void WanderState::processFrame()
         } else if (m_lastTries > 3) {
           recomputePath();
         } else {
-          travelToPoint(m_nextPoint + 1);
+          m_currentPath.skip();
+          resetPointStatistics();
           m_lastTries++;
         }
         
@@ -214,19 +196,17 @@ void WanderState::processFrame()
 void WanderState::processPlanning()
 {
   Vector3f p = m_gameState->player.origin;
-  Map *map = getContext()->getMap();
   Grid *grid = getContext()->getGrid();
-  MapPath path;
   
   // Plan a path if none is currently available
-  if (m_nextPoint == -1) {
+  if (!m_hasNextPoint) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
     if (grid->computeRandomPath(p, &m_currentPath)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.size());
-      travelToPoint(0);
+      m_hasNextPoint = true;
+      resetPointStatistics();
     } else {
       getLogger()->info("Path not found.");
-      m_nextPoint = -2;
     }
   }
 }

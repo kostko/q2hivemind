@@ -69,19 +69,14 @@ public:
     virtual void processPlanning();
 protected:
     /**
-     * Returns the current destination vector.
-     */
-    Vector3f getNextDestination() const;
-    
-    /**
      * Returns the distance from origin to destination.
      */
     float getDistanceToDestination() const;
     
     /**
-     * Sets new destination point on current path.
+     * Resets point-dependent statistics.
      */
-    void travelToPoint(int index);
+    void resetPointStatistics();
     
     /**
      * Requests path recomputation from current location to our
@@ -96,7 +91,7 @@ protected:
 private:
     // Current path to follow
     GridPath m_currentPath;
-    int m_nextPoint;
+    bool m_hasNextPoint;
     timestamp_t m_lastFrameUpdate;
     float m_speed;
     
@@ -106,6 +101,7 @@ private:
     float m_lastZ;
     timestamp_t m_lastMinChange;
     int m_lastTries;
+    Vector3f m_lastOrigin;
 };
 
 }
