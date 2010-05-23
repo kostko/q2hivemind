@@ -17,8 +17,8 @@ find_package(Protobuf REQUIRED)
 
 # Uncomment these lines for full debugging
 SET(CMAKE_BUILD_TYPE debug)
-SET(CMAKE_CXX_FLAGS_DEBUG "-fvisibility=hidden -fPIC")
-SET(CMAKE_C_FLAGS_DEBUG "-fvisibility=hidden -fPIC")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g3 -fvisibility=hidden -fPIC")
+SET(CMAKE_C_FLAGS_DEBUG "-g3 -fvisibility=hidden -fPIC")
 
 include_directories(
         # External includes
