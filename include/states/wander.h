@@ -83,19 +83,10 @@ protected:
     void travelToPoint(int index);
     
     /**
-     * Returns the current link.
-     */
-    MapLink *getCurrentLink() const;
-    
-    /**
      * Requests path recomputation from current location to our
      * destination.
-     *
-     * @param markInvalidOnNone True if planner should mark the link
-     *                          that lead here as invalid when no path
-     *                          out can be found
      */
-    void recomputePath(bool markInvalidOnNone = false);
+    void recomputePath();
 
     /**
      * Check for possible interesting items nearby.
@@ -114,10 +105,6 @@ private:
     float m_lastZ;
     timestamp_t m_lastMinChange;
     int m_lastTries;
-    
-    // For checking invalid links
-    bool m_markInvalidOnNone;
-    MapLink *m_lastLink;
 };
 
 }

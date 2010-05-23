@@ -20,9 +20,7 @@ WanderState::WanderState(Context *context)
   : State(context, "wander", -1),
     m_nextPoint(-1),
     m_speed(0),
-    m_minDistance(-1),
-    m_markInvalidOnNone(false),
-    m_lastLink(NULL)
+    m_minDistance(-1)
 {
   Object::init();
   getLocalPlanner()->addEligibleState(this);
@@ -39,8 +37,6 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
   m_nextPoint = -1;
   m_speed = 0;
   m_minDistance = -1;
-  m_markInvalidOnNone = false;
-  m_lastLink = NULL;
   
   // The wander state is always complete, because it has no goal.
   m_complete = true;
@@ -51,7 +47,7 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
 void WanderState::goodbye()
 {
   getLogger()->info("Now leaving wander state.");
-  recomputePath(false);
+  recomputePath();
 }
 
 Vector3f WanderState::getNextDestination() const
@@ -76,15 +72,8 @@ void WanderState::travelToPoint(int index)
   getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
 }
 
-MapLink *WanderState::getCurrentLink() const
+void WanderState::recomputePath()
 {
-  return m_currentPath.links[(m_nextPoint - 1) / 2];
-}
-
-void WanderState::recomputePath(bool markInvalidOnNone)
-{
-  //m_lastLink = getCurrentLink();
-  m_markInvalidOnNone = markInvalidOnNone;
   m_speed = -1;
   m_nextPoint = -1;
   m_lastTries = 0;
@@ -169,11 +158,8 @@ void WanderState::processFrame()
     }
 
     if (m_speed < 10) {
-      // Mark this link as bad and request to recompute the path
+      // Request to recompute the path
       getLogger()->warning("We are stuck, but should be following a path!");
-      
-      // TODO maybe this should just increase cost, not remove it completely
-      //getCurrentLink()->invalidate();
       recomputePath();
     } else {
       // Check whether we will probably never reach our destination 
@@ -206,7 +192,7 @@ void WanderState::processFrame()
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
-          recomputePath(true);
+          recomputePath();
         } else if (m_lastTries > 3) {
           recomputePath();
         } else {
