@@ -8,6 +8,7 @@
 #include "states/wander.h"
 #include "logger.h"
 #include "context.h"
+#include "network/connection.h"
 #include "mapping/grid.h"
 #include "planner/local.h"
 
@@ -41,6 +42,9 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
   m_markInvalidOnNone = false;
   m_lastLink = NULL;
   
+  // The wander state is always complete, because it has no goal.
+  m_complete = true;
+
   // TODO Check metadata if it contains a destination
 }
 
@@ -90,12 +94,37 @@ void WanderState::recomputePath(bool markInvalidOnNone)
   m_nextPoint = -1;
 }
 
+void WanderState::checkForItems()
+{
+  Vector3f origin = m_gameState->player.origin;
+  Connection *conn = getContext()->getConnection();
+
+  for (int i = m_gameState->maxPlayers+1; i < 1024; i++) {
+
+    Entity item = m_gameState->entities[i];
+    double dist = (origin - item.origin).norm();
+
+    if (item.isVisible() && dist < BOT_SIGHT) {
+      std::string itemName = conn->getServerConfig(item.modelIndex);
+
+      if (itemName.find("models/weapons") != std::string::npos ||
+          itemName.find("models/items") != std::string::npos) {
+
+        getLogger()->info(format("Interesting item (%s) spoted at: %f, %f, %f which is dist = %f away.") % itemName % item.origin[0] % item.origin[1] % item.origin[2] % dist);
+      }
+    }
+  }
+}
+
 void WanderState::processFrame()
 {
+  // Check for interesting items while wandering
+  //checkForItems();
+
   Map *map = getContext()->getMap();
   timestamp_t now = Timing::getCurrentTimestamp();
   Vector3f origin = m_gameState->player.origin;
-  
+
   // By default we stand still and do not fire or jump
   m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
   m_moveFire = false;

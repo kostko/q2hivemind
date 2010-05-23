@@ -120,6 +120,21 @@ private:
      */
     virtual void execute(BrainAction *action);
 
+    /**
+     * Is the action possible?
+     */
+    virtual bool eligibleAction(BrainAction *action);
+
+    /**
+     * Returns the action that is always eligible.
+     */
+    virtual inline int alwaysEligibleId() { return WANDER; }
+
+    /**
+     * Get the default action name.
+     */
+    virtual std::string defaultActionName();
+
     // Weapon string to enum number map    
     boost::unordered_map<std::string, int> m_weaponMap;
 

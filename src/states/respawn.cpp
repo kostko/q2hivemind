@@ -28,7 +28,7 @@ void RespawnState::initialize(const boost::any &metadata, bool restored)
 {
   getLogger()->info("Now entering respawn state.");
   m_selected = true;
-  m_complete = true;
+  m_complete = false;
   getLocalPlanner()->clearEligibleStates();
 }
 
@@ -36,7 +36,7 @@ void RespawnState::goodbye()
 {
   getLogger()->info("Now leaving respawn state.");
   m_selected = false;
-  m_complete = false;
+  m_complete = true;
 }
 
 void RespawnState::processFrame()

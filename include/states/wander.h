@@ -19,6 +19,10 @@ namespace HiveMind {
 
 class Context;
 
+enum {
+    BOT_SIGHT = 300
+};
+
 /**
  * Wander state.
  */
@@ -92,6 +96,11 @@ protected:
      *                          out can be found
      */
     void recomputePath(bool markInvalidOnNone = false);
+
+    /**
+     * Check for possible interesting items nearby.
+     */
+    void checkForItems();
 private:
     // Current path to follow
     MapPath m_currentPath;

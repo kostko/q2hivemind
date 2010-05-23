@@ -62,7 +62,6 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   Vector3f destination, target;
   bool jump;
   m_currentState->getNextTarget(&destination, &target, fire, &jump);
-  *fire = false;
   
   // If there is no target we simply stay idle
   if (destination[0] == std::numeric_limits<float>::infinity())
@@ -70,19 +69,25 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   
   // Compute orientation and velocity vectors for given destination
   Vector3f delta = destination - m_gameState.player.origin;
-  float pitch = Algebra::pitchFromVect(delta);
-  float yaw = Algebra::yawFromVect(delta);
-  
-  // Request the motion controller to calculate yaw
-  yaw = m_motionController.calculateMotion(m_gameState, yaw);
-  
+  Vector3f eye = target - m_gameState.player.origin;
+
+  float pitch = Algebra::pitchFromVect(eye);
+  float yaw = Algebra::yawFromVect(eye);
+
+  bool move = delta != Vector3f::Zero();
+
+  // Use fuzzy logic only when we need to move
+  if (move) {
+    yaw = m_motionController.calculateMotion(m_gameState, yaw);
+  }
+
+  (*velocity)[0] = move ? 400 : 0;
+  (*velocity)[1] = 0;
+  (*velocity)[2] = jump ? 400.0 : 0.0;
+
   (*orientation)[0] = -pitch;
   (*orientation)[1] = yaw;
   (*orientation)[2] = 0.0;
-  
-  (*velocity)[0] = 400.0;
-  (*velocity)[1] = 0;
-  (*velocity)[2] = jump ? 400.0 : 0.0;
 }
 
 void LocalPlanner::requestTransition(const TransitionRequest &request)

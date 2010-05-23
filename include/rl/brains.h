@@ -85,17 +85,32 @@ protected:
     /**
      * What really defines the "brain" is the reward function.
      */
-    virtual double reward(BrainState *prevState, BrainState *currState) { return 0; }
+    virtual double reward(BrainState *prevState, BrainState *currState) = 0;
     
     /**
      * Observe my current state.
      */
-    virtual BrainState *observe() { return 0; }
+    virtual BrainState *observe() = 0;
     
     /**
      * Execute the given action.
      */
-    virtual void execute(BrainAction *action) {}
+    virtual void execute(BrainAction *action) = 0;
+
+    /**
+     * Is the action possible?
+     */
+    virtual bool eligibleAction(BrainAction *action) = 0;
+
+    /**
+     * Returns the action that is always eligible.
+     */
+    virtual int alwaysEligibleId() = 0;
+
+    /**
+     * Default action name.
+     */
+    virtual std::string defaultActionName() = 0;
 
     LocalPlanner *m_localPlanner;
     

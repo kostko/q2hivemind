@@ -166,9 +166,24 @@ public:
     void pruneEligibleStates();
 
     /**
+     * Is the given state eligible for transition?
+     */
+    inline bool isEligible(State *state) const { return m_eligibleStates.find(state) != m_eligibleStates.end(); }
+
+    /**
      * Clear eligible states set.
      */
     void clearEligibleStates();
+
+    /**
+     * Are there any alternative states? Beside the always eligible state.
+     */
+    bool alternativeStates() const { return (m_eligibleStates.size() > 1); }
+
+    /**
+     * Returns the current state.
+     */
+    inline State *getCurrentState() { return m_currentState; }
 protected:
     /**
      * Main processing loop for the local planner.

@@ -49,21 +49,26 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
 void Brains::interact()
 {
   // If there's an action in progress, just continue.
-  if (m_currAction->executionState() != NULL && !m_currAction->complete()) {
-      return;
+  if (m_currAction->executionState()->getName() != defaultActionName() && !m_currAction->complete()) {
+    return;
+  }
+
+  // If there are no alternatives, just continue.
+  if (!m_localPlanner->alternativeStates()) {
+    return;
   }
 
   // Doing nothing - select a new action.
-  if (m_currAction->getName() == "NULL") {
+  if (m_currAction->getName() == defaultActionName()) {
     // Check in what state am I before the action
     *m_currState = *observe();
-    
+
     if (m_learn) {
-      *m_currAction = *suggestAction(m_currState);
+      *m_currAction = *randomAction();
     } else {
       *m_currAction = *exploit(m_currState);
     }
-    
+
     // Execute my chosen action
     execute(m_currAction);
   }
@@ -82,8 +87,9 @@ void Brains::interact()
       updateQ(m_currState, m_currAction, newState);
     }
 
-    // Null the current action
-    m_currAction->setName("NULL");
+    // Fallback to default action
+    m_currAction->from(alwaysEligibleId());
+    execute(m_currAction);
   }  
 }
 
@@ -118,10 +124,16 @@ BrainAction *Brains::newBrainAction(std::string name)
 }
 
 BrainAction *Brains::randomAction()
-{  
-  int actionID = (int)(random() * m_Q->actions());
-  m_suggestedAction->from(actionID);
-  
+{
+  while (true) {
+    int actionID = (int)(random() * m_Q->actions());
+    m_suggestedAction->from(actionID);
+
+    // The action must be possible to execute
+    if (eligibleAction(m_suggestedAction)) {
+      break;
+    }
+  }
   return m_suggestedAction;
 }
 
@@ -190,7 +202,25 @@ double Brains::computeReasonableTemp()
 
 BrainAction *Brains::exploit(BrainState *state)
 {
-  return suggestBoltz(state, MIN_Q_TEMPERATURE);
+  int best = alwaysEligibleId();
+  m_suggestedAction->from(best);
+  double maxVal = m_Q->at(state, m_suggestedAction);
+
+  // Return the action with the highest Q value
+  for (int i = 0; i < m_Q->actions(); i++) {
+
+    m_suggestedAction->from(i);
+    double newVal = m_Q->at(state, m_suggestedAction);
+
+    if (newVal > maxVal && eligibleAction(m_suggestedAction)) {
+      maxVal = newVal;
+      best = i;
+    }
+  }
+
+  m_suggestedAction->from(best);
+
+  return m_suggestedAction;
 }
 
 }

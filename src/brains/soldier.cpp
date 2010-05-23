@@ -7,7 +7,10 @@
  */
 #include "logger.h"
 #include "planner/local.h"
+#include "planner/global.h"
+#include "planner/directory.h"
 #include "brains/soldier.h"
+#include "context.h"
  
 namespace HiveMind {
 
@@ -62,6 +65,7 @@ void SoldierBrains::init()
 
   // Initial execution state
   m_currAction->setExecutionState(m_actionStateMap[WANDER]);
+  m_currAction->setName("wander");
 
   getLogger()->info("Brains initialized.");
 }
@@ -138,8 +142,13 @@ BrainState *SoldierBrains::observe()
   // TODO: how to detect team members?
   bool enemy = false;
   for (int i = 1; i < gs->maxPlayers; i++) {
-    if (i != gs->playerEntityId && gs->entities[i].isVisible())
+
+    // Check for friendly fire :P
+    bool isFriend = m_localPlanner->getContext()->getGlobalPlanner()->getDirectory()->isFriend(i);
+
+    if (i != gs->playerEntityId && gs->entities[i].isVisible() && !isFriend) {
       enemy = true;
+    }
   }
   (*m_tempState)[ENEMY] = enemy ? VISIBLE : NOT_VISIBLE;
   
@@ -158,11 +167,28 @@ BrainState *SoldierBrains::observe()
 
 void SoldierBrains::execute(BrainAction *action)
 {
-  // TODO Determine which physical state executes the needed action
+  // Get the state associated with the action
+  getLogger()->info(format("ID: %d") % action->id());
   State *executionState = m_actionStateMap[action->id()];
+
+  // Prepare the action to execute
   *m_currAction = *action;
   m_currAction->setExecutionState(executionState);
-  m_localPlanner->requestTransition(m_currAction->executionState()->getName());
+  m_currAction->setName(executionState->getName());
+  
+  // Request the transition
+  m_localPlanner->requestTransition(executionState->getName());
+}
+
+bool SoldierBrains::eligibleAction(BrainAction *action)
+{
+  State *ex = m_actionStateMap[action->id()];
+  return m_localPlanner->isEligible(ex);
+}
+
+std::string SoldierBrains::defaultActionName()
+{
+  return m_actionStateMap[alwaysEligibleId()]->getName();
 }
 
 }

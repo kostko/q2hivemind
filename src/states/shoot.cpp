@@ -5,14 +5,15 @@
  * Copyright (C) 2010 by Anze Vavpetic <anze.vavpetic@gmail.com>
  * Copyright (C) 2010 by Grega Kespret <grega.kespret@gmail.com>
  */
-
 #include "states/shoot.h"
 #include "planner/local.h"
 #include "planner/global.h"
 #include "planner/directory.h"
+#include "mapping/map.h"
 #include "logger.h"
 #include "context.h"
 #include "dispatcher.h"
+
 #include <limits>
 
 namespace HiveMind {
@@ -30,6 +31,7 @@ ShootState::~ShootState()
 
 void ShootState::initialize(const boost::any &metadata, bool restored)
 {
+  m_complete = false;
   getLogger()->info("Now entering shoot state.");
 }
 
@@ -49,8 +51,11 @@ void ShootState::checkEvent()
 
     Vector3f origin = m_gameState->player.origin;
 
-    // Emit a signal
-    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
+    // Emit only if not already in shoot state
+    if (getLocalPlanner()->getCurrentState() != this) {
+      // Emit a signal
+      getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
+    }
   }
 }
 
@@ -70,6 +75,7 @@ void ShootState::processFrame()
     m_shouldLearn = (m_shootStart - now > MIN_SHOOT_TIME);
     m_complete = true;
     //transitionDown();
+    getLogger()->info("Proximity check: no target.");
     return;
   }
 
@@ -80,16 +86,31 @@ void ShootState::processFrame()
 
 int ShootState::getClosestEnemy()
 {
+  Map *map = getContext()->getMap();
   // Select a (the closest) target to shoot at
   Vector3f origin = m_gameState->player.origin;
   double minDist = MIN_DISTANCE;
   int enemyId = NO_ENEMY;
 
   for (int i = 1; i < m_gameState->maxPlayers; i++) {
-    bool isFriend = getLocalPlanner()->getContext()->getGlobalPlanner()->getDirectory()->isFriend(i);
-    if (i != m_gameState->playerEntityId && m_gameState->entities[i].isVisible() && !isFriend) {
 
-      Vector3f enemyPos = m_gameState->entities[i].origin;
+    // Check for friendly fire :P
+    bool isFriend = getLocalPlanner()->getContext()->getGlobalPlanner()->getDirectory()->isFriend(i);
+
+    // Check if the enemy is alive
+    Vector3f enemyPos = m_gameState->entities[i].origin;
+    bool isAlive = false;
+
+    for (int j = 0; j <= 3; j++) {
+      // Ray test for different offsets
+      enemyPos[2] = m_gameState->entities[i].origin[2] + ENEMY_OFFSETS[j];
+      isAlive = (map->rayTest(origin, enemyPos, Map::Solid) >= 1.0);
+      if (isAlive) {
+        break;
+      }
+    }
+
+    if (i != m_gameState->playerEntityId && m_gameState->entities[i].isVisible() && !isFriend && isAlive) {
       double newDist = (origin - enemyPos).norm();
 
       if (newDist < minDist) {
@@ -98,13 +119,15 @@ int ShootState::getClosestEnemy()
       }
     }
   }
-  
+
   return enemyId;
 }
 
 void ShootState::makeEligible(OpponentSpottedEvent *event)
 {
-  getLocalPlanner()->addEligibleState(this);
+  if (!getLocalPlanner()->isEligible(this)) {
+    getLocalPlanner()->addEligibleState(this);
+  }
 }
 
 

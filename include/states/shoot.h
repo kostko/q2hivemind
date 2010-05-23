@@ -19,8 +19,11 @@ class OpponentSpottedEvent;
 enum {
     NO_ENEMY = -1,
     MIN_DISTANCE = 500,      // The minimum distance for spotting an enemy
-    MIN_SHOOT_TIME = 700     // Minimum shoot time
+    MIN_SHOOT_TIME = 1000     // Minimum shoot time
 };
+
+// Offsets for ray testing if the enemy is alive
+const float ENEMY_OFFSETS[] = { 0.0, -16.0, 16.0, 32.0 };
 
 /**
  * Shoot state.
@@ -70,7 +73,6 @@ public:
      */
     void makeEligible(OpponentSpottedEvent *event);
 private:
-
     /**
      *  Returns the entity ID of the closest enemy.
      */
