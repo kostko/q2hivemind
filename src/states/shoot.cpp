@@ -84,16 +84,26 @@ void ShootState::processFrame()
 int ShootState::getClosestEnemy()
 {
   Map *map = getContext()->getMap();
+  Directory *dir = getLocalPlanner()->getContext()->getGlobalPlanner()->getDirectory();
+   
   // Select a (the closest) target to shoot at
   Vector3f origin = m_gameState->player.origin;
   double minDist = MIN_DISTANCE;
   int enemyId = NO_ENEMY;
 
   for (int i = 1; i < m_gameState->maxPlayers; i++) {
-
-    // Check for friendly fire :P
-    bool isFriend = getLocalPlanner()->getContext()->getGlobalPlanner()->getDirectory()->isFriend(i);
-
+    // Check for player entity
+    if (i == m_gameState->playerEntityId)
+      continue;
+    
+    // Check entity visibility
+    if (!m_gameState->entities[i].isVisible())
+      continue;
+    
+    // Check for friendly fire
+    if (dir->isFriend(i))
+      continue;
+    
     // Check if the enemy is alive
     Vector3f enemyPos = m_gameState->entities[i].origin;
     bool isAlive = false;
@@ -107,9 +117,8 @@ int ShootState::getClosestEnemy()
       }
     }
 
-    if (i != m_gameState->playerEntityId && m_gameState->entities[i].isVisible() && !isFriend && isAlive) {
+    if (isAlive) {
       double newDist = (origin - enemyPos).norm();
-
       if (newDist < minDist) {
           minDist = newDist;
           enemyId = i;
