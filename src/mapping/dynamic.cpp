@@ -33,6 +33,13 @@ void DynamicMapper::worldUpdated(const GameState &state)
   // TODO incorporate team member movements to learn paths
   
   // TODO incorporate other entity movements to learn paths
+
+  // For each visited GridNode remember when we have last visited it
+  Vector3f p = state.player.origin;
+  GridNode *node = m_grid->getNearestNode(p);
+  if (node != NULL) {
+    node->updateLastVisit();
+  }
 }
 
 }

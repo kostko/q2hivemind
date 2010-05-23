@@ -25,7 +25,8 @@ GridWaypoint::GridWaypoint(const Vector3f &location)
 
 GridNode::GridNode()
   : m_medium(Unknown),
-    m_type(Normal)
+    m_type(Normal),
+    m_lastVisit(0)
 {
 }
 
@@ -371,16 +372,27 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
   // Choose random node
   typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
   BOOST_FOREACH(NodeLinkPair p, links) {
-    if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end())
-      return p.first;
+    if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end()) {
+      if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
+        return p.first;
+      } else {
+        getLogger()->warning(format("Would pick node %s, but it was visited %f seconds ago.") % p.first % ((Timing::getCurrentTimestamp() - p.first->getLastVisit())/1000));
+        break;
+      }
+    }
     counter++;
   }
 
   // If randomly chosen node was already visited, let's just pick the first node that
   // has not been visited (don't care for randomness at this point)
   BOOST_FOREACH(NodeLinkPair p, links) {
-    if (visitedNodes.find(p.first) == visitedNodes.end())
-      return p.first;
+    if (visitedNodes.find(p.first) == visitedNodes.end()) {
+      if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
+        return p.first;
+      } else {
+        getLogger()->warning(format("Would pick node %s, but it was visited %f seconds ago.") % p.first % ((Timing::getCurrentTimestamp() - p.first->getLastVisit())/1000));
+      }
+    }
   }
 
   // Cycle detected when trying to pick next node in path. We will have to backtrack.
@@ -404,7 +416,8 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
 
   int pathSize = rollDie(100, 200);
   std::vector<GridNode*> tmp;
- 
+  tmp.push_back(node);
+
   for (int i = 0; i < pathSize; i++) {
     visitedNodes.insert(node);
 
@@ -420,12 +433,10 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
     }
     
     tmp.push_back(nextNode);
-    node->updateLastVisit();
     node = nextNode;
   }
   
-  // Populate the path structure
-  path->add(startNode);
+  // Populate the path structure  
   BOOST_FOREACH(GridNode *n, tmp) {
     path->add(n);
   }
