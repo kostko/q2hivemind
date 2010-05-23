@@ -15,6 +15,9 @@ namespace HiveMind {
 
 class Context;
 class Grid;
+class BotLocationUpdateEvent;
+class BotRespawnEvent;
+class EntityUpdatedEvent;
 
 /**
  * A dynamic mapper learns from bot and other entity movements to
@@ -22,8 +25,16 @@ class Grid;
  */
 class DynamicMapper : public Object {
 public:
+    /**
+     * Class constructor.
+     *
+     * @param context Hivemind context
+     */
     DynamicMapper(Context *context);
     
+    /**
+     * Class destructor.
+     */
     ~DynamicMapper();
     
     /**
@@ -32,12 +43,44 @@ public:
      * @param state State of the world
      */
     void worldUpdated(const GameState &state);
+protected:
+    /**
+     * This method gets called when a bot's location is updated.
+     */
+    void botLocationUpdated(BotLocationUpdateEvent *event);
+    
+    /**
+     * This method gets called when a bot has respawned.
+     */
+    void botRespawned(BotRespawnEvent *event);
+    
+    /**
+     * This method gets called when an entity has been updated.
+     */
+    void entityUpdated(EntityUpdatedEvent *event);
+    
+    /**
+     * Processes an entity update.
+     */
+    void processEntity(const Entity &entity);
+    
+    /**
+     * Learns path from movement between two points.
+     *
+     * @param pointA First location
+     * @param pointB Second location
+     */
+    void learnFromMovement(const Vector3f &pointA, const Vector3f &pointB);
 private:
     // Context
     Context *m_context;
     
     // Mapping grid
     Grid *m_grid;
+    
+    // Last position
+    bool m_haveLastOrigin;
+    Vector3f m_lastOrigin;
 };
 
 }

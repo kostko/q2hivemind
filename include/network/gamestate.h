@@ -38,9 +38,23 @@ public:
 
 class Entity {
 public:
+  Entity()
+    : m_entityId(-1),
+      m_updated(false),
+      m_player(false)
+  {}
+  
   inline bool isVisible() const { return m_updated; }
   
-  void setVisible(bool visible) { m_updated = visible; }
+  inline void setVisible(bool visible) { m_updated = visible; }
+  
+  inline void setPlayer(bool player) { m_player = player; }
+  
+  inline bool isPlayer() const { return m_player; }
+  
+  inline void setEntityId(int id) { m_entityId = id; }
+  
+  inline int getEntityId() const { return m_entityId; }
 public:
   Vector3f angles;
   Vector3f origin;
@@ -54,7 +68,9 @@ public:
   int framenum;
   int renderfx;
 private:
+  int m_entityId;
   bool m_updated;
+  bool m_player;
 };
 
 class GameState {

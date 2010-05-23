@@ -106,7 +106,7 @@ void Context::connectTo(const std::string &host, unsigned int port)
   if (m_connection)
     return;
   
-  m_connection = new Connection(m_botId, host, port);
+  m_connection = new Connection(this, m_botId, host, port);
   m_connection->connect();
   
   // Load maps
@@ -151,6 +151,9 @@ void Context::execute()
     m_dynamicMapper->worldUpdated(state);
     m_globalPlanner->worldUpdated(state);
     m_localPlanner->worldUpdated(state);
+    
+    // Deliver deferred events
+    m_dispatcher->deliver();
     
     // Request next move from local planner
     Vector3f orientation, velocity;

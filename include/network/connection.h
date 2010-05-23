@@ -19,6 +19,8 @@
 
 namespace HiveMind {
 
+class Context;
+
 /**
  * A complete Quake 2 client implementation.
  */
@@ -38,7 +40,7 @@ public:
      * @param host Quake 2 server host
      * @param port Quake 2 server port
      */
-    Connection(const std::string &id, const std::string &host, int port);
+    Connection(Context *context, const std::string &id, const std::string &host, int port);
     
     /**
      * Class destructor.
@@ -252,6 +254,9 @@ private:
     Update m_updates[MAX_UPDATES + 1];
     int m_currentUpdate;
     timestamp_t m_lastUpdateTime;
+    
+    // Hivemind context
+    Context *m_context;
 };
 
 }

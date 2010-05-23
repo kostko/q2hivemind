@@ -9,6 +9,8 @@
 #include "network/util.h"
 #include "logger.h"
 #include "timing.h"
+#include "context.h"
+#include "dispatcher.h"
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -20,7 +22,7 @@
 
 namespace HiveMind {
 
-Connection::Connection(const std::string &id, const std::string &host, int port)
+Connection::Connection(Context *context, const std::string &id, const std::string &host, int port)
   : m_host(host),
     m_port(boost::lexical_cast<std::string>(port)),
     m_connected(false),
@@ -42,7 +44,8 @@ Connection::Connection(const std::string &id, const std::string &host, int port)
     m_spawn(&(m_gamestates[16])),
     m_lastInventoryUpdate(0),
     m_currentUpdate(0),
-    m_lastUpdateTime(0)
+    m_lastUpdateTime(0),
+    m_context(context)
 {
   Object::init();
   
@@ -720,10 +723,15 @@ int Connection::processPacket(char *buffer, size_t length)
 
         // Mark entity as not updated (not visible)
         m_spawn->entities[entity].setVisible(false);
+        m_spawn->entities[entity].setEntityId(entity);
+        m_spawn->entities[entity].setPlayer(entity <= m_maxPlayers);
         m_dataPoints[entity].timestamp = timestamp;
         m_dataPoints[entity].origin[0] = m_spawn->entities[entity].origin[0];
         m_dataPoints[entity].origin[1] = m_spawn->entities[entity].origin[1];
         m_dataPoints[entity].origin[2] = m_spawn->entities[entity].origin[2];
+        
+        // Emit proper event
+        m_context->getDispatcher()->emitDeferred(new EntityUpdatedEvent(m_spawn->entities[entity]));
         break;
       }
       
@@ -841,6 +849,8 @@ int Connection::processPacket(char *buffer, size_t length)
             getLogger()->error("Entity number greater than 1024! Protocol violation, aborting.");
           }
           
+          m_cs->entities[entity].setEntityId(entity);
+          m_cs->entities[entity].setPlayer(entity <= m_maxPlayers);
           m_cs->entities[entity].setVisible(true);
           if (mask & 0x00000800) m_cs->entities[entity].modelIndex = READ_CHAR;
           if (mask & 0x00100000) m_cs->entities[entity].modelIndex2 = READ_CHAR;
@@ -922,6 +932,9 @@ int Connection::processPacket(char *buffer, size_t length)
           if (mask & 0x00000040) {
             m_cs->entities[entity].setVisible(false);
           }
+          
+          // Emit proper event
+          m_context->getDispatcher()->emitDeferred(new EntityUpdatedEvent(m_cs->entities[entity]));
         }
         break;
       }

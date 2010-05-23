@@ -9,6 +9,7 @@
 #define HM_EVENT_H
 
 #include "globals.h"
+#include "network/gamestate.h"
 
 #include <string>
 
@@ -29,6 +30,7 @@ public:
       Invalid = 0,
       BotLocationUpdate,
       BotRespawn,
+      EntityUpdated,
       OpponentSpotted,
       
       // This represents any event and should be the last one
@@ -138,6 +140,24 @@ public:
 private:
     // Current bot origin
     Vector3f m_origin;
+};
+
+class EntityUpdatedEvent : public Event {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param entity Entity that has been updated
+     */
+    EntityUpdatedEvent(const Entity &entity);
+
+    /**
+     * Returns the entity.
+     */
+    inline Entity getEntity() const { return m_entity; }
+private:
+    // Current bot origin
+    Entity m_entity;
 };
 
 }

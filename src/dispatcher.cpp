@@ -7,8 +7,9 @@
  */
 #include "dispatcher.h"
 #include "logger.h"
-#include "states/swim.h"
+
 #include <boost/signals2.hpp>
+#include <boost/foreach.hpp>
 
 namespace HiveMind {
 
@@ -34,11 +35,29 @@ void Dispatcher::emit(Event *event)
     case Event::BotLocationUpdate: signalBotLocationUpdate(static_cast<BotLocationUpdateEvent*>(event)); break;
     case Event::BotRespawn: signalBotRespawn(static_cast<BotRespawnEvent*>(event)); break;
     case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
+    case Event::EntityUpdated: signalEntityUpdated(static_cast<EntityUpdatedEvent*>(event)); break;
     default: break;
   }
   
   // Any handler is always called
   signalAnyEvent(event);
+}
+
+void Dispatcher::emitDeferred(Event *event)
+{
+  boost::lock_guard<boost::mutex> g(m_eventQueueMutex);
+  m_eventQueue.push_back(event);
+}
+    
+void Dispatcher::deliver()
+{
+  boost::lock_guard<boost::mutex> g(m_eventQueueMutex);
+  BOOST_FOREACH(Event *event, m_eventQueue) {
+    emit(event);
+    delete event;
+  }
+  
+  m_eventQueue.clear();
 }
 
 }

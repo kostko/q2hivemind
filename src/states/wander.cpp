@@ -64,36 +64,10 @@ void WanderState::recomputePath()
 {
   m_speed = -1;
   m_hasNextPoint = false;
-  m_lastTries = 0;
-}
-
-void WanderState::checkForItems()
-{
-  Vector3f origin = m_gameState->player.origin;
-  Connection *conn = getContext()->getConnection();
-
-  for (int i = m_gameState->maxPlayers+1; i < 1024; i++) {
-
-    Entity item = m_gameState->entities[i];
-    double dist = (origin - item.origin).norm();
-
-    if (item.isVisible() && dist < BOT_SIGHT) {
-      std::string itemName = conn->getServerConfig(item.modelIndex);
-
-      if (itemName.find("models/weapons") != std::string::npos ||
-          itemName.find("models/items") != std::string::npos) {
-
-        getLogger()->info(format("Interesting item (%s) spoted at: %f, %f, %f which is dist = %f away.") % itemName % item.origin[0] % item.origin[1] % item.origin[2] % dist);
-      }
-    }
-  }
 }
 
 void WanderState::processFrame()
 {
-  // Check for interesting items while wandering
-  //checkForItems();
-  
   Map *map = getContext()->getMap();
   timestamp_t now = Timing::getCurrentTimestamp();
   Vector3f origin = m_gameState->player.origin;
@@ -122,7 +96,6 @@ void WanderState::processFrame()
     if (m_currentPath.visit(origin)) {
       Vector3f p = m_currentPath.getCurrent()->getLocation();
       getLogger()->info(format("Got it. Next point is %f %f %f.") % p[0] % p[1] % p[2]); 
-      m_lastTries = 0;
       resetPointStatistics();
     }
 
@@ -174,12 +147,8 @@ void WanderState::processFrame()
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
           recomputePath();
-        } else if (m_lastTries > 3) {
-          recomputePath();
         } else {
-          m_currentPath.skip();
-          resetPointStatistics();
-          m_lastTries++;
+          recomputePath();
         }
 
         return;

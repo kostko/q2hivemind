@@ -11,7 +11,10 @@
 #include "object.h"
 #include "timing.h"
 #include "kdtree++/kdtree.hpp"
+#include "mapping/items.h"
+
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/thread.hpp>
 
 #include <list>
 #include <set>
@@ -20,6 +23,7 @@ namespace HiveMind {
 
 class Map;
 class MapPath;
+class Grid;
 class GridLink;
 class GridNode;
 
@@ -91,12 +95,14 @@ private:
 // Helper typedefs
 typedef boost::unordered_map<GridNode*, GridLink*> GridLinkMap;
 typedef std::set<GridWaypoint> GridWaypointSet;
+typedef std::set<Item> ItemSet;
 
 /**
  * This represents a graph node that can contain multiple
  * waypoints.
  */
 class GridNode {
+friend class Grid;
 public:
     /**
      * Possible mediums for a grid node.
@@ -120,7 +126,7 @@ public:
     /**
      * Class constructor.
      */
-    GridNode();
+    GridNode(Grid *grid);
     
     /**
      * Class destructor.
@@ -198,13 +204,36 @@ public:
      * Sets this grid node's last visit time to now.
      */
     inline void updateLastVisit() { m_lastVisit = Timing::getCurrentTimestamp(); }
+    
+    /**
+     * Adds a new item to this node.
+     */
+    inline void addItem(const HiveMind::Item &item) { m_items.insert(item); }
+    
+    /**
+     * Returns item list for this node.
+     */
+    inline ItemSet &items() { return m_items; }
+    
+    /**
+     * Returns true if this node is linked with the rest of the map.
+     */
+    inline bool isLinked() const { return m_linked; }
 private:
+    // Grid instance
+    Grid *m_grid;
+    
+    // Node attributes
     Vector3f m_location;
     GridWaypointSet m_waypoints;
     GridLinkMap m_links;
     Medium m_medium;
     Type m_type;
     timestamp_t m_lastVisit;
+    bool m_linked;
+    
+    // Item registry for this node
+    ItemSet m_items;
 };
 
 /**
@@ -351,10 +380,14 @@ public:
     virtual void close() = 0;
 };
 
+// Waypoint map
+typedef boost::unordered_map<GridWaypoint, GridNode*> GridWaypointNodeMap;
+
 /**
  * Mapping grid.
  */
 class Grid : public Object {
+friend class GridNode;
 public:
     // Cell radius
     enum { cell_radius = 24 };
@@ -414,13 +447,19 @@ public:
     void learnLocation(const Vector3f &loc);
     
     /**
+     * Adds a specific grid node as an item node into the registry.
+     */
+    void learnItem(GridNode *node);
+    
+    /**
      * Returns the nearest node accoording to some location.
      *
      * @param loc Location coordinates
      * @param radius Search radius
+     * @param onlyLinked Should only linked nodes be considered
      * @return Nearest grid node
      */
-    GridNode *getNearestNode(const Vector3f &loc, float radius = 100);
+    GridNode *getNearestNode(const Vector3f &loc, float radius = 100, bool onlyLinked = true);
     
     /**
      * Attempts to find a path through the mapping grid using A* search.
@@ -441,7 +480,7 @@ public:
      * @return True when path was found, false otherwise
      */
     bool computeRandomPath(const Vector3f &start, GridPath *path);
-protected:
+
     /**
      * Attempts to find a node for a location. If no suitable node
      * exists a new one is created and returned.
@@ -451,7 +490,7 @@ protected:
      * @return A valid GridNode instance or NULL
      */
     GridNode *getNodeByLocation(const Vector3f &loc, bool create = true);
-    
+protected:
     /**
      * A helper method to generate a random number.
      */
@@ -472,10 +511,14 @@ private:
     
     // Lookup data structures
     GridTree m_tree;
-    boost::unordered_map<GridWaypoint, GridNode*> m_waypointMap;
+    GridWaypointNodeMap m_waypointMap;
+    boost::unordered_map<Item::Type, GridTree> m_items;
     
     // Random generator
     mutable boost::mt19937 m_gen;
+    
+    // Mutex
+    boost::shared_mutex m_mutex;
 };
 
 }

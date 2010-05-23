@@ -29,6 +29,7 @@ std::string Event::getTypeAsString() const
     case BotLocationUpdate: return "BotLocationUpdate";
     case BotRespawn: return "BotRespawn";
     case OpponentSpotted: return "OpponentSpotted";
+    case EntityUpdated: return "EntityUpdated";
     default: return "Invalid";
   }
 }
@@ -53,6 +54,12 @@ BotRespawnEvent::BotRespawnEvent(Bot *bot)
 OpponentSpottedEvent::OpponentSpottedEvent(const Vector3f& origin)
   : Event(OpponentSpotted),
     m_origin(origin)
+{
+}
+
+EntityUpdatedEvent::EntityUpdatedEvent(const Entity &entity)
+  : Event(EntityUpdated),
+    m_entity(entity)
 {
 }
 

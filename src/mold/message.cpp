@@ -30,7 +30,7 @@ Message::Message(const Message &other)
 
 Message::~Message()
 {
-  delete m_data;
+  free(m_data);
 }
 
 bool Message::parseHeader()

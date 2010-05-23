@@ -83,11 +83,6 @@ protected:
      * destination.
      */
     void recomputePath();
-
-    /**
-     * Check for possible interesting items nearby.
-     */
-    void checkForItems();
 private:
     // Current path to follow
     GridPath m_currentPath;
@@ -100,7 +95,6 @@ private:
     float m_maxDistance;
     float m_lastZ;
     timestamp_t m_lastMinChange;
-    int m_lastTries;
     Vector3f m_lastOrigin;
 };
 

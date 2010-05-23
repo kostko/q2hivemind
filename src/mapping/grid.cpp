@@ -23,10 +23,12 @@ GridWaypoint::GridWaypoint(const Vector3f &location)
 {
 }
 
-GridNode::GridNode()
-  : m_medium(Unknown),
+GridNode::GridNode(Grid *grid)
+  : m_grid(grid),
+    m_medium(Unknown),
     m_type(Normal),
-    m_lastVisit(0)
+    m_lastVisit(0),
+    m_linked(false)
 {
 }
 
@@ -49,6 +51,30 @@ void GridNode::addWaypoint(const GridWaypoint &p)
 
 void GridNode::addLink(GridNode *other, float weight, bool reinforce)
 {
+  boost::unique_lock<boost::shared_mutex> g(m_grid->m_mutex);
+  
+  // Check if we need to change linked status
+  if (!m_linked && other->isLinked()) {
+    std::list<GridNode*> queue;
+    std::set<GridNode*> visited;
+    queue.push_back(this);
+    
+    while (!queue.empty()) {
+      GridNode *n = queue.front();
+      queue.pop_front();
+      
+      if (visited.find(n) == visited.end()) {
+        visited.insert(n);
+        n->m_linked = true;
+        
+        typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
+        BOOST_FOREACH(NodeLinkPair p, n->links()) {
+          queue.push_back(p.first);
+        }
+      }
+    }
+  }
+  
   // Check if a link already exists so we don't duplicate it
   if (m_links.find(other) == m_links.end()) {
     m_links[other] = new GridLink(other, weight);
@@ -56,7 +82,6 @@ void GridNode::addLink(GridNode *other, float weight, bool reinforce)
     GridLink *link = m_links[other];
     link->reinforce(weight);
   }
-  
 }
 
 GridLink::GridLink(GridNode *node, float weight)
@@ -231,15 +256,30 @@ void Grid::learnLocation(const Vector3f &loc)
   getNodeByLocation(loc);
 }
 
+void Grid::learnItem(GridNode *node)
+{
+  // Register all new items in this node
+  BOOST_FOREACH(Item item, node->items()) {
+    if (m_items.find(item.getType()) == m_items.end()) {
+      m_items[item.getType()] = GridTree(std::ptr_fun(waypoint_component));
+    }
+    
+    GridWaypoint wp(item.getLocation());
+    if (m_items[item.getType()].find(wp) == m_items[item.getType()].end())
+      m_items[item.getType()].insert(wp);
+  }
+}
+
 GridNode *Grid::getNodeByLocation(const Vector3f &loc, bool create)
 {
+  boost::unique_lock<boost::shared_mutex> g(m_mutex);
   GridWaypoint target(loc);
   GridNode *node = NULL;
   std::pair<GridTree::const_iterator, float> found = m_tree.find_nearest(target, cell_radius);
   if (found.first == m_tree.end()) {
     // No existing waypoints found in that location, create a new node
     if (create) {
-      node = new GridNode();
+      node = new GridNode(this);
       node->addWaypoint(target);
       m_tree.insert(target);
       m_waypointMap[target] = node;
@@ -254,11 +294,32 @@ GridNode *Grid::getNodeByLocation(const Vector3f &loc, bool create)
   return node;
 }
 
-GridNode *Grid::getNearestNode(const Vector3f &loc, float radius)
+// A search predicate that only selects nodes that are linked
+class require_linked_node {
+public:
+    require_linked_node(const GridWaypointNodeMap &map)
+      : map(map)
+    {}
+    
+    bool operator()(const GridWaypoint &p) const
+    {
+      return map.at(p)->isLinked();
+    }
+private:
+    GridWaypointNodeMap map;
+};
+
+GridNode *Grid::getNearestNode(const Vector3f &loc, float radius, bool onlyLinked)
 {
   GridWaypoint target(loc);
   GridNode *node = NULL;
-  std::pair<GridTree::const_iterator, float> found = m_tree.find_nearest(target, radius);
+  std::pair<GridTree::const_iterator, float> found;
+  
+  if (onlyLinked)
+    found = m_tree.find_nearest_if(target, radius, require_linked_node(m_waypointMap));
+  else
+    found = m_tree.find_nearest(target, radius);
+  
   if (found.first != m_tree.end()) {
     GridWaypoint wp = *found.first;
     node = m_waypointMap[wp];
@@ -319,8 +380,9 @@ void Grid::importGrid(const std::string &filename)
       in >> location[1];
       in >> location[2];
       
-      GridNode *node = new GridNode();
+      GridNode *node = new GridNode(this);
       node->addWaypoint(location);
+      node->m_linked = true;
       m_tree.insert(location);
       m_waypointMap[location] = node;
       nodeIds[nodeId] = node;
@@ -376,7 +438,6 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
       if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
         return p.first;
       } else {
-        getLogger()->warning(format("Would pick node %s, but it was visited %f seconds ago.") % p.first % ((Timing::getCurrentTimestamp() - p.first->getLastVisit())/1000));
         break;
       }
     }
@@ -389,8 +450,6 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
     if (visitedNodes.find(p.first) == visitedNodes.end()) {
       if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
         return p.first;
-      } else {
-        getLogger()->warning(format("Would pick node %s, but it was visited %f seconds ago.") % p.first % ((Timing::getCurrentTimestamp() - p.first->getLastVisit())/1000));
       }
     }
   }
@@ -401,6 +460,8 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
 
 bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
 {
+  boost::shared_lock<boost::shared_mutex> g(m_mutex);
+  
   // Clear previous path
   path->clear();
 
@@ -426,10 +487,11 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
       // Start backtracking; pop the cycle node from path but leave
       // it in visitedNodes, so it doesn't get entered again
       tmp.pop_back();
-      node = tmp.back();
-
+      
       if (tmp.size() == 0)
         return false;
+      
+      node = tmp.back();
     }
     
     tmp.push_back(nextNode);
@@ -454,6 +516,8 @@ int Grid::rollDie(int from, int to) const
 
 bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, bool full)
 {
+  boost::shared_lock<boost::shared_mutex> g(m_mutex);
+  
   // Clear previous path
   path->clear();
   
