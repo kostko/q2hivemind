@@ -50,9 +50,9 @@ void ShootState::checkEvent()
   int enemyId = getClosestEnemy();
 
   if (enemyId != NO_ENEMY) {
-    Vector3f enemyOrigin = m_gameState->entities[enemyId].origin;
     // Emit a signal
-    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(enemyOrigin));
+    OpponentSpottedEvent event(m_gameState->entities[enemyId].origin);
+    getContext()->getDispatcher()->emit(&event);
   }
 }
 
