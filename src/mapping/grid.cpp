@@ -287,14 +287,15 @@ bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
     return false;
   }
 
-  int pathSize = roll_die(5000, 10000);
+  int pathSize = rollDie(5000, 10000);
 
   for (int i=0; i<pathSize; i++) {
     GridLinkMap links = node->links();
 
-    if (links.size() == 0) return false;
+    if (links.size() == 0)
+      return false;
     
-    int randomElement = roll_die(0, links.size());
+    int randomElement = rollDie(0, links.size());
     int counter = 0;
 
     typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
@@ -306,14 +307,13 @@ bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
       }
       counter++;
     }
-
   }
+  
   path->length = path->points.size();
   return true;
+}
 
-  }
-
-int Grid::roll_die(int from, int to) {
+int Grid::rollDie(int from, int to) {
   boost::uniform_int<> dist(from, to);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
   return die();

@@ -350,10 +350,15 @@ public:
      * @return True when path was found, false otherwise
      */
     bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true);
-
+    
+    /**
+     * Returns a random path from origin.
+     *
+     * @param start Start location coordinates
+     * @param path Where to save the path
+     * @return True when path was found, false otherwise
+     */
     bool computeRandomPath(const Vector3f &start, MapPath *path);
-
-    int roll_die(int from, int to);
 protected:
     /**
      * Attempts to find a node for a location. If no suitable node
@@ -364,6 +369,11 @@ protected:
      * @return A valid GridNode instance or NULL
      */
     GridNode *getNodeByLocation(const Vector3f &loc, bool create = true);
+    
+    /**
+     * A helper method to generate a random number.
+     */
+    int rollDie(int from, int to);
 private:
     // Static geometry map
     Map *m_map;
