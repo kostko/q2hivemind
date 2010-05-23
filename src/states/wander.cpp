@@ -51,12 +51,7 @@ void WanderState::initialize(const boost::any &metadata, bool restored)
 void WanderState::goodbye()
 {
   getLogger()->info("Now leaving wander state.");
-
-  m_nextPoint = -1;
-  m_speed = 0;
-  m_minDistance = -1;
-  m_markInvalidOnNone = false;
-  m_lastLink = NULL;
+  recomputePath(false);
 }
 
 Vector3f WanderState::getNextDestination() const
@@ -162,7 +157,9 @@ void WanderState::processFrame()
     if (m_nextPoint == m_currentPath.length - 1) {
       // We have reached our destination
       getLogger()->info("Destination reached.");
-      m_nextPoint = -2; // XXX
+
+      // We want to find the next random path the next time we will go into this state
+      m_nextPoint = -1;
       //m_complete = true;
       return;
     } else {
@@ -231,7 +228,8 @@ void WanderState::processPlanning()
   // Plan a path if none is currently available
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
-    if (grid->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
+    //if (grid->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
+    if (grid->computeRandomPath(p, &m_currentPath)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
       travelToPoint(0);
     } else {

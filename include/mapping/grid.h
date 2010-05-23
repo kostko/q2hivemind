@@ -10,6 +10,7 @@
 
 #include "object.h"
 #include "kdtree++/kdtree.hpp"
+#include <boost/random/mersenne_twister.hpp>
 
 #include <list>
 #include <set>
@@ -349,6 +350,10 @@ public:
      * @return True when path was found, false otherwise
      */
     bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true);
+
+    bool computeRandomPath(const Vector3f &start, MapPath *path);
+
+    int roll_die(int from, int to);
 protected:
     /**
      * Attempts to find a node for a location. If no suitable node
@@ -367,6 +372,8 @@ private:
     typedef KDTree::KDTree<3, GridWaypoint, std::pointer_to_binary_function<GridWaypoint,size_t,float> > Tree;
     Tree m_tree;
     boost::unordered_map<GridWaypoint, GridNode*> m_waypointMap;
+
+    boost::mt19937 gen;
 };
 
 }

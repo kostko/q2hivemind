@@ -8,11 +8,14 @@
 #include "mapping/grid.h"
 #include "mapping/map.h"
 #include "logger.h"
-
+#include <ctime>
 #include <queue>
 #include <fstream>
 
 #include <boost/foreach.hpp>
+
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/variate_generator.hpp>
 
 namespace HiveMind {
 
@@ -72,6 +75,7 @@ Grid::Grid(Map *map)
     m_tree(std::ptr_fun(waypoint_component))
 {
   Object::init();
+  gen.seed(static_cast<unsigned int> (std::time(0)));
 }
 
 Grid::~Grid()
@@ -267,6 +271,52 @@ void Grid::importGrid(const std::string &filename)
   m_tree.optimise();
   
   getLogger()->info(format("Imported %d grid nodes, %d grid links and %d waypoints.") % nodeCount % linkCount % waypointCount);
+}
+
+bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
+{
+  // Clear previous path
+  path->points.clear();
+  path->links.clear();
+  path->points.push_back(start);
+
+  GridNode *node = getNearestNode(start);
+
+  if (node == NULL) {
+    // Start node is not known so we can't navigate from there
+    return false;
+  }
+
+  int pathSize = roll_die(5000, 10000);
+
+  for (int i=0; i<pathSize; i++) {
+    GridLinkMap links = node->links();
+
+    if (links.size() == 0) return false;
+    
+    int randomElement = roll_die(0, links.size());
+    int counter = 0;
+
+    typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
+    BOOST_FOREACH(NodeLinkPair p, links) {
+      if (randomElement == counter) {
+        path->points.push_back(p.first->getLocation());
+        node = p.first;
+        break;
+      }
+      counter++;
+    }
+
+  }
+  path->length = path->points.size();
+  return true;
+
+  }
+
+int Grid::roll_die(int from, int to) {
+  boost::uniform_int<> dist(from, to);
+  boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
+  return die();
 }
 
 bool Grid::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full)
