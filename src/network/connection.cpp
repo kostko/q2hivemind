@@ -1097,5 +1097,10 @@ int Connection::receivePacket(char *data)
   return length;
 }
 
+void Connection::resetSpawnAngles()
+{
+  m_spawnAngles = Vector3f(-1, -1, -1);
+}
+
 }
 

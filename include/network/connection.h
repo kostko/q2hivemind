@@ -123,6 +123,11 @@ public:
      * @param msg Message to write
      */
     void writeConsoleAsync(const std::string &msg);
+
+    /**
+     * Resets spawn angles.
+     */
+    void resetSpawnAngles();
 protected:
     /**
      * Entry point for the internal protocol worker thread.

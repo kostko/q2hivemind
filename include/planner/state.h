@@ -145,6 +145,11 @@ protected:
      * @param eventStart timestamp_t
      */
     inline void setEventStart(timestamp_t eventStart) { m_eventStart = eventStart; }
+
+    /**
+     * Return true if this bot is alive and false if he is dead.
+     */
+    inline bool alive() { return (m_gameState->player.health > 0); }
 protected:
     // Next move
     Vector3f m_moveDestination;
