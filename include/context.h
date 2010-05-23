@@ -142,7 +142,7 @@ public:
      * @param state Current game state
      */
     void simulateFrame(const GameState &state, Vector3f *orientation, Vector3f *velocity);
-protected:
+
     /**
      * Returns the connection instance associated with this
      * context.

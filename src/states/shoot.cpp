@@ -51,11 +51,9 @@ void ShootState::checkEvent()
 
     Vector3f origin = m_gameState->player.origin;
 
-    // Emit only if not already in shoot state
-    if (getLocalPlanner()->getCurrentState() != this) {
-      // Emit a signal
-      getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
-    }
+    // Emit a signal
+    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
+    
   }
 }
 
