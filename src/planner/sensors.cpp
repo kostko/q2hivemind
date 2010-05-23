@@ -46,7 +46,7 @@ void DistanceSensor::update(const GameState &state, float yaw)
   // When the sensor is noisy we should perturb the angle a bit
   float angle = m_angle;
   if (m_noisy) {
-    angle += Algebra::randWeight() * 3.0;
+    angle += Algebra::randWeight() * 5.0;
     m_measureAngle = angle;
   }
   

@@ -113,6 +113,7 @@ private:
     float m_maxDistance;
     float m_lastZ;
     timestamp_t m_lastMinChange;
+    int m_lastTries;
     
     // For checking invalid links
     bool m_markInvalidOnNone;

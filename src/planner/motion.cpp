@@ -25,13 +25,11 @@ MotionController::MotionController(Context *context)
   Object::init();
   
   // Prepare sensors on the horizontal plane
-  m_sensors.push_back(DistanceSensor(context, 75.0));
-  m_sensors.push_back(DistanceSensor(context, 45.0));
-  m_sensors.push_back(DistanceSensor(context, 25.0));
-  m_sensors.push_back(DistanceSensor(context, 0.0));
-  m_sensors.push_back(DistanceSensor(context, -25.0));
-  m_sensors.push_back(DistanceSensor(context, -45.0));
-  m_sensors.push_back(DistanceSensor(context, -75.0));
+  for (int i = 0; i < 10; i++) {
+    m_sensors.push_back(DistanceSensor(context, 10.0f * (float) i));
+    if (i > 0)
+      m_sensors.push_back(DistanceSensor(context, -10.0f * (float) i));
+  }
 }
 
 float MotionController::calculateMotion(const GameState &state, float yaw)

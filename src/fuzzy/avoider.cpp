@@ -13,9 +13,12 @@ namespace HiveMind {
 
 FuzzyAvoider::FuzzyAvoider(float angle, float distance)
 {
-  Trapezoid angleSmall(-1, 0, 45, 60);
-  Trapezoid angleMedium(55, 85, 95, 105);
-  Trapezoid angleLarge(75, 110, 115, 180);
+  // Fuzzy angles
+  Trapezoid angleSmall(-1, 0, 25, 35);
+  Trapezoid angleMedium(30, 45, 60, 70);
+  Trapezoid angleLarge(65, 75, 85, 90);
+  
+  // Fuzzy distances
   Trapezoid distSmall(-1, 12, 25, 40);
   Trapezoid distMedium(30, 55, 65, 75);
   Trapezoid distLarge(70, 90, 100, 150);

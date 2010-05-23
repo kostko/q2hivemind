@@ -36,7 +36,7 @@ public:
      * @param distance Sensing distance (in steps)
      * @param noisy Should the sensor add random noise to angles
      */
-    DistanceSensor(Context *context, float angle = 0.0, float distance = 5, bool noisy = true);
+    DistanceSensor(Context *context, float angle = 0.0, float distance = 8, bool noisy = true);
     
     /**
      * Updates the sensor.

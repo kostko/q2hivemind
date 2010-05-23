@@ -87,6 +87,7 @@ void WanderState::recomputePath(bool markInvalidOnNone)
   m_markInvalidOnNone = markInvalidOnNone;
   m_speed = -1;
   m_nextPoint = -1;
+  m_lastTries = 0;
 }
 
 void WanderState::checkForItems()
@@ -150,6 +151,7 @@ void WanderState::processFrame()
         // Consider this point visited when we come close enough
         getLogger()->info(format("Got it. Next point is %d.") % (i + 1));
         travelToPoint(i + 1);
+        m_lastTries = 0;
         break;
       }
     }
@@ -205,6 +207,11 @@ void WanderState::processFrame()
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
           recomputePath(true);
+        } else if (m_lastTries > 3) {
+          recomputePath();
+        } else {
+          travelToPoint(m_nextPoint + 1);
+          m_lastTries++;
         }
         
         return;
@@ -228,7 +235,6 @@ void WanderState::processPlanning()
   // Plan a path if none is currently available
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
-    //if (grid->findPath(p, Vector3f(1888.0,736.0,546.0), &m_currentPath, true)) {
     if (grid->computeRandomPath(p, &m_currentPath)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
       travelToPoint(0);
