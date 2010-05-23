@@ -32,6 +32,10 @@ ShootState::~ShootState()
 void ShootState::initialize(const boost::any &metadata, bool restored)
 {
   m_complete = false;
+
+  // Remember start time of shoot state request
+  m_shootStart = Timing::getCurrentTimestamp();
+
   getLogger()->info("Now entering shoot state.");
 }
 
@@ -46,14 +50,9 @@ void ShootState::checkEvent()
   int enemyId = getClosestEnemy();
 
   if (enemyId != NO_ENEMY) {
-    // Remember start time of shoot state request
-    m_shootStart = Timing::getCurrentTimestamp();
-
-    Vector3f origin = m_gameState->player.origin;
-
+    Vector3f enemyOrigin = m_gameState->entities[enemyId].origin;
     // Emit a signal
-    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(origin));
-    
+    getContext()->getDispatcher()->emit(new OpponentSpottedEvent(enemyOrigin));
   }
 }
 
@@ -123,9 +122,9 @@ int ShootState::getClosestEnemy()
 
 void ShootState::makeEligible(OpponentSpottedEvent *event)
 {
-  if (!getLocalPlanner()->isEligible(this)) {
+  //if (!getLocalPlanner()->isEligible(this)) {
     getLocalPlanner()->addEligibleState(this);
-  }
+  //}
 }
 
 

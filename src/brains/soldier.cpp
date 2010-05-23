@@ -168,7 +168,6 @@ BrainState *SoldierBrains::observe()
 void SoldierBrains::execute(BrainAction *action)
 {
   // Get the state associated with the action
-  getLogger()->info(format("ID: %d") % action->id());
   State *executionState = m_actionStateMap[action->id()];
 
   // Prepare the action to execute
