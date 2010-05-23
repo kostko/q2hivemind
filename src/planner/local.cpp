@@ -112,7 +112,7 @@ void LocalPlanner::addEligibleState(State *state) {
   state->setEventStart(Timing::getCurrentTimestamp());
 
   m_eligibleStates.insert(state);
-  getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
+  //getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
   
 }
 

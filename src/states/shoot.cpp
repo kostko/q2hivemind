@@ -72,7 +72,7 @@ void ShootState::processFrame()
     m_shouldLearn = (m_shootStart - now > MIN_SHOOT_TIME);
     m_complete = true;
     //transitionDown();
-    getLogger()->info("Proximity check: no target.");
+    //getLogger()->info("Proximity check: no target.");
     return;
   }
 
