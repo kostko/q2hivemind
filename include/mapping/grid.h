@@ -224,6 +224,11 @@ private:
 };
 
 /**
+ * A path through the grid.
+ */
+typedef std::vector<GridNode*> GridPath;
+
+/**
  * Grid exporter interface.
  */
 class GridExporter {
@@ -349,7 +354,7 @@ public:
      * @param full Should a full path be returned
      * @return True when path was found, false otherwise
      */
-    bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true);
+    bool findPath(const Vector3f &start, const Vector3f &end, GridPath *path, bool full = true);
     
     /**
      * Returns a random path from origin.
@@ -358,7 +363,7 @@ public:
      * @param path Where to save the path
      * @return True when path was found, false otherwise
      */
-    bool computeRandomPath(const Vector3f &start, MapPath *path);
+    bool computeRandomPath(const Vector3f &start, GridPath *path);
 protected:
     /**
      * Attempts to find a node for a location. If no suitable node

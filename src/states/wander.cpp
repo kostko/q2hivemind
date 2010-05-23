@@ -52,12 +52,12 @@ void WanderState::goodbye()
 
 Vector3f WanderState::getNextDestination() const
 {
-  return m_currentPath.points[m_nextPoint];
+  return m_currentPath[m_nextPoint]->getLocation();
 }
 
 float WanderState::getDistanceToDestination() const
 {
-  return (m_currentPath.points[m_nextPoint] - m_gameState->player.origin).norm();
+  return (getNextDestination() - m_gameState->player.origin).norm();
 }
 
 void WanderState::travelToPoint(int index)
@@ -68,7 +68,7 @@ void WanderState::travelToPoint(int index)
   // Log some information about our destination
   Vector3f p = m_gameState->player.origin;
   getLogger()->info(format("My position is %f,%f,%f.") % p[0] % p[1] % p[2]);
-  p = m_currentPath.points[m_nextPoint];
+  p = getNextDestination();
   getLogger()->info(format("Travelling to %f,%f,%f.") % p[0] % p[1] % p[2]);
 }
 
@@ -129,12 +129,12 @@ void WanderState::processFrame()
   
   // Follow current path
   if (m_nextPoint > -1) {
-    for (int i = m_currentPath.length - 2; i >= m_nextPoint; i--) {
-      float n = m_gameState->player.origin[2] - m_currentPath.points[i][2];
+    for (int i = m_currentPath.size() - 2; i >= m_nextPoint; i--) {
+      float n = m_gameState->player.origin[2] - m_currentPath[i]->getLocation()[2];
       if (n < -16 || n > 64)
         continue;
       
-      Vector3f v = m_currentPath.points[i];
+      Vector3f v = m_currentPath[i]->getLocation();
       v[2] = origin[2];
       if ((origin - v).norm() < 24.0) {
         // Consider this point visited when we come close enough
@@ -145,7 +145,7 @@ void WanderState::processFrame()
       }
     }
     
-    if (m_nextPoint == m_currentPath.length - 1) {
+    if (m_nextPoint == m_currentPath.size() - 1) {
       // We have reached our destination
       getLogger()->info("Destination reached.");
 
@@ -222,7 +222,7 @@ void WanderState::processPlanning()
   if (m_nextPoint == -1) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
     if (grid->computeRandomPath(p, &m_currentPath)) {
-      getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.length);
+      getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.size());
       travelToPoint(0);
     } else {
       getLogger()->info("Path not found.");

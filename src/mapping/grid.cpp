@@ -273,19 +273,18 @@ void Grid::importGrid(const std::string &filename)
   getLogger()->info(format("Imported %d grid nodes, %d grid links and %d waypoints.") % nodeCount % linkCount % waypointCount);
 }
 
-bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
+bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
 {
   // Clear previous path
-  path->points.clear();
-  path->links.clear();
-  path->points.push_back(start);
+  path->clear();
 
   GridNode *node = getNearestNode(start);
-
   if (node == NULL) {
     // Start node is not known so we can't navigate from there
     return false;
   }
+  
+  path->push_back(node);
 
   int pathSize = rollDie(5000, 10000);
 
@@ -301,7 +300,7 @@ bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
     typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
     BOOST_FOREACH(NodeLinkPair p, links) {
       if (randomElement == counter) {
-        path->points.push_back(p.first->getLocation());
+        path->push_back(p.first);
         node = p.first;
         break;
       }
@@ -309,7 +308,6 @@ bool Grid::computeRandomPath(const Vector3f &start, MapPath *path)
     }
   }
   
-  path->length = path->points.size();
   return true;
 }
 
@@ -319,11 +317,10 @@ int Grid::rollDie(int from, int to) {
   return die();
 }
 
-bool Grid::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full)
+bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, bool full)
 {
   // Clear previous path
-  path->points.clear();
-  path->links.clear();
+  path->clear();
   
   GridNode *startNode = getNearestNode(start);
   GridNode *endNode = getNearestNode(end);
@@ -392,10 +389,9 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, b
   // When a path has been found, reconstruct it
   if (found) {
     GridNode *node = endNode;
-    path->points.push_back(end);
     
     while (node != startNode) {
-      path->points.push_back(node->getLocation());
+      path->push_back(node);
       
       if (reversePath.find(node) != reversePath.end()) {
         NodeLink fl = reversePath[node];
@@ -406,13 +402,10 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, b
     }
     
     // Insert origin face
-    path->points.push_back(startNode->getLocation());
+    path->push_back(startNode);
     
     // Reverse everything
-    std::reverse(path->points.begin(), path->points.end());
-    //std::reverse(path->links.begin(), path->links.end());
-    
-    path->length = path->points.size();
+    std::reverse(path->begin(), path->end());
     return true;
   }
   

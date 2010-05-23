@@ -10,6 +10,7 @@
 
 #include "planner/state.h"
 #include "mapping/map.h"
+#include "mapping/grid.h"
 #include "timing.h"
 
 #include <list>
@@ -94,7 +95,7 @@ protected:
     void checkForItems();
 private:
     // Current path to follow
-    MapPath m_currentPath;
+    GridPath m_currentPath;
     int m_nextPoint;
     timestamp_t m_lastFrameUpdate;
     float m_speed;
