@@ -9,6 +9,7 @@
 #define HM_MAPPING_GRID_H
 
 #include "object.h"
+#include "timing.h"
 #include "kdtree++/kdtree.hpp"
 #include <boost/random/mersenne_twister.hpp>
 
@@ -21,6 +22,10 @@ class Map;
 class MapPath;
 class GridLink;
 class GridNode;
+
+enum {
+    DO_NOT_REVISIT_NODE_TIME = 5000
+};
 
 /**
  * This represents a waypoint.
@@ -182,13 +187,24 @@ public:
      *
      * @param type New type
      */
-    inline void setType(Type type) { m_type = type; } 
+    inline void setType(Type type) { m_type = type; }
+
+    /**
+     * Returns the time when this GridNode was last visited.
+     */
+    inline timestamp_t getLastVisit() { return m_lastVisit; }
+
+    /**
+     * Sets this grid node's last visit time to now.
+     */
+    inline void updateLastVisit() { m_lastVisit = Timing::getCurrentTimestamp(); }
 private:
     Vector3f m_location;
     GridWaypointSet m_waypoints;
     GridLinkMap m_links;
     Medium m_medium;
     Type m_type;
+    timestamp_t m_lastVisit;
 };
 
 /**
@@ -364,6 +380,17 @@ public:
      * @return True when path was found, false otherwise
      */
     bool computeRandomPath(const Vector3f &start, GridPath *path);
+
+
+    /**
+     * Returns a node that is linked from start node.
+     * 
+     * @param start Start GridNode
+     * @param visitedNodes Set of nodes that have been visited in this path construction
+     * @return GridNode when successive node is found or NULL if successive node cannot be found 
+     *         (if there is no link from start node or if all nodes from start node have been visited already = cycle)
+     */
+    GridNode* pickNextNode(GridNode *start, std::set<GridNode*> *visitedNodes);
 protected:
     /**
      * Attempts to find a node for a location. If no suitable node

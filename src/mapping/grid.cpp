@@ -273,39 +273,67 @@ void Grid::importGrid(const std::string &filename)
   getLogger()->info(format("Imported %d grid nodes, %d grid links and %d waypoints.") % nodeCount % linkCount % waypointCount);
 }
 
+GridNode* Grid::pickNextNode(GridNode *start, std::set<GridNode*> *visitedNodes) {
+  GridLinkMap links = start->links();
+  if (links.size() == 0)
+    return NULL;
+  
+  int randomElement = rollDie(0, links.size()-1);
+  int counter = 0;
+
+  typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
+  // Choose random node
+  BOOST_FOREACH(NodeLinkPair p, links) {
+    if (counter == randomElement && visitedNodes->find(p.first) == visitedNodes->end())
+      return p.first;
+    counter++;
+  }
+
+  // If randomly chosen node was already visited, let's just pick the first node that has not been visited (don't care for randomness at this point)
+  BOOST_FOREACH(NodeLinkPair p, links) {
+    //getLogger()->info(format("  %d %s") % counter % p.first);
+    if (visitedNodes->find(p.first) == visitedNodes->end())
+      return p.first;
+  }
+
+  //Cycle detected when trying to pick next node in path. We will have to backtrack.
+  return NULL;
+}
+
 bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
 {
   // Clear previous path
   path->clear();
 
   GridNode *node = getNearestNode(start);
+  GridNode *nextNode;
+  std::set<GridNode*> visitedNodes;
+
   if (node == NULL) {
     // Start node is not known so we can't navigate from there
     return false;
   }
-  
+
   path->push_back(node);
 
-  int pathSize = rollDie(5000, 10000);
-
+  int pathSize = rollDie(100, 200);
+ 
   for (int i=0; i<pathSize; i++) {
-    GridLinkMap links = node->links();
+    visitedNodes.insert(node);
 
-    if (links.size() == 0)
-      return false;
-    
-    int randomElement = rollDie(0, links.size());
-    int counter = 0;
+    // Resolve cycle
+    while ((nextNode = pickNextNode(node, &visitedNodes)) == NULL) {
+      // Start backtracking; pop the cycle node from path but leave it in visitedNodes, so it doesn't get entered again
+      path->pop_back();
+      node = path->back();
 
-    typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
-    BOOST_FOREACH(NodeLinkPair p, links) {
-      if (randomElement == counter) {
-        path->push_back(p.first);
-        node = p.first;
-        break;
-      }
-      counter++;
+      if (path->size() == 0) return false;
     }
+
+    path->push_back(nextNode);
+    node->updateLastVisit();
+
+    node = nextNode;
   }
   
   return true;
