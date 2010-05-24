@@ -15,7 +15,8 @@ namespace HiveMind {
 
 RespawnState::RespawnState(Context *context)
   : State(context, "respawn", 1000),
-    m_selected(false)
+    m_selected(false),
+    m_moveFire(true)
 {
   Object::init();
 }
@@ -43,7 +44,6 @@ void RespawnState::processFrame()
 {
   Vector3f dest = Vector3f(0.0, 0.0, 0.0);
   m_moveTarget = m_moveDestination = dest;
-  m_moveFire = !m_moveFire;
 
   getLocalPlanner()->requestTransition("wander",1);
 }

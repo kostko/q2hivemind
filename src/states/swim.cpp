@@ -18,7 +18,8 @@ namespace HiveMind {
 SwimState::SwimState(Context *context)
   : State(context, "swim", 3000),
     m_firstInWater(0),
-    m_lastInWater(0)
+    m_lastInWater(0),
+    m_moveFire(false)
 {
   Object::init();
 }

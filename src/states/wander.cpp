@@ -21,7 +21,9 @@ WanderState::WanderState(Context *context)
     m_hasNextPoint(false),
     m_speed(0),
     m_minDistance(-1),
-    m_randomize(false)
+    m_randomize(false),
+    m_moveFire(false),
+    m_moveJump = false;
 {
   Object::init();
   getLocalPlanner()->addEligibleState(this);
@@ -76,8 +78,6 @@ void WanderState::processFrame()
 
   // By default we stand still and do not fire or jump
   m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
-  m_moveFire = false;
-  m_moveJump = false;
 
   // Check if we got stuck
   if (m_speed > 0) {
