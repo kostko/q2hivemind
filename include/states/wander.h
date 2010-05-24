@@ -81,8 +81,10 @@ protected:
     /**
      * Requests path recomputation from current location to our
      * destination.
+     *
+     * @param randomize True means to pick the next node at random
      */
-    void recomputePath();
+    void recomputePath(bool randomize = false);
 private:
     // Current path to follow
     GridPath m_currentPath;
@@ -96,6 +98,7 @@ private:
     float m_lastZ;
     timestamp_t m_lastMinChange;
     Vector3f m_lastOrigin;
+    bool m_randomize;
 };
 
 }

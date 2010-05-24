@@ -488,9 +488,10 @@ public:
      *
      * @param start Start location coordinates
      * @param path Where to save the path
+     * @param randomize When true construct path from random nodes, otherwise pick those that were least recently visited
      * @return True when path was found, false otherwise
      */
-    bool computeRandomPath(const Vector3f &start, GridPath *path);
+    bool computeRandomPath(const Vector3f &start, GridPath *path, bool randomize);
 
     /**
      * Attempts to find a node for a location. If no suitable node
@@ -522,10 +523,11 @@ protected:
      * 
      * @param start Start GridNode
      * @param visitedNodes Set of nodes that have been visited in this path construction
+     * @param randomize When true pick node at random, otherwise pick least recently visited node
      * @return GridNode when successive node is found or NULL if successive node cannot be found 
      *         (if there is no link from start node or if all nodes from start node have been visited already = cycle)
      */
-    GridNode* pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const;
+    GridNode* pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes, bool randomize) const;
     
     /**
      * Returns the BSP map associated with this grid.

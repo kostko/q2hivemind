@@ -20,7 +20,8 @@ WanderState::WanderState(Context *context)
   : State(context, "wander", -1),
     m_hasNextPoint(false),
     m_speed(0),
-    m_minDistance(-1)
+    m_minDistance(-1),
+    m_randomize(false)
 {
   Object::init();
   getLocalPlanner()->addEligibleState(this);
@@ -60,10 +61,11 @@ void WanderState::resetPointStatistics()
   m_minDistance = -1;
 }
 
-void WanderState::recomputePath()
+void WanderState::recomputePath(bool randomize)
 {
   m_speed = -1;
   m_hasNextPoint = false;
+  m_randomize = randomize;
 }
 
 void WanderState::processFrame()
@@ -146,9 +148,9 @@ void WanderState::processFrame()
         } else if (diffZ > 24) {
           // Probably fell somewhere
           getLogger()->info("Probably fell somewhere. Recomputing a new path.");
-          recomputePath();
+          recomputePath(true);
         } else {
-          recomputePath();
+          recomputePath(true);
         }
 
         return;
@@ -170,7 +172,7 @@ void WanderState::processPlanning()
   // Plan a path if none is currently available
   if (!m_hasNextPoint) {
     getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
-    if (grid->computeRandomPath(p, &m_currentPath)) {
+    if (grid->computeRandomPath(p, &m_currentPath, m_randomize)) {
       getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.size());
       m_hasNextPoint = true;
       resetPointStatistics();

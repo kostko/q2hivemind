@@ -502,39 +502,64 @@ struct gridnode_cmp {
   }
 };
 
-GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const
+GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes, bool randomize) const
 {
   GridLinkMap links = start->links();
   if (links.size() == 0)
     return NULL;
-      
-  std::vector<GridNode*> linkNodes;
-  
+
   typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
-  BOOST_FOREACH(NodeLinkPair p, links) {
-    // Skip links going from the ground into the air
-    if (start->isGround() && p.first->isAir())
-      continue;
 
-    linkNodes.push_back(p.first);
+  if (randomize) {
+    // Pick a point at random
+
+    int randomElement = rollDie(0, links.size() - 1);  
+    int counter = 0;
+
+    // Choose random node    
+    BOOST_FOREACH(NodeLinkPair p, links) {    
+      if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end())
+        return p.first;
+      
+      counter++;
+    }
+
+    // Pick the first node that was not visited yet, don't care for randomness at this point
+    BOOST_FOREACH(NodeLinkPair p, links) {
+      if (visitedNodes.find(p.first) == visitedNodes.end()) 
+        return p.first;      
+    }
+  } else {
+    // Pick a point that was the least recently visited
+    std::vector<GridNode*> linkNodes;
+
+    BOOST_FOREACH(NodeLinkPair p, links) {
+      // Skip links going from the ground into the air
+      if (start->isGround() && p.first->isAir())
+        continue;
+
+      linkNodes.push_back(p.first);
+    }
+
+    // Sort grid nodes,
+    std::sort(linkNodes.begin(), linkNodes.end(), gridnode_cmp());
+
+    BOOST_FOREACH(GridNode *node, linkNodes) {
+      if (visitedNodes.find(node) == visitedNodes.end())
+        return node;
+    }
   }
-
-  // Sort grid nodes,
-  std::sort(linkNodes.begin(), linkNodes.end(), gridnode_cmp());
-
-  BOOST_FOREACH(GridNode *node, linkNodes) {
-    if (visitedNodes.find(node) == visitedNodes.end())
-      return node;
-  }  
 
   // Cycle detected when trying to pick next node in path. We will have to backtrack.
   return NULL;
 }
 
-bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
+bool Grid::computeRandomPath(const Vector3f &start, GridPath *path, bool randomize)
 {
   boost::shared_lock<boost::shared_mutex> g(m_mutex);
   
+  getLogger()->info(format("computeRandomPath with randomize = %s") % randomize);
+
   // Clear previous path
   path->clear();
 
@@ -556,15 +581,17 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path)
     visitedNodes.insert(node);
 
     // Resolve cycle
-    while ((nextNode = pickNextNode(node, visitedNodes)) == NULL) {
+    while ((nextNode = pickNextNode(node, visitedNodes, randomize)) == NULL) {
       // Start backtracking; pop the cycle node from path but leave
       // it in visitedNodes, so it doesn't get entered again
-      tmp.pop_back();
-      
-      if (tmp.size() == 0)
-        return false;
+      tmp.pop_back();     
       
       node = tmp.back();
+
+      getLogger()->info(format("Popping, %d left") % tmp.size());
+
+      if (tmp.size() == 0)
+        return false;
     }
     
     tmp.push_back(nextNode);
