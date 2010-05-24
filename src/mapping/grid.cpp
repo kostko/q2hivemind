@@ -588,8 +588,6 @@ bool Grid::computeRandomPath(const Vector3f &start, GridPath *path, bool randomi
       
       node = tmp.back();
 
-      getLogger()->info(format("Popping, %d left") % tmp.size());
-
       if (tmp.size() == 0)
         return false;
     }
