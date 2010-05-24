@@ -34,6 +34,28 @@ private:
     float m_result;
 };
 
+/**
+ * A simple destination seeker made using fuzzy logic.
+ */
+class FuzzySeeker {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param distance Distance to destination
+     * @param divergence Divergence from yaw
+     */
+    FuzzySeeker(float distance, float divergence);
+    
+    /**
+     * Returns the maximum yaw correction allowed.
+     */
+    inline float getCorrectionLimit() const { return m_result; }
+private:
+    // Resulting correction limit
+    float m_result;
+};
+
 }
 
 #endif

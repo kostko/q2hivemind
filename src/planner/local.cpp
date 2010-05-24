@@ -74,7 +74,7 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
 
   // Use fuzzy logic only when we need to move
   if (move) {
-    yaw = m_motionController.calculateMotion(*m_gameState, yaw);
+    yaw = m_motionController.calculateMotion(*m_gameState, yaw, delta.norm());
   }
 
   (*velocity)[0] = move ? 400 : 0;

@@ -20,7 +20,8 @@ namespace HiveMind {
 class Context;
 
 MotionController::MotionController(Context *context)
-  : m_context(context)
+  : m_context(context),
+    m_yaw(0)
 {
   Object::init();
   
@@ -32,14 +33,22 @@ MotionController::MotionController(Context *context)
   }
 }
 
-float MotionController::calculateMotion(const GameState &state, float yaw)
+float MotionController::calculateMotion(const GameState &state, float yaw, float distance)
 {
+  // Turn towards our destination
+  float divergence = 180.0f * (m_yaw - yaw) / M_PI;
+  FuzzySeeker seeker(distance, divergence);
+  if (m_yaw > yaw)
+    m_yaw -= std::min(seeker.getCorrectionLimit(), m_yaw - yaw);
+  else if (m_yaw < yaw)
+    m_yaw += std::min(seeker.getCorrectionLimit(), yaw - m_yaw);
+  
   // Perform an obstacle sensor sweep across the horizontal plane
   float distanceToObstacle = std::numeric_limits<float>::infinity();
   float angleToObstacle = 0.0;
   
   BOOST_FOREACH(DistanceSensor &sensor, m_sensors) {
-    sensor.update(state, yaw);
+    sensor.update(state, m_yaw);
     if (sensor.getMeasurement() < distanceToObstacle) {
       distanceToObstacle = sensor.getMeasurement();
       angleToObstacle = sensor.getMeasureAngle();
@@ -49,11 +58,14 @@ float MotionController::calculateMotion(const GameState &state, float yaw)
   // Calculate change using fuzzy logic
   FuzzyAvoider avoider(angleToObstacle, distanceToObstacle);
   float correction = avoider.getAngleCorrection();
-  correction = std::min(0.1f, correction);
   if (angleToObstacle > 0.0)
     correction = -correction;
   
-  return yaw + correction;
+  m_yaw += correction;
+  if (m_yaw >= 2*M_PI)
+    m_yaw = 2*M_PI - m_yaw;
+  
+  return m_yaw;
 }
 
 }

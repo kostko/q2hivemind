@@ -38,15 +38,19 @@ public:
      *
      * @param state Current gamestate
      * @param yaw Yaw in radians
+     * @param distance Distance to destination
      * @return Corrected yaw to use
      */
-    float calculateMotion(const GameState &state, float yaw);
+    float calculateMotion(const GameState &state, float yaw, float distance);
 private:
     // Context
     Context *m_context;
     
     // Sensors
     std::vector<DistanceSensor> m_sensors;
+    
+    // Yaw
+    float m_yaw;
 };
 
 }
