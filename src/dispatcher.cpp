@@ -51,13 +51,20 @@ void Dispatcher::emitDeferred(Event *event)
     
 void Dispatcher::deliver()
 {
-  boost::lock_guard<boost::mutex> g(m_eventQueueMutex);
-  BOOST_FOREACH(Event *event, m_eventQueue) {
+  // Copy the event queue so we can deliver the events without holding the
+  // event queue mutex
+  std::list<Event*> queue;
+  {
+    boost::lock_guard<boost::mutex> g(m_eventQueueMutex);
+    queue = m_eventQueue;
+    m_eventQueue.clear();
+  }
+  
+  // Mutex no longer held, we operate on its copy and own the events
+  BOOST_FOREACH(Event *event, queue) {
     emit(event);
     delete event;
   }
-  
-  m_eventQueue.clear();
 }
 
 }
