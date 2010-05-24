@@ -27,10 +27,6 @@ class Grid;
 class GridLink;
 class GridNode;
 
-enum {
-    DO_NOT_REVISIT_NODE_TIME = 5000
-};
-
 /**
  * This represents a waypoint.
  */

@@ -486,45 +486,46 @@ GridNode *Grid::getNodeByMedium(const Vector3f &loc, GridNode::Medium medium, fl
   return node;
 }
 
+/**
+ * Structure for comparing two grid nodes.
+ */
+struct gridnode_cmp {
+  /**
+   * Function object. These benefit from inlining.
+   *
+   * @param a Pointer to GridNode
+   * @param b Pointer to GridNode
+   * @result True if a was less recently visited than b and false otherwise
+   */
+  bool operator()(GridNode* a, GridNode* b) const {
+    return a->getLastVisit() < b->getLastVisit();
+  }
+};
+
 GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const
 {
   GridLinkMap links = start->links();
   if (links.size() == 0)
     return NULL;
+      
+  std::vector<GridNode*> linkNodes;
   
-  int randomElement = rollDie(0, links.size() - 1);
-  int counter = 0;
-
-  // Choose random node
   typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
   BOOST_FOREACH(NodeLinkPair p, links) {
     // Skip links going from the ground into the air
     if (start->isGround() && p.first->isAir())
       continue;
-    
-    if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end()) {
-      if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
-        return p.first;
-      } else {
-        break;
-      }
-    }
-    counter++;
+
+    linkNodes.push_back(p.first);
   }
 
-  // If randomly chosen node was already visited, let's just pick the first node that
-  // has not been visited (don't care for randomness at this point)
-  BOOST_FOREACH(NodeLinkPair p, links) {
-    // Skip links going from the ground into the air
-    if (start->isGround() && p.first->isAir())
-      continue;
-    
-    if (visitedNodes.find(p.first) == visitedNodes.end()) {
-      if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
-        return p.first;
-      }
-    }
-  }
+  // Sort grid nodes,
+  std::sort(linkNodes.begin(), linkNodes.end(), gridnode_cmp());
+
+  BOOST_FOREACH(GridNode *node, linkNodes) {
+    if (visitedNodes.find(node) == visitedNodes.end())
+      return node;
+  }  
 
   // Cycle detected when trying to pick next node in path. We will have to backtrack.
   return NULL;
