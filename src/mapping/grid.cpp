@@ -519,8 +519,10 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
     // Choose random node    
     BOOST_FOREACH(NodeLinkPair p, links) {
       // Skip links going from the ground into the air
-      if (start->isGround() && p.first->isAir())
+      if (start->isGround() && p.first->isAir()) {
+        counter++;
         continue;
+      }
           
       if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end())
         return p.first;
