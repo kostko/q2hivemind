@@ -16,7 +16,7 @@ FuzzyAvoider::FuzzyAvoider(float angle, float distance)
   // Fuzzy angles
   Trapezoid angleSmall(-1, 0, 25, 35);
   Trapezoid angleMedium(30, 45, 60, 70);
-  Trapezoid angleLarge(65, 75, 85, 90);
+  Trapezoid angleLarge(40, 75, 88, 100);
   
   // Fuzzy distances
   Trapezoid distSmall(-1, 12, 25, 40);
@@ -36,9 +36,9 @@ FuzzyAvoider::FuzzyAvoider(float angle, float distance)
   w[8] = angleLarge(angle) * distLarge(distance);
   
   float sum = w[0] + w[1] + w[2] + w[3] + w[4] + w[5] + w[6] + w[7] + w[8];
-  m_result = (w[0] * 90) + (w[1] * 55) + (w[2] * 35) +
-             (w[3] * 55) + (w[4] * 35) + (w[5] * 20) +
-             (w[6] * 35) + (w[7] * 20) + (w[8] * 5);
+  m_result = (w[0] * 5) + (w[1] * 3) + (w[2] * 2) +
+             (w[3] * 3) + (w[4] * 2) + (w[5] * 1) +
+             (w[6] * 2) + (w[7] * 1) + (w[8] * 1);
   
   // Normalize result
   if (sum == 0.0f) {

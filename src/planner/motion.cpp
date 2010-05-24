@@ -49,6 +49,7 @@ float MotionController::calculateMotion(const GameState &state, float yaw)
   // Calculate change using fuzzy logic
   FuzzyAvoider avoider(angleToObstacle, distanceToObstacle);
   float correction = avoider.getAngleCorrection();
+  correction = std::min(0.1f, correction);
   if (angleToObstacle > 0.0)
     correction = -correction;
   
