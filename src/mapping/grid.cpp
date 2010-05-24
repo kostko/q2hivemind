@@ -16,9 +16,6 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
-// XXX
-#include <iostream>
-
 namespace HiveMind {
 
 GridWaypoint::GridWaypoint(const Vector3f &location)
