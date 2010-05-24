@@ -78,7 +78,8 @@ public:
   Player player;
   int playerEntityId;
   int maxPlayers;
-  Entity entities[1024]; 
+  Entity entities[1024];
+  boost::unordered_map<std::string, int> inventory; 
 };
 
 class InternalPlayer {

@@ -85,6 +85,11 @@ public:
     GameState getGameState() const;
     
     /**
+     * Requests the server to refresh the inventory.
+     */
+    void refreshInventory();
+    
+    /**
      * Returns the player entity identifier.
      */
     inline int getPlayerEntityId() const { return m_playerNum; }
@@ -230,8 +235,9 @@ private:
     Vector3f m_spawnAngles;
     
     // Inventory
-    int m_inventory[256];
+    boost::unordered_map<std::string, int> m_inventory;
     timestamp_t m_lastInventoryUpdate;
+    int m_lastPlayerAmmo;
     
     // Server information
     std::string m_serverConfig[1568];

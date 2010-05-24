@@ -168,6 +168,18 @@ void Connection::say(const std::string &msg)
   writeConsoleSync("say " + msg);
 }
 
+void Connection::refreshInventory()
+{
+  boost::lock_guard<boost::mutex> g(m_gameStateMutex);
+  timestamp_t now = Timing::getCurrentTimestamp(); 
+  if (now - m_lastInventoryUpdate > 5000 || (m_cs->player.stats[3] == 0 && m_lastPlayerAmmo > 0)) { 
+    writeConsoleAsync("inven");
+    m_lastInventoryUpdate = now; 
+  }
+  
+  m_lastPlayerAmmo = m_cs->player.stats[3];
+}
+
 void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool attack)
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
@@ -245,6 +257,7 @@ GameState Connection::getGameState() const
   
   s.playerEntityId = m_playerNum;
   s.maxPlayers = m_maxPlayers;
+  s.inventory = m_inventory;
   
   return s;
 }
@@ -507,8 +520,12 @@ int Connection::processPacket(char *buffer, size_t length)
       
       // Inventory
       case 0x05: {
+        m_inventory.clear();
         for (int j = 0; j < 256; j++) {
-          m_inventory[j] = *((short *) (buffer + i));
+          int amount = *((short *) (buffer + i));
+          if (amount > 0) {
+            m_inventory[m_serverConfig[1056 + j]] = amount;
+          }
           i += 2;
         }
         m_lastInventoryUpdate = Timing::getCurrentTimestamp();
