@@ -15,8 +15,7 @@ namespace HiveMind {
 
 RespawnState::RespawnState(Context *context)
   : State(context, "respawn", 1000),
-    m_selected(false),
-    m_moveFire(true)
+    m_selected(false)
 {
   Object::init();
 }
@@ -27,7 +26,7 @@ RespawnState::~RespawnState()
 
 void RespawnState::initialize(const boost::any &metadata, bool restored)
 {
-  getLogger()->info("Now entering respawn state.");
+  getLogger()->info(format("Now entering respawn state. Fire was %s") % m_moveFire);
   m_selected = true;
   m_complete = false;
   getLocalPlanner()->clearEligibleStates();
