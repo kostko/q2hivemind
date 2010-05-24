@@ -557,8 +557,6 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
 bool Grid::computeRandomPath(const Vector3f &start, GridPath *path, bool randomize)
 {
   boost::shared_lock<boost::shared_mutex> g(m_mutex);
-  
-  getLogger()->info(format("computeRandomPath with randomize = %s") % randomize);
 
   // Clear previous path
   path->clear();
