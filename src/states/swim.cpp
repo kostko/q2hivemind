@@ -68,6 +68,7 @@ void SwimState::processFrame()
   Vector3f origin = m_gameState->player.origin;
 
   m_moveJump = true;
+  m_moveFire = false;
 
   // TODO: change this so the location is not hardcoded
   Vector3f dest = Vector3f(320.000000, 456.000000, 552.000000);

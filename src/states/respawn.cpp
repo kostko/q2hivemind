@@ -44,7 +44,7 @@ void RespawnState::processFrame()
 {
   Vector3f dest = Vector3f(0.0, 0.0, 0.0);
   m_moveTarget = m_moveDestination = dest;
-
+  m_moveFire = true;
   getLocalPlanner()->requestTransition("wander",1);
 }
 
