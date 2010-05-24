@@ -971,104 +971,6 @@ bool Map::findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bo
   return false;
 }
 
-bool Map::randomPath(const Vector3f &start, MapPath *path)
-{
-#if 0
-  // Sanity check start position
-  if (findLeafId(start) == 0) {
-    getLogger()->warning("Start position is outside map!");
-    return false;
-  }
-  
-  int face = findFaceId(start);
-  if (face == -1) {
-    return false;
-  }
-  
-  // Initialize distances
-  for (int i = 0; i < d->faceCount; i++) {
-    d->dist[i] = -1;
-  }
-  
-  if (face >= d->faceCount || face < 0) {
-    getLogger()->error("Start face out of bounds!");
-    return false;
-  }
-  
-  d->dist[face] = 0;
-  path->points.push_back(Vector3f(
-    d->xfaces[face].origin[0],
-    d->xfaces[face].origin[1],
-    d->xfaces[face].origin[2] + 24.0
-  ));
-  path->length = 1;
-  
-  int list[256];
-  int list2[256];
-  
-  for (int i = 0; i < 256; i++) {
-    if (face >= d->faceCount || face < 0) {
-      getLogger()->error("Face out of bounds!");
-      return false;
-    }
-    
-    int numlinks = std::min(256, (int) d->xfaces[face].numlinks);
-    for (int j = 0; j < numlinks; j++) {
-      list2[j] = d->xfaces[face].firstlink + j;
-    }
-    
-    for (int j = numlinks - 1; j >= 0; j--) {
-      int k = rand() % (j + 1);
-      list[j] = list2[k];
-      list2[k] = list2[j-1];
-    }
-    
-    int j;
-    for (j = 0; j < numlinks; j++) {
-      int link = list[j];
-      if (link >= d->linkCount || link < 0) {
-        getLogger()->error("Link out of bounds!");
-        return false;
-      }
-      
-      if (!d->links[link].valid)
-        continue;
-      
-      int face2 = d->links[link].face;
-      if (face2 >= d->faceCount || face2 < 0) {
-        getLogger()->error("Face out of bounds!");
-        return false;
-      }
-      
-      if (d->dist[face2] == -1) {
-        d->dist[face2] = 0;
-        face = face2;
-        
-        path->points.push_back(Vector3f(
-          d->links[link].origin[0],
-          d->links[link].origin[1],
-          d->links[link].origin[2] + 24.0
-        ));
-        path->points.push_back(Vector3f(
-          d->xfaces[face].origin[0],
-          d->xfaces[face].origin[1],
-          d->xfaces[face].origin[2] + 24.0
-        ));
-        path->links.push_back(&d->links[link]);
-        path->length = 2*i + 3;
-        break;
-      }
-    }
-    
-    if (j == numlinks)
-      break;
-  }
-  
-  return true;
-#endif
-  return false;
-}
-
 bool Map::intersectLeaf(int leaf, int mask) const
 {
   if (leaf == 0) {
@@ -1187,6 +1089,31 @@ float Map::intersectTree(const Vector3f &start, const Vector3f &end, int node, f
       }
     }
   }
+}
+
+int Map::pointContents(const Vector3f &point)
+{
+  int num = d->models[0].rootnode;
+  float distance;
+  node_t node;
+  plane_t plane;
+  
+  while (num >= 0) {
+    node = d->nodes[num];
+    plane = d->planes[node.planenum];
+    
+    if (plane.type < 3)
+      distance = point[plane.type] - plane.dist;
+    else
+      distance = Vector3f(plane.normal).dot(point) - plane.dist;
+    
+    if (d < 0)
+      num = node.back;
+    else
+      num = node.front;
+  }
+  
+  return d->leafs[-1 - num].contents;
 }
 
 float Map::rayTest(const Vector3f &start, const Vector3f &end, int mask)

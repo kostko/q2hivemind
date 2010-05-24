@@ -210,17 +210,7 @@ public:
      * @param full Should a full path be returned or not
      * @return True when the path was found
      */
-    bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true) const;
-    
-    /**
-     * Generates a random path from a specific location. This still
-     * needs to be vastly improved.
-     *
-     * @param start Origin (usually the bot's position)
-     * @param path Where to save the path
-     * @return True when the path was found
-     */
-    bool randomPath(const Vector3f &start, MapPath *path); 
+    bool findPath(const Vector3f &start, const Vector3f &end, MapPath *path, bool full = true) const; 
     
     /**
      * Casts a ray from start vector to end vector and checks if there
@@ -233,6 +223,14 @@ public:
      * @return Fraction of distance where the hit ocurred
      */
     float rayTest(const Vector3f &start, const Vector3f &end, int mask);
+    
+    /**
+     * Returns brush contents at a specific point.
+     *
+     * @param point Point to be considered
+     * @return Brush contents mask
+     */
+    int pointContents(const Vector3f &point);
     
     /**
      * Returns the specified link object.

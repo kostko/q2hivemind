@@ -13,6 +13,8 @@
 #include "dispatcher.h"
 #include "event.h"
 #include "network/connection.h"
+#include "planner/directory.h"
+#include "planner/global.h"
 
 namespace HiveMind {
 
@@ -52,6 +54,7 @@ void DynamicMapper::entityUpdated(EntityUpdatedEvent *event)
 void DynamicMapper::processEntity(const Entity &entity)
 {
   Connection *conn = m_context->getConnection();
+  Directory *dir = m_context->getGlobalPlanner()->getDirectory();
   
   if (entity.isVisible() && entity.modelIndex > 0) {
     if (!entity.isPlayer()) {
@@ -81,8 +84,18 @@ void DynamicMapper::processEntity(const Entity &entity)
       }
     } else {
       // Player entity
-      // TODO incorporate other entity movements to learn paths
+      if (!dir->isFriend(entity.getEntityId())) {
+        if (m_lastEntityOrigin.find(entity.getEntityId()) != m_lastEntityOrigin.end()) {
+          learnFromMovement(m_lastEntityOrigin.at(entity.getEntityId()), entity.origin);
+        }
+        
+        m_lastEntityOrigin[entity.getEntityId()] = entity.origin;
+      }
     }
+  } else if (entity.isPlayer() && !dir->isFriend(entity.getEntityId())) {
+    // Invalidate last entity origin
+    // FIXME maybe we should base this on entity seen timestamps
+    m_lastEntityOrigin.erase(entity.getEntityId());
   }
 }
 

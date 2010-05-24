@@ -16,6 +16,9 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
+// XXX
+#include <iostream>
+
 namespace HiveMind {
 
 GridWaypoint::GridWaypoint(const Vector3f &location)
@@ -73,6 +76,8 @@ void GridNode::addLink(GridNode *other, float weight, bool reinforce)
         }
       }
     }
+    
+    m_linked = true;
   }
   
   // Check if a link already exists so we don't duplicate it
@@ -82,6 +87,25 @@ void GridNode::addLink(GridNode *other, float weight, bool reinforce)
     GridLink *link = m_links[other];
     link->reinforce(weight);
   }
+}
+
+void GridNode::evaluateMedium()
+{
+  Medium medium;
+  Vector3f p = getLocation() - Vector3f(0, 0, 50);
+  float d = m_grid->getMap()->rayTest(getLocation(), p, Map::Solid);
+  if (d == 1.0) {
+    medium = Air;
+  } else {
+    medium = Ground;
+  }
+  
+  int contents = m_grid->getMap()->pointContents(getLocation() + Vector3f(0, 0, 20.0));
+  if (contents & Map::Water) {
+    medium = Water;
+  }
+  
+  setMedium(medium);
 }
 
 GridLink::GridLink(GridNode *node, float weight)
@@ -281,6 +305,7 @@ GridNode *Grid::getNodeByLocation(const Vector3f &loc, bool create)
     if (create) {
       node = new GridNode(this);
       node->addWaypoint(target);
+      node->evaluateMedium();
       m_tree.insert(target);
       m_waypointMap[target] = node;
     }
@@ -419,7 +444,49 @@ void Grid::importGrid(const std::string &filename)
   // Optimise the tree
   m_tree.optimise();
   
+  // Evaluate media for all nodes
+  typedef std::pair<GridWaypoint, GridNode*> WaypointNodePair;
+  BOOST_FOREACH(WaypointNodePair p, m_waypointMap) {
+    p.second->evaluateMedium();
+  }
+  
   getLogger()->info(format("Imported %d grid nodes, %d grid links and %d waypoints.") % nodeCount % linkCount % waypointCount);
+}
+
+// A search predicate that only selects nodes with specific medium
+class require_medium {
+public:
+    require_medium(const GridWaypointNodeMap &map, GridNode::Medium medium)
+      : map(map), medium(medium)
+    {}
+    
+    bool operator()(const GridWaypoint &p) const
+    {
+      GridNode *node = map.at(p);
+      return node->isLinked() && node->getMedium() == medium;
+    }
+private:
+    GridWaypointNodeMap map;
+    GridNode::Medium medium;
+};
+
+
+GridNode *Grid::getNodeByMedium(const Vector3f &loc, GridNode::Medium medium, float radius)
+{
+  GridWaypoint target(loc);
+  GridNode *node = NULL;
+  std::pair<GridTree::const_iterator, float> found = m_tree.find_nearest_if(
+    target,
+    radius,
+    require_medium(m_waypointMap, medium)
+  );
+  
+  if (found.first != m_tree.end()) {
+    GridWaypoint wp = *found.first;
+    node = m_waypointMap[wp];
+  }
+  
+  return node;
 }
 
 GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const
@@ -434,6 +501,10 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
   // Choose random node
   typedef std::pair<GridNode*, GridLink*> NodeLinkPair;
   BOOST_FOREACH(NodeLinkPair p, links) {
+    // Skip links going from the ground into the air
+    if (start->isGround() && p.first->isAir())
+      continue;
+    
     if (counter == randomElement && visitedNodes.find(p.first) == visitedNodes.end()) {
       if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
         return p.first;
@@ -447,6 +518,10 @@ GridNode* Grid::pickNextNode(GridNode *start, const std::set<GridNode*> &visited
   // If randomly chosen node was already visited, let's just pick the first node that
   // has not been visited (don't care for randomness at this point)
   BOOST_FOREACH(NodeLinkPair p, links) {
+    // Skip links going from the ground into the air
+    if (start->isGround() && p.first->isAir())
+      continue;
+    
     if (visitedNodes.find(p.first) == visitedNodes.end()) {
       if (Timing::getCurrentTimestamp() - p.first->getLastVisit() > DO_NOT_REVISIT_NODE_TIME) {
         return p.first;
@@ -565,6 +640,10 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, 
     BOOST_FOREACH(NodeLink p, node->links()) {
       GridNode *neigh = p.first;
       if (closed.find(neigh) != closed.end())
+        continue;
+      
+      // Skip links going from the ground into the air
+      if (node->isGround() && neigh->isAir())
         continue;
       
       bool better = false;

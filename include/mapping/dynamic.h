@@ -81,6 +81,9 @@ private:
     // Last position
     bool m_haveLastOrigin;
     Vector3f m_lastOrigin;
+    
+    // For tracking other entities
+    boost::unordered_map<int, Vector3f> m_lastEntityOrigin;
 };
 
 }

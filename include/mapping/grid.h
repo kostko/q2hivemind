@@ -219,6 +219,21 @@ public:
      * Returns true if this node is linked with the rest of the map.
      */
     inline bool isLinked() const { return m_linked; }
+    
+    /**
+     * Determines the medium in which the node resides.
+     */
+    void evaluateMedium();
+    
+    /**
+     * Returns true if this node is an air node.
+     */
+    inline bool isAir() const { return m_medium == Air; }
+    
+    /**
+     * Returns true if this node is a ground node.
+     */
+    inline bool isGround() const { return m_medium == Ground; }
 private:
     // Grid instance
     Grid *m_grid;
@@ -490,6 +505,16 @@ public:
      * @return A valid GridNode instance or NULL
      */
     GridNode *getNodeByLocation(const Vector3f &loc, bool create = true);
+    
+    /**
+     * Returns the closest node of the specified medium.
+     *
+     * @param loc Location coordinates
+     * @param medium Wanted medium
+     * @param radius Search radius
+     * @return A valid GridNode instance or NULL
+     */
+    GridNode *getNodeByMedium(const Vector3f &loc, GridNode::Medium medium, float radius = 100);
 protected:
     /**
      * A helper method to generate a random number.
@@ -505,6 +530,11 @@ protected:
      *         (if there is no link from start node or if all nodes from start node have been visited already = cycle)
      */
     GridNode* pickNextNode(GridNode *start, const std::set<GridNode*> &visitedNodes) const;
+    
+    /**
+     * Returns the BSP map associated with this grid.
+     */
+    inline Map *getMap() const { return m_map; }
 private:
     // Static geometry map
     Map *m_map;
