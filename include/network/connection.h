@@ -80,6 +80,11 @@ public:
     void say(const std::string &msg);
     
     /**
+     * Uses a specific item.
+     */
+    void use(const std::string &item);
+    
+    /**
      * Returns the current game state.
      */
     GameState getGameState() const;

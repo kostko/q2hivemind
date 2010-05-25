@@ -167,6 +167,11 @@ void Connection::say(const std::string &msg)
   writeConsoleSync("say " + msg);
 }
 
+void Connection::use(const std::string &item)
+{
+  writeConsoleSync("use " + item);
+}
+
 void Connection::refreshInventory()
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
