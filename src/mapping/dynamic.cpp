@@ -86,11 +86,13 @@ void DynamicMapper::processEntity(const Entity &entity)
       // Player entity
       if (!dir->isFriend(entity.getEntityId())) {
         if (m_lastEntityOrigin.find(entity.getEntityId()) != m_lastEntityOrigin.end()) {
-          learnFromMovement(m_lastEntityOrigin.at(entity.getEntityId()), entity.origin);
+          learnFromMovement(m_lastEntityOrigin.at(entity.getEntityId()), entity.serverOrigin);
         }
         
-        m_lastEntityOrigin[entity.getEntityId()] = entity.origin;
+        m_lastEntityOrigin[entity.getEntityId()] = entity.serverOrigin;
       }
+      
+      // TODO Update composite dynamic entity view
     }
   } else if (entity.isPlayer() && !dir->isFriend(entity.getEntityId())) {
     // Invalidate last entity origin

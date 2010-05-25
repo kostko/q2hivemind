@@ -57,9 +57,10 @@ OpponentSpottedEvent::OpponentSpottedEvent(const Vector3f& origin)
 {
 }
 
-EntityUpdatedEvent::EntityUpdatedEvent(const Entity &entity)
+EntityUpdatedEvent::EntityUpdatedEvent(const Entity &entity, bool external)
   : Event(EntityUpdated),
-    m_entity(entity)
+    m_entity(entity),
+    m_external(external)
 {
 }
 

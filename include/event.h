@@ -148,16 +148,23 @@ public:
      * Class constructor.
      *
      * @param entity Entity that has been updated
+     * @param external Is this an external update (via MOLD)
      */
-    EntityUpdatedEvent(const Entity &entity);
+    EntityUpdatedEvent(const Entity &entity, bool external = false);
 
     /**
      * Returns the entity.
      */
     inline Entity getEntity() const { return m_entity; }
+    
+    /**
+     * Returns true if this entity update is an external one.
+     */
+    inline bool isExternal() const { return m_external; }
 private:
-    // Current bot origin
+    // Current entity origin
     Entity m_entity;
+    bool m_external;
 };
 
 }

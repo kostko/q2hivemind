@@ -27,3 +27,24 @@ message LocationUpdate {
   required float z = 3;
 }
 
+//
+// Entity update events are used to distribute entity movement
+// knowledge around the team, so all bots see a composite
+// picture of the dynamic world.
+//
+message EntityUpdate {
+  // Coordinates
+  required float x = 1;
+  required float y = 2;
+  required float z = 3;
+  
+  // Entity identifier
+  required uint32 entityId = 4;
+  
+  // Model index
+  required uint32 modelIndex = 5;
+  
+  // Player or not
+  required bool player = 6;
+}
+

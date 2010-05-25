@@ -6,6 +6,7 @@ message Message {
     CONTROL_ANNOUNCE = 1;
     EVENT_LOCATION_UPDATE = 2;
     EVENT_RESPAWNED = 3;
+    EVENT_ENTITY_UPDATE = 4;
   };
   
   // Source/dest bot identifiers

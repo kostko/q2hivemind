@@ -24,6 +24,7 @@ class Context;
 class Directory;
 class Bot;
 class BotRespawnEvent;
+class EntityUpdatedEvent;
 
 /**
  * Global planner.
@@ -76,6 +77,11 @@ protected:
      * Bot respawned event handler and propagator.
      */
     void botRespawned(BotRespawnEvent *event);
+    
+    /**
+     * This method gets called when an entity has been updated.
+     */
+    void entityUpdated(EntityUpdatedEvent *event);
     
     /**
      * Searches for a bot in the directory and if one is not

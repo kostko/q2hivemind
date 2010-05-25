@@ -59,6 +59,7 @@ public:
   Vector3f angles;
   Vector3f origin;
   Vector3f velocity;
+  Vector3f serverOrigin;
   
   int modelIndex;
   int modelIndex2;

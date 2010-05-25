@@ -247,6 +247,7 @@ GameState Connection::getGameState() const
   for (int i = 0; i < 1024; i++) {
     Entity *e = &(m_cs->entities[i]);
     Entity *d = &(s.entities[i]);
+    d->serverOrigin = e->origin;
     d->origin = e->origin + f*e->velocity;
     d->velocity = e->velocity;
     d->angles = e->angles;
