@@ -86,6 +86,19 @@ void GridNode::addLink(GridNode *other, float weight, bool reinforce)
   }
 }
 
+void GridNode::addItem(const HiveMind::Item &item)
+{
+  // This is needed to update item's last updated time as this is not
+  // used in hash value and equality checks
+  m_items.erase(item);
+  m_items.insert(item);
+}
+
+void GridNode::removeItem(const HiveMind::Item &item)
+{
+  m_items.erase(item);
+}
+
 void GridNode::evaluateMedium()
 {
   Medium medium;
@@ -288,6 +301,28 @@ void Grid::learnItem(GridNode *node)
     GridWaypoint wp(item.getLocation());
     if (m_items[item.getType()].find(wp) == m_items[item.getType()].end())
       m_items[item.getType()].insert(wp);
+  }
+  
+  // Register node as item-holding node for later expiry checks
+  m_itemNodes.insert(node);
+}
+
+void Grid::collectAllExpired()
+{
+  timestamp_t now = Timing::getCurrentTimestamp();
+  
+  // Remove all expired items
+  BOOST_FOREACH(GridNode *node, m_itemNodes) {
+    std::list<Item> queue;
+    
+    BOOST_FOREACH(Item item, node->items()) {
+      if (now - item.getLastSeen() > item_expiry_time)
+        queue.push_back(item);
+    }
+    
+    BOOST_FOREACH(Item &item, queue) {
+      node->removeItem(item);
+    }
   }
 }
 

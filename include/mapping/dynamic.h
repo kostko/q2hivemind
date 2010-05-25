@@ -10,6 +10,7 @@
 
 #include "object.h"
 #include "network/gamestate.h"
+#include "timing.h"
 
 namespace HiveMind {
 
@@ -25,6 +26,9 @@ class EntityUpdatedEvent;
  */
 class DynamicMapper : public Object {
 public:
+    // Grid collection interval (in msec)
+    enum { grid_collection_interval = 60000 };
+    
     /**
      * Class constructor.
      *
@@ -77,6 +81,7 @@ private:
     
     // Mapping grid
     Grid *m_grid;
+    timestamp_t m_lastGridCollection;
     
     // Last position
     bool m_haveLastOrigin;

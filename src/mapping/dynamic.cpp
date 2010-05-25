@@ -21,6 +21,7 @@ namespace HiveMind {
 DynamicMapper::DynamicMapper(Context *context)
   : m_context(context),
     m_grid(context->getGrid()),
+    m_lastGridCollection(0),
     m_haveLastOrigin(false)
 {
   Object::init();
@@ -71,16 +72,15 @@ void DynamicMapper::processEntity(const Entity &entity)
         // A valuable item
         Item item = Item::forModel(model);
         item.setLocation(entity.origin);
+        item.updateLastSeen();
         node->setType(GridNode::Item);
         node->addItem(item);
         m_grid->learnItem(node);
       } else if (model.find("models/objects/dmspot/tris.md2") != std::string::npos) {
         // Spawn point
-        getLogger()->info(format("Discovered spawn point at %f %f %f.") % entity.origin[0] % entity.origin[1] % entity.origin[2]);
         node->setType(GridNode::SpawnPoint);
       } else {
         // Unknown non-player entity
-        getLogger()->info(format("Found unknown non-player entity: %s (%d)") % model % entity.getEntityId());
       }
     } else {
       // Player entity
@@ -147,6 +147,13 @@ void DynamicMapper::worldUpdated(const GameState &state)
   
   m_lastOrigin = state.player.serverOrigin;
   m_haveLastOrigin = true;
+  
+  // Run grid expiry functions once in a while
+  timestamp_t now = Timing::getCurrentTimestamp();
+  if (now - m_lastGridCollection >= grid_collection_interval) {
+    m_grid->collectAllExpired();
+    m_lastGridCollection = now;  
+  }
 }
 
 }

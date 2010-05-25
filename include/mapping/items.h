@@ -115,11 +115,16 @@ public:
     }
     
     /**
-     * Comparison operator.
+     * Hash function.
      */
-    inline bool operator<(const Item &other) const
+    friend std::size_t hash_value(const Item &item)
     {
-      return m_type < other.m_type;
+      std::size_t seed = 0;
+      boost::hash_combine(seed, item.m_type);
+      boost::hash_combine(seed, item.m_location[0]);
+      boost::hash_combine(seed, item.m_location[1]);
+      boost::hash_combine(seed, item.m_location[2]);
+      return seed;
     }
 private:
     // Item properties

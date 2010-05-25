@@ -15,6 +15,7 @@
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/thread.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <list>
 #include <set>
@@ -91,7 +92,7 @@ private:
 // Helper typedefs
 typedef boost::unordered_map<GridNode*, GridLink*> GridLinkMap;
 typedef std::set<GridWaypoint> GridWaypointSet;
-typedef std::set<Item> ItemSet;
+typedef boost::unordered_set<Item> ItemSet;
 
 /**
  * This represents a graph node that can contain multiple
@@ -204,7 +205,12 @@ public:
     /**
      * Adds a new item to this node.
      */
-    inline void addItem(const HiveMind::Item &item) { m_items.insert(item); }
+    void addItem(const HiveMind::Item &item);
+    
+    /**
+     * Removes an item from this node.
+     */
+    void removeItem(const HiveMind::Item &item);
     
     /**
      * Returns item list for this node.
@@ -403,6 +409,9 @@ public:
     // Cell radius
     enum { cell_radius = 24 };
     
+    // Item expiry time (in msec)
+    enum { item_expiry_time = 60000 };
+    
     /**
      * Class constructor.
      *
@@ -512,6 +521,11 @@ public:
      * @return A valid GridNode instance or NULL
      */
     GridNode *getNodeByMedium(const Vector3f &loc, GridNode::Medium medium, float radius = 100);
+    
+    /**
+     * Performs grid node expiry tasks.
+     */
+    void collectAllExpired();
 protected:
     /**
      * A helper method to generate a random number.
@@ -540,6 +554,7 @@ private:
     // Lookup data structures
     GridTree m_tree;
     GridWaypointNodeMap m_waypointMap;
+    std::set<GridNode*> m_itemNodes;
     boost::unordered_map<Item::Type, GridTree> m_items;
     
     // Random generator
