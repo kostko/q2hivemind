@@ -130,11 +130,6 @@ public:
      * @param msg Message to write
      */
     void writeConsoleAsync(const std::string &msg);
-
-    /**
-     * Resets spawn angles.
-     */
-    void resetSpawnAngles();
 protected:
     /**
      * Entry point for the internal protocol worker thread.
@@ -232,7 +227,6 @@ private:
     InternalGameState *m_ds;
     InternalGameState *m_spawn;
     TimePoint m_dataPoints[1024];
-    Vector3f m_spawnAngles;
     
     // Inventory
     boost::unordered_map<std::string, int> m_inventory;

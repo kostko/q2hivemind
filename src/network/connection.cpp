@@ -103,9 +103,8 @@ void Connection::connect()
   m_workerThread = boost::thread(&Connection::workerProtocol, this);
   m_connected = false;
   
-  // Initialize updates array and reset spawn angles
+  // Initialize updates array
   memset(m_updates, 0, (MAX_UPDATES + 1) * sizeof(Update));
-  m_spawnAngles = Vector3f(-1, -1, -1);
   
   // Attempt connection sequence
   getLogger()->info("Attempting to get challenge from server...");
@@ -199,7 +198,10 @@ void Connection::move(const Vector3f &angles, const Vector3f &velocity, bool att
     frameTime = 200;
   
   // Adjust angles as orientation depends on spawn angles
-  adjAngles = angles - m_spawnAngles;
+  adjAngles[0] = angles[0] + m_cs->player.angles[0];
+  adjAngles[1] = angles[1] - m_cs->player.angles[1];
+  adjAngles[2] = angles[2];
+  
   if (adjAngles[1] >= 2*M_PI)
     adjAngles[1] -= 2*M_PI;
   
@@ -810,12 +812,6 @@ int Connection::processPacket(char *buffer, size_t length)
           i += 2;
           m_cs->player.angles[2] = M_PI/32768.0 * ((float) *((short*) (buffer + i)));
           i += 2;
-          
-          // Populate spawn angles (we need this so we can properly send updates)
-          if (m_spawnAngles == Vector3f(-1, -1, -1)) {
-            m_spawnAngles = m_cs->player.angles;
-            getLogger()->info(format("Spawn angles for today are %f, %f, %f.") % m_spawnAngles[0] % m_spawnAngles[1] % m_spawnAngles[2]);
-          }
         }
         if (mask & 0x0080) i += 3;
         if (mask & 0x0100) i += 6;
@@ -1126,11 +1122,6 @@ int Connection::receivePacket(char *data)
   }
 
   return length;
-}
-
-void Connection::resetSpawnAngles()
-{
-  m_spawnAngles = Vector3f(-1, -1, -1);
 }
 
 }
