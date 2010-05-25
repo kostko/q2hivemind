@@ -116,19 +116,21 @@ void DynamicMapper::learnFromMovement(const Vector3f &pointA, const Vector3f &po
   if (pointA == pointB)
     return;
   
+  // Check for spawn points
+  float distance = (pointA - pointB).norm();
+  GridNode *node = m_grid->getNodeByLocation(pointB);
+  if (node->getType() == GridNode::SpawnPoint && distance > 50)
+    return;
+  
   // Sanity check if distance between points is too great, only learn individual
   // waypoints
-  if ((pointA - pointB).norm() > 200) {
+  if (distance > 200) {
     m_grid->getNodeByLocation(pointA);
     m_grid->getNodeByLocation(pointB);
   } else {
     // Actually learn the path into the mapping grid
     m_grid->learnWaypoints(pointA, pointB);
   }
-  
-  // For each visited GridNode remember when we have last visited it
-  GridNode *node = m_grid->getNodeByLocation(pointB);
-  node->updateLastVisit();
 }
 
 void DynamicMapper::worldUpdated(const GameState &state)
@@ -138,6 +140,10 @@ void DynamicMapper::worldUpdated(const GameState &state)
   if (m_haveLastOrigin && m_lastOrigin != state.player.serverOrigin) {
     learnFromMovement(m_lastOrigin, state.player.serverOrigin);
   }
+  
+  // For each visited GridNode remember when we have last visited it
+  GridNode *node = m_grid->getNodeByLocation(state.player.serverOrigin);
+  node->updateLastVisit();
   
   m_lastOrigin = state.player.serverOrigin;
   m_haveLastOrigin = true;
