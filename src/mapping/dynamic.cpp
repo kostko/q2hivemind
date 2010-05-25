@@ -113,6 +113,9 @@ void DynamicMapper::botRespawned(BotRespawnEvent *event)
 
 void DynamicMapper::learnFromMovement(const Vector3f &pointA, const Vector3f &pointB)
 {
+  if (pointA == pointB)
+    return;
+  
   // Sanity check if distance between points is too great, only learn individual
   // waypoints
   if ((pointA - pointB).norm() > 200) {
