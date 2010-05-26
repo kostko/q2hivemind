@@ -7,6 +7,7 @@
  */
 #include "mapping/grid.h"
 #include "mapping/map.h"
+#include "mapping/items.h"
 #include "logger.h"
 #include <ctime>
 #include <queue>
@@ -299,8 +300,10 @@ void Grid::learnItem(GridNode *node)
     }
     
     GridWaypoint wp(item.getLocation());
-    if (m_items[item.getType()].find(wp) == m_items[item.getType()].end())
+    if (m_items[item.getType()].find(wp) == m_items[item.getType()].end()) {
       m_items[item.getType()].insert(wp);
+      m_itemWaypointMap[wp] = node;
+    }
   }
   
   // Register node as item-holding node for later expiry checks
@@ -758,6 +761,22 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, 
   }
   
   return found;
+}
+
+GridNode *Grid::getNearestItemNode(Item::Type type, const Vector3f &origin)
+{
+  GridWaypoint target(origin);
+  GridTree tree = m_items[type];
+  GridNode *node = NULL;
+
+  std::pair<GridTree::const_iterator, float> found = tree.find_nearest(target);
+
+  if (found.first != tree.end()) {
+    GridWaypoint wp = *found.first;
+    node = m_itemWaypointMap[wp];
+  }
+
+  return node;
 }
 
 }

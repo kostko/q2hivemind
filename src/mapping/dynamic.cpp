@@ -14,7 +14,10 @@
 #include "event.h"
 #include "network/connection.h"
 #include "planner/directory.h"
+#include "planner/local.h"
 #include "planner/global.h"
+#include "planner/state.h"
+#include "states/goto.h"
 
 namespace HiveMind {
 
@@ -76,6 +79,10 @@ void DynamicMapper::processEntity(const Entity &entity)
         node->setType(GridNode::Item);
         node->addItem(item);
         m_grid->learnItem(node);
+
+        // Add an appropriate state to eligible list
+        checkEligible(model);
+
       } else if (model.find("models/objects/dmspot/tris.md2") != std::string::npos) {
         // Spawn point
         node->setType(GridNode::SpawnPoint);
@@ -153,6 +160,30 @@ void DynamicMapper::worldUpdated(const GameState &state)
   if (now - m_lastGridCollection >= grid_collection_interval) {
     m_grid->collectAllExpired();
     m_lastGridCollection = now;  
+  }
+}
+
+void DynamicMapper::checkEligible(const std::string &model)
+{
+  std::string stateName = "";
+
+  if (model.find("models/items/ammo") != std::string::npos) {
+    stateName = "gotoammo";
+  } else if (model.find("models/items/weapons") != std::string::npos) {
+    stateName = "gotoweapon";
+  } else if (model.find("models/items/healing") != std::string::npos) {
+    stateName = "gotohealth";
+  } else if (model.find("models/items/") != std::string::npos) {
+    stateName = "gotoupgrade";
+  }
+
+  if (stateName == "")
+    return;
+
+  LocalPlanner *lp = m_context->getLocalPlanner();
+  GoToState *state = static_cast<GoToState*>(lp->getStateFromName(stateName));
+  if (state != NULL && !state->itemExists()) {
+    state->setItemExists(true);
   }
 }
 

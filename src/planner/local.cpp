@@ -112,7 +112,7 @@ void LocalPlanner::addEligibleState(State *state)
 {  
   state->setEventStart(Timing::getCurrentTimestamp());
   m_eligibleStates.insert(state);
-  //getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
+ // getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
 }
 
 void LocalPlanner::pruneState(const std::string &state)
@@ -209,11 +209,10 @@ void LocalPlanner::process()
     // When there is no current state we transition to wander state
     if (!m_currentState)
       requestTransition("wander");
-
+      
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
-
     // Sleep some 200ms
     usleep(200000);
   }

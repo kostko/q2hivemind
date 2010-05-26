@@ -21,6 +21,10 @@
 #include "states/swim.h"
 #include "states/shoot.h"
 #include "states/respawn.h"
+#include "states/gotoammo.h"
+#include "states/gotohealth.h"
+#include "states/gotoweapon.h"
+#include "states/gotoupgrade.h"
 
 // MOLD message bus
 #include "mold/server.h"
@@ -76,6 +80,11 @@ void Context::simulationStart(const std::string &map)
   m_localPlanner->registerState(new SwimState(this));
   m_localPlanner->registerState(new ShootState(this));
   m_localPlanner->registerState(new RespawnState(this));
+  m_localPlanner->registerState(new GoToAmmoState(this));
+  m_localPlanner->registerState(new GoToHealthState(this));
+  m_localPlanner->registerState(new GoToUpgradeState(this));
+  m_localPlanner->registerState(new GoToWeaponState(this));
+  m_localPlanner->addEligibleState(m_localPlanner->getStateFromName("wander"));
   m_localPlanner->start();
   
   // Create and start global planner (only so that it is there, it won't
@@ -139,6 +148,11 @@ void Context::execute()
   m_localPlanner->registerState(new SwimState(this));
   m_localPlanner->registerState(new ShootState(this));
   m_localPlanner->registerState(new RespawnState(this));
+  m_localPlanner->registerState(new GoToAmmoState(this));
+  m_localPlanner->registerState(new GoToHealthState(this));
+  m_localPlanner->registerState(new GoToUpgradeState(this));
+  m_localPlanner->registerState(new GoToWeaponState(this));
+  m_localPlanner->addEligibleState(m_localPlanner->getStateFromName("wander"));
   m_localPlanner->start();
   
   // Create and start global planner

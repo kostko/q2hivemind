@@ -24,7 +24,16 @@ WanderState::WanderState(Context *context)
     m_randomize(false)
 {
   Object::init();
-  getLocalPlanner()->addEligibleState(this);
+}
+
+WanderState::WanderState(Context *context, const std::string &name, int eligibilityTime, bool prunable)
+  : State(context, name, eligibilityTime, prunable),
+    m_hasNextPoint(false),
+    m_speed(0),
+    m_minDistance(-1),
+    m_randomize(false)
+{
+  Object::init();
 }
 
 WanderState::~WanderState()
@@ -37,6 +46,8 @@ void WanderState::initialize(const boost::any &metadata)
   m_speed = 0;
   m_minDistance = -1;
   m_randomize = false;
+
+  m_atDestination = false;
 
   // The wander state is always complete, because it has no goal.
   m_complete = true;
@@ -100,6 +111,7 @@ void WanderState::processFrame()
     if (m_currentPath.isDestinationReached()) {
       // We have reached our destination
       getLogger()->info("Destination reached.");
+      m_atDestination = true;
 
       // We want to compute new random path the next time we will go into this state (in processPlanning)
       m_hasNextPoint = false;

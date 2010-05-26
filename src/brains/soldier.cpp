@@ -54,14 +54,12 @@ void SoldierBrains::init()
   m_weaponMap[head + "v_rocket" + tail] = ROCKET_LAUNCHER;
 
   // Init the action ID to State map
-  m_actionStateMap[WANDER]   = m_localPlanner->getStateFromName("wander");
+  m_actionStateMap[WANDER] = m_localPlanner->getStateFromName("wander");
   m_actionStateMap[SHOOT_AT] = m_localPlanner->getStateFromName("shoot");
-
- // TODO
- // m_actionStateMap[FIND_AMMO] = NULL;
- // m_actionStateMap[FIND_HEALTH] = NULL;
- // m_actionStateMap[FIND_BETTER_WEAPON] = NULL;
- // m_actionStateMap[RUNAWAY] = NULL;
+  m_actionStateMap[FIND_AMMO] = m_localPlanner->getStateFromName("gotoammo");
+  m_actionStateMap[FIND_HEALTH] = m_localPlanner->getStateFromName("gotohealth");
+  m_actionStateMap[FIND_BETTER_WEAPON] = m_localPlanner->getStateFromName("gotoweapon");
+  m_actionStateMap[FIND_UPGRADE] = m_localPlanner->getStateFromName("gotoupgrade");
 
   // Initial execution state
   m_currAction->setExecutionState(m_actionStateMap[WANDER]);
@@ -94,7 +92,7 @@ double SoldierBrains::reward(BrainState *prevState, BrainState *currState)
 BrainState *SoldierBrains::observe()
 {
   GameState *gs = m_localPlanner->getGameState();
-  
+
   // Health
   int health = gs->player.health;
   if (health < 20) {    
@@ -104,11 +102,11 @@ BrainState *SoldierBrains::observe()
   } else {
     (*m_tempState)[HEALTH] = MID_HEALTH;
   }
-
+  
   // Weapon
   int weapon = m_weaponMap[ gs->player.weaponModel ];
   (*m_tempState)[WEAPON] = weapon;
-  
+
   // Ammo
   int ammo = gs->player.ammo;
   
@@ -137,7 +135,7 @@ BrainState *SoldierBrains::observe()
    case BFG:
      (*m_tempState)[AMMO] = ammo > 5 ? HIGH_AMMO : LOW_AMMO;  // although 200 is the maximum for BFG :P
   }
-  
+
   // Check if we can see any enemies  
   bool enemy = false;
   for (int i = 1; i < gs->maxPlayers; i++) {

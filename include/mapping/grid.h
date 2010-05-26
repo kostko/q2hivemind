@@ -27,6 +27,7 @@ class MapPath;
 class Grid;
 class GridLink;
 class GridNode;
+class Item;
 
 /**
  * This represents a waypoint.
@@ -523,6 +524,14 @@ public:
     GridNode *getNodeByMedium(const Vector3f &loc, GridNode::Medium medium, float radius = 100);
     
     /**
+     * Returns the closest grid node with the requested item type.
+     *
+     * @param type Type of item
+     * @param origin The agent's position
+     */
+    GridNode *getNearestItemNode(Item::Type type, const Vector3f &origin);
+   
+    /**
      * Performs grid node expiry tasks.
      */
     void collectAllExpired();
@@ -554,7 +563,9 @@ private:
     // Lookup data structures
     GridTree m_tree;
     GridWaypointNodeMap m_waypointMap;
+    GridWaypointNodeMap m_itemWaypointMap;
     std::set<GridNode*> m_itemNodes;
+
     boost::unordered_map<Item::Type, GridTree> m_items;
     
     // Random generator

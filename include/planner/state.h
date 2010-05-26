@@ -171,9 +171,6 @@ protected:
     // Learn from this state transition
     bool m_shouldLearn;
 private:
-    // Unique state name
-    std::string m_name;
-    
     // Context and local planner
     Context *m_context;
     LocalPlanner *m_planner;
@@ -183,6 +180,9 @@ private:
 
     // When did the trigger event for this state occur
     timestamp_t m_eventStart;
+
+    // Unique state name
+    std::string m_name;
 
     // How long should we leave the state in m_eligibleStates (to be a candidate
     // for transition) before deleting it [in ms]

@@ -19,15 +19,13 @@
 namespace HiveMind {
 
 class Context;
-
-enum {
-    BOT_SIGHT = 300
-};
+class GoToState;
 
 /**
  * Wander state.
  */
 class WanderState : public State {
+friend class GoToState;
 public:
     /**
      * Class constructor.
@@ -69,6 +67,11 @@ public:
     virtual void processPlanning();
 protected:
     /**
+     * Special constructor for subclasses.
+     */
+    WanderState(Context *context, const std::string &name, int eligibilityTime, bool prunable);
+
+    /**
      * Returns the distance from origin to destination.
      */
     float getDistanceToDestination() const;
@@ -85,6 +88,9 @@ protected:
      * @param randomize True means to pick the next node at random
      */
     void recomputePath(bool randomize = false);
+
+    // Have we reached the destination?
+    bool m_atDestination;
 private:
     // Current path to follow
     GridPath m_currentPath;

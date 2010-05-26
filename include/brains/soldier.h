@@ -19,7 +19,7 @@ class State;
 
 // Number of possible component values
 enum StateComponentSize {
-    N_ACTIONS = 2,
+    N_ACTIONS = 6,
     N_STATE0 = 3,
     N_STATE1 = 9,
     N_STATE2 = 2,
@@ -42,8 +42,8 @@ enum Actions {
     SHOOT_AT,
     FIND_AMMO, 
     FIND_HEALTH, 
-    FIND_BETTER_WEAPON, 
-    RUNAWAY
+    FIND_BETTER_WEAPON,
+    FIND_UPGRADE
 };
 
 // State component for health

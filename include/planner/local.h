@@ -104,7 +104,7 @@ public:
     /**
      * Get state object from name.
      */
-    inline State *getStateFromName(const std::string name) { return m_states[name]; }
+    inline State *getStateFromName(const std::string &name) { return m_states[name]; }
 
     /**
      * Add eligible state to m_eligibleStates.
@@ -112,6 +112,12 @@ public:
     void addEligibleState(State *state);
 
     /**
+     * Remove an eligible state.
+     */
+    void removeEligibleState(State *state);
+
+    /**
+     * Prune too old states from m_eligibleStates.
      * Update eligible states set. Does two things:
      *   1) Calls checkEvent() method on all states. This will hopefully add 
      *      some new states to eligible states set if some trigger events occur.

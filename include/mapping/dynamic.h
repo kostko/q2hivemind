@@ -76,6 +76,11 @@ protected:
      */
     void learnFromMovement(const Vector3f &pointA, const Vector3f &pointB);
 private:
+    /**
+     * Check for new eligible states.
+     */
+    void checkEligible(const std::string &model);
+
     // Context
     Context *m_context;
     
