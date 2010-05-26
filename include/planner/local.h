@@ -26,46 +26,6 @@ class Brains;
 class BrainAction;
 
 /**
- * A transition request.
- */
-class TransitionRequest {
-public:
-    // State to transition into
-    std::string state;
-    
-    // Priority (higher number means higher priority)
-    int priority;
-    
-    // Metadata (state-specific)
-    boost::any metadata;
-    
-    // Has this state been restored
-    bool restored;
-
-    /**
-     * Constructs an invalid request.
-     */
-    TransitionRequest()
-      : state(""),
-        priority(0),
-        restored(false)
-    {}
-
-    /**
-     * Returns true if this is a valid request.
-     */
-    inline bool isValid() const { return state != "" && priority > 0; }
-    
-    /**
-     * Comparison function.
-     */
-    friend inline bool operator==(const TransitionRequest &a, const TransitionRequest &b)
-    {
-      return a.state == b.state && a.priority == b.priority;
-    }
-};
-
-/**
  * Local planner and state manager.
  */
 class LocalPlanner : public Object {
@@ -111,16 +71,7 @@ public:
      * @param fire Fire flag pointer
      */
     void getBestMove(Vector3f *orientation, Vector3f *velocity, bool *fire);
-    
-    /**
-     * Request a transition to the specified state. This doesn't
-     * mean that this transition will actually get chosen as it may
-     * get overriden by some higher-priority request.
-     *
-     * @param request A transition request
-     */
-    void requestTransition(const TransitionRequest &request);
-    
+        
     /**
      * Request a transition to the specified state. This doesn't
      * mean that this transition will actually get chosen as it may
@@ -131,9 +82,9 @@ public:
      * can be passed using this method.
      *
      * @param state State name
-     * @param priority Optional priority
+     * @param metadata Optional metadata
      */
-    void requestTransition(const std::string &state, int priority = 1);
+    void requestTransition(const std::string &state, const boost::any &metadata = boost::any());
 
     /**
      * Returns the game state object.
@@ -161,9 +112,12 @@ public:
     void addEligibleState(State *state);
 
     /**
-     * Prune too old states from m_eligibleStates.
+     * Update eligible states set. Does two things:
+     *   1) Calls checkEvent() method on all states. This will hopefully add 
+     *      some new states to eligible states set if some trigger events occur.
+     *   2) Prune too old states from eligible states set.
      */
-    void pruneEligibleStates();
+    void updateEligibleStates();
 
     /**
      * Is the given state eligible for transition?
@@ -178,7 +132,7 @@ public:
     /**
      * Are there any alternative states? Beside the always eligible state.
      */
-    bool alternativeStates() const { return (m_eligibleStates.size() > 1); }
+    bool alternativeStates() const { return (isEligible(m_currentState) ? m_eligibleStates.size() > 1 : !m_eligibleStates.empty()); }
 
     /**
      * Returns the current state.
@@ -196,13 +150,7 @@ private:
     // State registry
     boost::unordered_map<std::string, State*> m_states;
     State *m_currentState;
-    
-    // Transition requests are aggregated and ranked, the highest ranking
-    // request is approved if last state transition was not to close to
-    // avoid state flapping
-    std::list<TransitionRequest> m_transitionRequests;
-    unsigned int m_lastTransition;
-    
+        
     // Background processing thread
     boost::thread m_workerThread;
     boost::mutex m_requestMutex;

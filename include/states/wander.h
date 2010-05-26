@@ -47,7 +47,7 @@ public:
      * @param metadata Supplied metadata
      * @param restored True if state was restored from stack
      */
-    virtual void initialize(const boost::any &metadata, bool restored);
+    virtual void initialize(const boost::any &metadata);
     
     /**
      * Prepare for leaving this state.

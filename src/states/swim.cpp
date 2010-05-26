@@ -16,7 +16,7 @@
 namespace HiveMind {
 
 SwimState::SwimState(Context *context)
-  : State(context, "swim", 3000),
+  : State(context, "swim", -1, true),
     m_firstInWater(0),
     m_lastInWater(0)
 {
@@ -42,7 +42,7 @@ void SwimState::checkEvent()
       // We have been in the water at least 1 second
       getLogger()->warning("We are sinking, I repeat we are sinking!");
 
-      getLocalPlanner()->requestTransition("swim", 100);
+      getLocalPlanner()->requestTransition("swim");
       m_firstInWater = 0;
     }
   } else {
@@ -51,14 +51,13 @@ void SwimState::checkEvent()
   }
 }
 
-void SwimState::initialize(const boost::any &metadata, bool restored)
+void SwimState::initialize(const boost::any &metadata)
 {
-  getLogger()->info("Now entering swim state.");
+  m_complete = false;
 }
 
 void SwimState::goodbye()
 {
-  getLogger()->info("Now leaving swim state.");
 }
 
 void SwimState::processFrame()
@@ -84,7 +83,6 @@ void SwimState::processFrame()
       
       m_complete = true;
       m_lastInWater = 0;
-      getLocalPlanner()->getBrains()->interact();
     }
   } else {
     // Reset swim timer

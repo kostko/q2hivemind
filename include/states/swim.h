@@ -41,7 +41,7 @@ public:
      *
      * @param metadata Supplied metadata
      */
-    virtual void initialize(const boost::any &metadata, bool restored);
+    virtual void initialize(const boost::any &metadata);
     
     /**
      * Prepare for leaving this state.

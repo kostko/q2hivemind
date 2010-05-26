@@ -13,7 +13,7 @@
 
 namespace HiveMind {
 
-State::State(Context *context, const std::string &name, int eligibilityTime)
+State::State(Context *context, const std::string &name, int eligibilityTime, bool prunable)
   : m_name(name),
     m_context(context),
     m_planner(context->getLocalPlanner()),
@@ -22,7 +22,8 @@ State::State(Context *context, const std::string &name, int eligibilityTime)
     m_moveTarget(Vector3f::Zero()),
     m_complete(false),
     m_eligibilityTime(eligibilityTime),
-    m_eventStart(0)
+    m_eventStart(0),
+    m_isPrunable(prunable)
 {
 }
 

@@ -138,8 +138,7 @@ BrainState *SoldierBrains::observe()
      (*m_tempState)[AMMO] = ammo > 5 ? HIGH_AMMO : LOW_AMMO;  // although 200 is the maximum for BFG :P
   }
   
-  // Check if we can see any enemies
-  // TODO: how to detect team members?
+  // Check if we can see any enemies  
   bool enemy = false;
   for (int i = 1; i < gs->maxPlayers; i++) {
 

@@ -48,19 +48,16 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
 
 void Brains::interact()
 {
-  // If there's an action in progress, just continue.
-  if (m_currAction->executionState()->getName() != defaultActionName() && !m_currAction->complete()) {
-    return;
-  }
 
-  // If there are no alternatives, just continue.
-  if (!m_localPlanner->alternativeStates()) {
-    return;
-  }
 
-  // Doing nothing - select a new action.
+  // If current state is not complete or if we don't have possible alternative states to transition to, then skip
+  if (!m_localPlanner->getCurrentState()->isComplete() || !m_localPlanner->alternativeStates())
+    return;  
+  
   if (m_currAction->getName() == defaultActionName()) {
-    // Check in what state am I before the action
+    // We are in wander state and there are some other eligible states available
+    
+    // Observe my state
     *m_currState = *observe();
 
     if (m_learn) {

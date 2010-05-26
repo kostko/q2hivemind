@@ -32,8 +32,9 @@ public:
      * @param context Context context
      * @param name State name
      * @param eligibilityTime int Time before deleted from eligible states set
+     * @param prunable bool True if this state can be pruned and false otherwise
      */
-    State(Context *context, const std::string &name, int eligibilityTime);
+    State(Context *context, const std::string &name, int eligibilityTime, bool prunable);
     
     /**
      * Class destructor.
@@ -49,9 +50,8 @@ public:
      * Prepare for entry into this state.
      *
      * @param metadata Supplied metadata
-     * @param restored True if state was restored from stack
      */
-    virtual void initialize(const boost::any &metadata, bool restored) = 0;
+    virtual void initialize(const boost::any &metadata) = 0;
     
     /**
      * Prepare for leaving this state.
@@ -150,6 +150,11 @@ protected:
      * Return true if this bot is alive and false if he is dead.
      */
     inline bool alive() { return (m_gameState->player.health > 0); }
+
+    /**
+     * Returns true if this state can be pruned from eligible states.
+     */
+    inline bool isPrunable() { return m_isPrunable; }
 protected:
     // Next move
     Vector3f m_moveDestination;
@@ -183,6 +188,8 @@ private:
     // for transition) before deleting it [in ms]
     int m_eligibilityTime;
 
+    // Can local planner prune this state
+    bool m_isPrunable;
 };
 
 }

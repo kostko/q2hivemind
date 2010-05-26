@@ -19,7 +19,7 @@
 namespace HiveMind {
 
 ShootState::ShootState(Context* context)
-  : State(context, "shoot", 2000)
+  : State(context, "shoot", 1000, true)
 {
   Object::init();
   context->getDispatcher()->signalOpponentSpotted.connect(boost::bind(&ShootState::makeEligible, this, _1));
@@ -29,19 +29,16 @@ ShootState::~ShootState()
 {
 }
 
-void ShootState::initialize(const boost::any &metadata, bool restored)
+void ShootState::initialize(const boost::any &metadata)
 {
   m_complete = false;
 
   // Remember start time of shoot state request
   m_shootStart = Timing::getCurrentTimestamp();
-
-  getLogger()->info("Now entering shoot state.");
 }
 
 void ShootState::goodbye()
 {
-  getLogger()->info("Now leaving shoot state.");
 }
 
 void ShootState::checkEvent()
@@ -70,9 +67,6 @@ void ShootState::processFrame()
     // Only learn if we have been in this state long enough
     timestamp_t now = Timing::getCurrentTimestamp();
     m_shouldLearn = (m_shootStart - now > MIN_SHOOT_TIME);
-    m_complete = true;
-    //transitionDown();
-    //getLogger()->info("Proximity check: no target.");
     return;
   }
 
@@ -131,9 +125,7 @@ int ShootState::getClosestEnemy()
 
 void ShootState::makeEligible(OpponentSpottedEvent *event)
 {
-  //if (!getLocalPlanner()->isEligible(this)) {
-    getLocalPlanner()->addEligibleState(this);
-  //}
+  getLocalPlanner()->addEligibleState(this);
 }
 
 

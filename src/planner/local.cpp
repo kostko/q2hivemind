@@ -86,59 +86,67 @@ void LocalPlanner::getBestMove(Vector3f *orientation, Vector3f *velocity, bool *
   (*orientation)[2] = 0.0;
 }
 
-void LocalPlanner::requestTransition(const TransitionRequest &request)
+void LocalPlanner::requestTransition(const std::string &state, const boost::any &metadata)
 {
-  if (m_states.find(request.state) == m_states.end())
-    getLogger()->error(format("Attempted use of unregistered state '%s'!") % request.state);
-  
-  boost::lock_guard<boost::mutex> g(m_requestMutex);
-  m_transitionRequests.push_back(request);
-}
+  if (m_states.find(state) == m_states.end())
+    getLogger()->error(format("Attempted use of unregistered state '%s'!") % state);
 
-void LocalPlanner::requestTransition(const std::string &state, int priority)
-{
-  TransitionRequest rq;
-  rq.state = state;
-  rq.priority = priority;
-  rq.metadata = boost::any();
-  requestTransition(rq);
+  if (m_currentState) {
+    // Transition to state itself is not executed
+    if (m_currentState->getName() == state)
+      return;
+
+    // Quit previous state
+    m_currentState->goodbye();
+    m_currentState->m_complete = true;
+    getLogger()->info(format("Left '%s' state.") % m_currentState->getName());
+  }
+
+  // And enter new state
+  m_currentState = m_states[state];
+  m_currentState->initialize(metadata);
+  getLogger()->info(format("Entered '%s' state.") % state);
 }
 
 void LocalPlanner::addEligibleState(State *state)
 {  
   state->setEventStart(Timing::getCurrentTimestamp());
-
   m_eligibleStates.insert(state);
   //getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
 }
 
-void LocalPlanner::pruneEligibleStates()
+void LocalPlanner::updateEligibleStates()
 {
-  timestamp_t now = Timing::getCurrentTimestamp();
+  // Go through all states and check for event triggers
+  // This will in turn populate our eligible states set and update its members' event start time
+  typedef std::pair<std::string, State*> StatePair;
+  BOOST_FOREACH(StatePair element, m_states) {
+    State *state = element.second;
+    state->checkEvent();
+  }
 
   std::list<State*> pruneList;
 
   BOOST_FOREACH(State *state, m_eligibleStates) {
     // Some states are not to be pruned
-    if (state->getEligibilityTime() == -1)
+    if (!state->isPrunable())
       continue;
 
-    int delta = now - state->getEventStart();
+    int delta = Timing::getCurrentTimestamp() - state->getEventStart();
 
-    // Prune state if it is too old
+    // If state is too old add it to prune list
     if (delta > state->getEligibilityTime()) {
       getLogger()->info(format("Pruning %s from eligible states set.") % state->getName());
 
       pruneList.push_back(state);
 
-      // If we are in the state that needs to be pruned, mark state as completed and call brains
-      if (state == m_currentState) {
-        m_currentState->m_complete = true;
-        m_brains->interact();
-      }
+      // If we are in the state that needs to be pruned, mark state as completed
+      if (state == m_currentState) 
+        m_currentState->m_complete = true;       
     }
   }
 
+  // Prune all states that are too old
   BOOST_FOREACH(State *state, pruneList) {
     m_eligibleStates.erase(state);
   }
@@ -162,16 +170,19 @@ void LocalPlanner::worldUpdated(const GameState &state)
   Map *map = m_context->getMap();
   Vector3f origin = state.player.origin;
   
-  // Go through all states and check for event triggers
+  m_worldUpdated = true;
+
   typedef std::pair<std::string, State*> StatePair;
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
     state->m_gameState = m_gameState;
-    state->checkEvent();
   }
-  
-  m_worldUpdated = true;
-  pruneEligibleStates();
+
+  // Update eligible states set
+  updateEligibleStates();
+
+  // Let the brain process what to do
+  m_brains->interact();
   
   // Perform current state frame processing
   if (m_currentState)
@@ -182,46 +193,8 @@ void LocalPlanner::process()
 {
   while (!m_abort) {
     // When there is no current state we transition to wander state
-    if (!m_currentState) {
+    if (!m_currentState)
       requestTransition("wander");
-    }
-    
-    // Process state transition requests
-    {
-      boost::lock_guard<boost::mutex> g(m_requestMutex);
-      int bestPriority = 0;
-      TransitionRequest rq;
-      BOOST_FOREACH(TransitionRequest p, m_transitionRequests) {
-        if (p.priority >= bestPriority && (!m_currentState || p.state != m_currentState->getName())) {
-          rq = p;
-          bestPriority = p.priority;
-        }
-      }
-      
-      if (rq.isValid()) {
-        if (m_currentState) {
-          // When current state has not yet finished, let's stack it
-          if (!m_currentState->isComplete()) {
-            getLogger()->info(format("State %s interrupted by %s state.")  % m_currentState->getName() % rq.state);
-          } else {
-            m_currentState->goodbye();
-          }
-        }
-        
-        m_currentState = m_states[rq.state];
-        m_currentState->m_complete = false;
-        
-        // Log state switch
-        getLogger()->info(format("Switching to %s state.") % m_currentState->getName());
-        m_currentState->initialize(rq.metadata, rq.restored);
-      }
-      
-      // Remove requests from the list
-      m_transitionRequests.clear();
-    }
-
-    // Let the brain process what to do
-    m_brains->interact();
 
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
@@ -235,8 +208,8 @@ void LocalPlanner::process()
 void LocalPlanner::clearEligibleStates()
 {
   // we delete all states except wander state
-  BOOST_FOREACH(State *state, m_eligibleStates) {
-    if (state->getName() != "wander") m_eligibleStates.erase(state);
+  BOOST_FOREACH(State *state, m_eligibleStates) {    
+    if (state->isPrunable()) m_eligibleStates.erase(state);
   }
 }
 }

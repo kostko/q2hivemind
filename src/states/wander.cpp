@@ -17,7 +17,7 @@
 namespace HiveMind {
 
 WanderState::WanderState(Context *context)
-  : State(context, "wander", -1),
+  : State(context, "wander", -1, false),
     m_hasNextPoint(false),
     m_speed(0),
     m_minDistance(-1),
@@ -31,23 +31,19 @@ WanderState::~WanderState()
 {
 }
 
-void WanderState::initialize(const boost::any &metadata, bool restored)
+void WanderState::initialize(const boost::any &metadata)
 {
-  getLogger()->info("Now entering wander state.");
-
   m_hasNextPoint = false;
   m_speed = 0;
   m_minDistance = -1;
+  m_randomize = false;
 
   // The wander state is always complete, because it has no goal.
   m_complete = true;
-
-  // TODO Check metadata if it contains a destination
 }
 
 void WanderState::goodbye()
 {
-  getLogger()->info("Now leaving wander state.");
   recomputePath();
 }
 
@@ -97,7 +93,7 @@ void WanderState::processFrame()
     // Visit current location and check if we got to a point
     if (m_currentPath.visit(origin)) {
       Vector3f p = m_currentPath.getCurrent()->getLocation();
-      getLogger()->info(format("Got it. Next point is %f %f %f.") % p[0] % p[1] % p[2]); 
+      //getLogger()->info(format("Got it. Next point is %f %f %f.") % p[0] % p[1] % p[2]);
       resetPointStatistics();
     }
 
@@ -114,7 +110,7 @@ void WanderState::processFrame()
 
     if (m_speed < 10) {
       // Request to recompute the path
-      getLogger()->warning("We are stuck, but should be following a path!");
+      //getLogger()->warning("We are stuck, but should be following a path!");
       recomputePath();
     } else {
       // Check whether we will probably never reach our destination
@@ -138,16 +134,16 @@ void WanderState::processFrame()
         //   * We are stuck because a link is unwalkable
         //     (we must mark the link as invalid and recalculate the path)
         //
-        getLogger()->warning(format("Potential stalepoint detected at distance %f max diff %f Z diff %f!") % m_minDistance % diff % diffZ);
+        //getLogger()->warning(format("Potential stalepoint detected at distance %f max diff %f Z diff %f!") % m_minDistance % diff % diffZ);
 
         if (diff > 25 && diffZ <= 24) {
           // Probably circling a waypoint
-          getLogger()->info("Probably circling a waypoint. Marking it as reached.");
+          //getLogger()->info("Probably circling a waypoint. Marking it as reached.");
           m_currentPath.skip();
           resetPointStatistics();
         } else if (diffZ > 24) {
           // Probably fell somewhere
-          getLogger()->info("Probably fell somewhere. Recomputing a new path.");
+          //getLogger()->info("Probably fell somewhere. Recomputing a new path.");
           recomputePath(true);
         } else {
           recomputePath(true);
@@ -171,13 +167,13 @@ void WanderState::processPlanning()
 
   // Plan a path if none is currently available
   if (!m_hasNextPoint) {
-    getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
+    //getLogger()->info(format("I am at position %f,%f,%f and have no next point.") % p[0] % p[1] % p[2]);
     if (grid->computeRandomPath(p, &m_currentPath, m_randomize)) {
-      getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.size());
+      //getLogger()->info(format("Discovered a path of length %d.") % m_currentPath.size());
       m_hasNextPoint = true;
       resetPointStatistics();
     } else {
-      getLogger()->info("Path not found.");
+      //getLogger()->info("Path not found.");
     }
   }
 }

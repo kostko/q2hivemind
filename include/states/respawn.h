@@ -41,7 +41,7 @@ public:
      *
      * @param metadata Supplied metadata
      */
-    virtual void initialize(const boost::any &metadata, bool restored);
+    virtual void initialize(const boost::any &metadata);
     
     /**
      * Prepare for leaving this state.
@@ -61,9 +61,10 @@ public:
      * needed. This method is called in main thread context.
      */
     virtual void checkEvent();
-private:
-    // Is this state selected
-    bool m_selected;
+private:    
+    timestamp_t m_killedTime;
+
+    int m_i;
 };
 
 }

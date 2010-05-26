@@ -80,7 +80,7 @@ public:
      * Get new empty BrainAction object.
      */
     BrainAction *newBrainAction(std::string name = "");
-      
+          
 protected:
     /**
      * What really defines the "brain" is the reward function.

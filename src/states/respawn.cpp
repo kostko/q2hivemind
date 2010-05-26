@@ -14,8 +14,9 @@
 namespace HiveMind {
 
 RespawnState::RespawnState(Context *context)
-  : State(context, "respawn", 1000),
-    m_selected(false)
+  : State(context, "respawn", -1, true),
+    m_killedTime(0),
+    m_i(0)
 {
   Object::init();
 }
@@ -24,35 +25,38 @@ RespawnState::~RespawnState()
 {
 }
 
-void RespawnState::initialize(const boost::any &metadata, bool restored)
+void RespawnState::initialize(const boost::any &metadata)
 {
-  getLogger()->info(format("Now entering respawn state. Fire was %s") % m_moveFire);
-  m_selected = true;
   m_complete = false;
   getLocalPlanner()->clearEligibleStates();
 }
 
 void RespawnState::goodbye()
 {
-  getLogger()->info("Now leaving respawn state.");
-  m_selected = false;
-  m_complete = true;
 }
 
 void RespawnState::processFrame()
 {
   Vector3f dest = Vector3f(0.0, 0.0, 0.0);
   m_moveTarget = m_moveDestination = dest;
-  m_moveFire = true;
-  getLocalPlanner()->requestTransition("wander",1);
+  if (m_i % 2 == 0)
+    m_moveFire = true;
+  else
+    m_moveFire = false;
+
+  m_i++;
+
+  if (m_i % 10 == 0)
+    getLocalPlanner()->requestTransition("wander");
 }
 
 void RespawnState::checkEvent()
 {
   int health = m_gameState->player.health;
 
-  if (!m_selected && health < 0) {
-    getLocalPlanner()->requestTransition("respawn", 500);
+  if (Timing::getCurrentTimestamp() - m_killedTime > 1000 && health < 0) {
+    getLocalPlanner()->requestTransition("respawn");
+    m_killedTime = Timing::getCurrentTimestamp();
     
     // Emit respawn event
     BotRespawnEvent event(NULL);
