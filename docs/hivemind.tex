@@ -159,17 +159,86 @@ Kot naš virtualni svet smo vzeli svet Quake II, ki omogoča dva načina vključ
   \item \textbf{Integracija v naslovni prostor igre} je v osnovni namenjena t.i. \textit{strežniškim botom} pa tudi najrazličnejšim dodatkom in razširitev igre.
 \end{enumerate}
 
-Ker je cilj narediti avtonomne agente, ki niso na nikakršen način priviligirani nad ostalimi igralci, poleg tega pa morajo biti tudi sposobni delovanja iz različnih sistemov IP\footnote{V mrežo povezanih računalnikov} je edina smiselna možnost prva. Zaradi tega je bil prvi korak razumevanje in implementacija Quake II protokola. % TODO
+Ker je cilj narediti avtonomne agente, ki niso na nikakršen način priviligirani nad ostalimi igralci, poleg tega pa morajo biti tudi sposobni delovanja iz različnih sistemov IP\footnote{V mrežo povezanih računalnikov} je edina smiselna možnost prva. Zaradi tega je bil prvi korak razumevanje in implementacija Quake II protokola ter izdelava preprostega odjemalca zanj.
 
 Vendar pa naše ogrodje relativno transparentno podpira tudi drugi način za potrebe pospešene simulacije. Razlogi za to so opisani v enem izmed kasnejših poglavij, ki opisuje \textit{evolucijske umetne nevronske mreže}. Čeprav samega pristopa kasneje nismo uporabili, se je podpora za takšen način simulacije ohranila.
 
+V podrobnosti obeh implementacij se na tem mestu ne  bi spuščali, pomembno je omeniti le da na svet v obeh primerih vplivamo na enak način. V vsakem trenutku moramo svetu posredovati vektorja orientacije (v obliki Eulerjevih kotov) ter hitrosti, poleg tega pa še oznako ali naj agent strelja ali ne. V drugi smeri pa so agentu periodično posredovani podatki o bližnjih dinamičnih entitetah ter o njegovi lokaciji.
+
+Celotno ogrodje je organizirano tako, da najprej vsem komponentam sistema posreduje najnovejše znanje o bližnjem svetu (t.i. \textit{game state}), nato pa od nadzornika gibanja zahteva nov set vektorjev, ki jih preko vmesnika posreduje v svet. Vse to se mora odvijati dovolj hitro, saj svet zahteva posodobitve v realnem času.
+
 \section{Nadzor gibanja in izogibanje oviram}
+
+Osnovna funkcija agenta je gibanje po svetu, saj to predstavlja bistven način interakcije s svetom. V ta namen je bilo prvotno potrebno razviti sistem, ki omogoča višjim nivojem da sporočijo želeno destinacijo v obliki \textit{lokalnih koordinat} (t.j. koordinat, ki so dosegljive brez dodatnega planiranja poti).
+
+Tak sistem mora imeti tudi sposobnost izogibanja oviram, saj bi se v nasprotnem primeru agent zaradi geometrije sveta kaj hitro zaletel v steno ali zataknil v kakšen rob. Podoben problem predstavljajo tudi prepadi in vodne pasti v katere bi agent, ki bi slepo sledil točkam kaj hitro padel.
 
 \subsection{Senzorji}
 
+Navidezni senzorji omogočajo zaznavanje razdalje do ovire pod določenim kotom. Podatki o statični geometriji sveta so na voljo v t.i. BSP\footnote{\textit{Binary Space Partitioning} drevesa razdelijo prostor s hiperravninami na manjše odseke in omogočajo učinkovite poizvedbe o geometriji} drevesih za katere smo morali implementirati parser in ustrezne funkcije za izvajanje poizvedb nad njimi. Tako je v osnovi mogoče izstreliti žarek iz točke A proti točki B in ugotoviti kje na poti ga prekine statična geometrija.
+
+Agentove senzorje smo si najprej zamislili kot nekaj (v našem primeru jih je 19 v zrazponu od -90° do +90°) usmerjenih žarkov, ki v vsakem trenutku preverjajo kje se nahaja ovira. Vsi žarki so razporejeni v neki ravnini na fiksni višini glede na položaj agenta, kotom pa je dodan naključen šum +-5°, ki zmanjšuje možnost da bi agent zgrešil kakšno oviro. Tak način sicer v osnovi deluje dobro pri zaznavanju sten in večjih ovir, odpove pa na stopnicah (agent bi v tem primeru stopnice zaznal kot steno) in prepadih (teh agent sploh ne bi zaznal).
+
+V ta namen smo preproste senzorje razdalje nadomestili s preprosto lokalno simulacijo sprehoda v dani smeri. Definirali smo dolžino koraka in simulacija je potekala tako:
+\begin{enumerate}
+  \item Najprej z žarkom v dani smeri preverimo ali je na naslednjem koraku slučajno stopnica in ali jo lahko prestopimo (za to je definirana maksimalna višina stopnice, ki jo agent še lahko prestopi). V primeru da jo lahko, premaknemo simulacijo na to mesto.
+  
+  \item Z žarkom v dani smeri preverimo ali se na dolžini koraka nahaja ovira. V kolikor se ne, prestavimo simulacijo na to mesto.
+  
+  \item Preverimo ali stojimo na trdnih tleh, tako da usmerimo žarek navpično navzdol od mesta simulacije. V kolikor stojimo na tleh, prestavimo simulacijo na to mesto.
+  
+  \item Če smo presegli maksimalno število korakov vrnemo razdaljo, sicer nazaj na prvo točko.
+\end{enumerate}
+
+Takšni senzorji se obnesejo veliko bolje, saj lahko agent sedaj pravilno zazna tako stopnice kot tudi prepade. To sicer poveča število geometričnih poizvedb (testov z žarkom), vendar se BSP drevesa izkažejo kot učinkovita optimizacija in tako te poizvedbe ne predstavljajo velikih težav.
+
+Sami senzorji pa so zgolj orodje, ki ga mora učinkovito uporabiti nadzorni sistem za sprejetje odločitve kam naj se dejansko premakne. V naslednjih dveh podpoglavjih bomo predstavili dva pristopa, enega manj uspešnega in enega precej uspešnega.
+
 \subsection{Nadzorni sistem z EANN}
 
+Najprej smo želeli nadzorni sistem implementirati s t.i. evolucijskimi umetnimi nevronskimi mrežami. Gre za koncept, kjer za učenje nevronske mreže uporabljamo genetski algoritem, ki ga vodi kriterijska funkcija. V literaturi \cite{champandard02} smo zasledili da se omenjena kombinacija dobro obnese na problemski domeni nadzornih sistemov takšnih agentov, zato smo jo poskušali uporabiti.
+
+V našem primeru so namreč tako vhodi (razdalje do ovir s senzorjev ter prejšnji izhod mreže) kot izhodi (zahtevani popravek kota) zvezne vrednosti za kar so nevronske mreže še posebej primerne (v kolikor uporabljamo ustrezno sigmoidno odzivno funkcijo).
+
+\subsubsection{Topologija nevronske mreže in genetski algoritem}
+Za topologijo nevronske mreže smo izbrali znani perceptron in sicer z enim skritim nivojem petih nevronov. Genom za genetski algoritem je bil tako sestavljen kar iz uteži nevronske mreže, na začetku pa so bile te uteži postavljene naključno. Osebke za križanje pri generiranju naslednje generacije smo iz populacije izbirali tako, da je bila verjetnost izbire vsakega osebka proporcionalna njegovi ustreznosti glede na kriterijsko funkcijo (ta način izbire se sicer imenuje \textit{roulette-wheel selection}).
+
+Ker je bila naša kriterijska funkcija (o njej malce kasneje) zastavljena tako, da je bila najvišja možna vrednost 0, vsi slabši osebki pa so bili predstavljeni z negativnimi vrednostmi, je bilo potrebno pred izbiro narediti tudi transformacijo vrednosti kriterijske funkcije tako da so vse vrednosti padle na realni interval med 0 in 10. Natančna funkcija, ki smo jo uporabili pri transformaciji se nahaja v \cite{seymour08}.
+
+\subsubsection{Kriterijska funkcija}
+Kriterijska funkcija je bila zastavljena tako, da je kaznovala različne tipe obnašanja (ti atributi so povzeti po \cite{champandard02}):
+\begin{itemize}
+  \item Trki z objekti so bili kaznovani.
+  \item Velike spremembe smeri so bile kaznovane (še posebej v kolikor ni bilo pred agentom nobene ovire).
+  \item Ohranjanje smeri je bilo nagrajeno (oz. neohranjanje smeri je bilo kaznovano).
+  \item Oscilacije (zaporedni popravki najprej v eno, nato pa v drugo smer) so bile kaznovane.
+\end{itemize}
+
+Na tem mestu pa je nastopila precejšnja težava. Genetski algoritem za konvergenco potrebuje dovolj veliko populacijo in veliko število generacij. Mi smo imeli na voljo enega agenta, ki je naenkrat lahko uporabljal zgolj en genom (nevronsko mrežo). Torej je bilo potrebno posamezno nevronsko mrežo uporabljati določen čas in nato kumulativno oceniti njeno ustreznost. Skupaj z velikim številom zahtevanih generacij je to predstavljalo precejšen problem, saj na hitrost simulacije nismo morali vplivati (delovala je v realnem času).
+
+\subsubsection{Pospešena simulacija}
+
+Edina možnost, da bi lahko preizkusili dani algoritem in povečali možnost konvergence v doglednem času je bila da na nek način pospešimo simulacijo. Za ta namen smo našemu ogrodju dodali možnost neposredne integracije v naslovni prostor simulatorja (torej igre Quake II), kjer smo lahko hitrost delovanja prilagodili. Tako smo dosegli približno 30-kratno pospešitev simulacije.
+
+Na žalost tudi po vsem tem naporu željenih rezultatov nismo dobili, konvergenca genetskega algoritma se je ustavila v nekem popolnoma neuporabnem naboru uteži. Razloge za to gre verjetno iskati v neprilagojenosti vrednosti parametrov kriterijske funkcije ali pa morebiti v kakšnem hrošču v implementaciji. Na žalost nismo imeli časa, da bi odkrili vzrok, tako da je to ena izmed možnosti za nadaljne raziskave. Smo pa v tem procesu našemu ogrodju dodali funkcionalnost potrebno za pospešeno simulacijo ter za uporabo genetskih algoritmov in umetnih nevronskih mrež.
+
 \subsection{Nadzorni sistem z mehko logiko}
+
+Med našim raziskovanjem smo kontaktirali tudi avtorja \cite{champandard02}, \textit{Alexa J. Champandarda}, ki je potrdil problematičnost uporabe EANN in priporočal, da raje naredimo preprost nadzorni sistem z mehko logiko\footnote{Fuzzy logic}. Bistvena prednost takšnega sistema je nepotrebnost iskanja po prostoru možnih obnašanj (torej učenja), prav tako pa je zaradi njegove preprostosti tak sistem brez morebitnih skritih odvisnosti (za razliko od kriterijske funkcije genetskega algoritma, kjer je včasih težko napovedati kakšne rezultate bo imela sprememba vrednosti določenega parametra).
+
+Mehka logika se sicer veliko uporablja tudi v robotiki \cite{grayston06}, v principu pa deluje tako, da posamezne vrednosti združimo v razrede (npr. razdalja do ovire je lahko majhna, srednja ali velika; kot do ovire je lahko majhen, srednji ali velik). Nato definiramo akcije za kombinacije takšnih razredov:
+
+\begin{verbatim}
+  ČE kot = majhen IN ovira = blizu POTEM ZAVIJ(za 15°).
+\end{verbatim}
+
+Takšna obnašanja definiramo za vse kombinacije kota in razdalje do ovire. Izračun poteka v dveh fazah in sicer najprej moramo vhodne vrednosti (kot ter razdaljo) spremeniti glede na pripadnost posameznim razredom (v našem primeru so imeli razredi trapezno obliko), nato pa izračunati izhodni kot glede na definirana obnašanja z množenjem ustreznih uteži.
+
+Ker spremenljivke nimajo grobih mej in ker se razredi deloma prekrivajo, dobimo kot izhod neverjetno gladke odzive na ovire. Ta rešitev se je torej izkazala kot zelo preprosta in zelo efektivna. Med že prej omenjenimi senzorji smo torej izbrali tistega, ki je sporočil najmanjšo razdaljo ter njegov kot ter zaznano razdaljo uporabili kot vhod v nadzorni sistem z mehko logiko. Na izhodu smo izračunali potreben popravek smeri.
+
+\subsection{Evaluacija rešitve}
+
+Rešitev z mehko logiko se je izkazala kot zelo robustna, agent se je uspešno izogibal prepadom, vodnim pastem in stenam. Sistem smo testirali tako, da smo agentu preprosto "ukazali" naj hodi naprej. Zaradi vključenega sistema za izogibanje oviram je brez večjih težav hodil po svetu brez da bi kam padel. S tem razlogom smo to rešitev ocenili kot dobro in jo obdržali v sistemu.
 
 \section{Navigacija po svetu}
 
@@ -195,6 +264,33 @@ Vendar pa naše ogrodje relativno transparentno podpira tudi drugi način za pot
 \section{Možne izboljšave}
 
 \section{Zaključek}
+
+%
+% Literatura
+%
+\begin{thebibliography}{9}
+
+\bibitem{champandard02}
+  Alex J. Champandard,
+  \emph{Realistic Autonomous Navigation in Dynamic Environments}.
+  Institute of Perception Action and Behaviour,
+  Edinburgh University,
+  2002.
+
+\bibitem{seymour08}
+  Peter Seymour,
+  \emph{Off-the-shelf Genetic Algorithm Optimiser}.
+  http://www.bluestretch.com/mendelsolve/offshelf\_ga.ps,
+  2008.
+
+\bibitem{grayston06}
+  Thomas Ian Grayston,
+  \emph{A Simplified Fuzzy-Logic Control System Approach to Obstacle Avoidance combining Stereoscopic Vision and Sonar}.
+  School of Computing,
+  University of Tasmania,
+  2006.
+
+\end{thebibliography}
 
 \end{document}
 
