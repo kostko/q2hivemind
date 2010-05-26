@@ -340,11 +340,141 @@ Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno kon
 \section{Nagrajevalno učenje}
 % aka. Reinforcement Learning
 
-\section{Komunikacija med instancami}
+\section{Komunikacija med agenti}
+
+Ogrodje omogoča tudi komunikacijo med večimi agenti, ki predstavljajo skupino. Ta komunikacija omogoča, da nekatere naloge opravijo veliko hitreje kot sicer (npr. že omenjeno raziskovanje sveta in generiranje topografije) in tudi da lahko sodelujejo pri določenih akcijah.
 
 \subsection{MOLD (Message Oriented Lightweight Distributor)}
 
+Na začetku nam je bilo priporočeno ogrodje CAST\footnote{CoSY Architecture Schema Toolkit}, ki je namenjeno prav skupinski komunikaciji različnih agentov oz. lahko tudi delov agentov. Uporablja paradigmo \textit{skupne table}, na katero različni agenti dodajajo svoje znanje o problemu, ki naj bi ga trenutno reševali. Pisanje na tablo je v osnovi predstavljeno kot sporočilo, ki ga nek agent pošlje vsem ostalim, prejmejo pa ga vsi, ki so se na tak tip sporočila naročili.
+
+To se mogoče zdi v redu, vendar je sama implementacija CAST-a in njegov pristop popolnoma prekompleksen in nepotreben za dano situacijo. Pri raziskovanju le-tega smo naleteli na naslednje probleme:
+\begin{enumerate}
+  \item Neverjetno pomanjkanje dokumentacije ter predvsem opisa notranjega delovanja ogrodja. Manjkajo relacije med posameznimi deli in podroben opis postopka serializacije ter hranjenja sporočil.
+  
+  \item Za serializacijo se uporablja neka pretirano obsežna knjižnjica imenovana ICE, ki je sama po sebi skoraj tako velika kot CAST.
+  
+  \item Ogrodje želi poleg problema same komunikacije (nespametno) reševati tudi problem postavitve (\textit{deployment}). Na tak način se programu ne predstavlja kot knjižnjica, temveč želi postati kar vstopna točka (\textit{entry point}) za izvajanje celotnega programa. To komplicira sistem prevajanja in tudi onemogoča fleksibilnost rešitve.
+\end{enumerate}
+
+Zaradi teh razlogov smo se odločili, da bo lažje v kolikor implementiramo svoj lasten protokol komunikacije. Imenovali smo ga MOLD, temelji pa na nekaj precej enostavnih principih.
+
+\subsubsection{Topologija}
+
+Osrednja ideja MOLD-a je zastavljena kot podatkovno vodilo. Posamezni agenti se na vodilo povežejo, na njem nastopajo s svojimi unikatnimi identifikatorji, ter med sabo s pomočjo vodila komunicirajo. Samo vodilo ne ponuja nobene druge storitve razen prenašanja ustrezno formatiranih sporočil med agenti, vsa komunikacija pa poteka preko TCP/IP povezav. Katerikoli agent lahko neodvisno od drugih kadarkoli na vodilo pošlje sporočilo, naloga vodila je torej zgolj to da to sporočilo dostavi naslovniku (eden ali cela skupina agentov).
+
+\subsubsection{Serializacijski format}
+
+Vsak fleksibilen protokol potrebuje tudi fleksibilen in učinkovit serializacijski format, ki se bo prenašal neposredno preko TCP/IP povezave. Takšna odlična knjižnjica razvita prav v ta namen je Googlova knjižnjica Protocol Buffers. Zelo dobra lastnost je to, da je \texttt{protobuf} namenjena zgolj serializaciji in ne poskuša implementirati tudi drugih stvari mrežne komunikacije (za razliko od ICE-a in CAST-a). Nadaljni primeri sporočil bodo zapisani v \texttt{protobuf} notaciji, zato priporočamo da se bralec z njo na tem mestu seznani.
+
+\subsubsection{Sporočila}
+
+Celoten protokol komunikacije med našimi agenti sestoji iz sporočil. Ta sporočila so brez stanja (za razliko od CAST-a, kjer trenutno stanje predstavlja sama tabla) in so lahko namenjena celotni skupini ali pa zgolj določenemu posameznemu agentu. Vsako sporočilo je predstavljeno v naslednji obliki:
+
+\begin{verbatim}
+message Message {
+  // Valid packet types
+  enum PacketType {
+    CONTROL_ANNOUNCE = 1;
+    EVENT_LOCATION_UPDATE = 2;
+    EVENT_RESPAWNED = 3;
+    EVENT_ENTITY_UPDATE = 4;
+    // ...
+  };
+  
+  // Source/dest bot identifiers
+  required string sourceId = 1;
+  optional string destinationId = 2;
+  
+  // Timestamp
+  required uint64 timestamp = 3;
+  
+  // Type
+  required PacketType type = 4;
+  
+  // Payload
+  required bytes data = 5;
+};
+\end{verbatim}
+
+\noindent
+To je osnovna ovojnica vsakega sporočila in takšna sporočila se prenašajo preko MOLD vodila. Glede na tip sporočila ima lahko vsako tako sporočilo še dodatno vsebino, ki se nahaja v \texttt{data} bloku. Vodilo vidi samo ta prvi nivo sporočila, kar omogoča učinkovito in hitro posredovanje sporočil med agenti (vmesna deserializacija ni potrebna). Za samo izvedbo komunikacije se ne uporablja večnitnosti, temveč asinhron način komunikacije, kjer vse vhodno/izhodne operacije ne blokirajo programa. Vse to poskrbi za maksimalno pretočnost vodila.
+
 \subsection{Potek komunikacije}
+
+Kot že rečeno si agenti med sabo izmenjujejo sporočila. Za izmenjevanje sporočil z drugimi agenti je odgovoren komunikacijski podsistem ogrodja. Edino temu podsistemu je dovoljeno, da neposredno sprejema in pošilja MOLD sporočila. Na tak način je pretok sporočil in notranjih dogodkov nadzorovan, kar olajša razhroščevanje.
+
+Posamezni deli agenta lahko v vsakem trenutku sprožijo notranje dogodke. Ti dogodki se npr. prožijo v primeru da agent odkrije neko novo entiteto ali pa npr. umre. Takšni notranji dogodki služijo za komunikacijo med posameznimi deli agenta, prav tako pa jih prestreže komunikacijski podsistem, da o dogajanjih obvešča tudi druge agente. Le-ta je odgovoren tudi za procesiranje prispelih sporočil ter morebitnemu proženju notranjih dogodkov ostalim komponentam.
+
+Nekaj pomembnih sporočil, ki nastopajo v komunikaciji ter njihova uporaba in interakcija z notranjimi komponentami, je opisanih v nadaljevanju.
+
+\subsubsection{Razglas prisotnosti agenta na vodilu}
+
+Ko se agent prvič uspešno poveže na vodilo mora najprej na nek način ugotoviti kdo vse je mogoče še prisoten na vodilu. Ker samo vodilo te storitve ne omogoča, agenti implementirajo razglasni protokol.
+
+Vsak agent takoj ob povezavi na vodilo pošlje sporočilo tipa \texttt{CONTROL\_ANNOUNCE}, ki ima naslednjo obliko:
+\begin{verbatim}
+message Announcement {
+  // Name
+  required string name = 1;
+  
+  // Entity identifier
+  required uint32 entityId = 2;
+  
+  // Reply marker
+  required bool reply = 3;
+};
+\end{verbatim}
+
+\noindent
+Vsebuje unikatni naziv agenta, identifikator njegove entitete na Quake II strežniku ter oznako ali gre za odgovor ali ne. Vsak agent, povezan na vodilo, ki prejme takšno sporočilo odgovori s svojim razglasom, le da oznako \texttt{reply} postavi na \texttt{true}. Ta oznaka preprečuje neskončne odgovore na razglase.
+
+Ti razglasi pa pri vsakem od agentov povzročijo dodajanje agenta v lokalni imenik (tega ima vsak agent pri sebi), ki omogoča poizvedbe ali je določena entiteta prijatelj ali sovražnik ter tudi sledenje lokacije agenta.
+
+\subsubsection{Sporočanje lokacije agenta in potrjevanje prisotnosti}
+
+Lokacijo agenta, ki se prav tako hrani v imeniku, mora vsak agent periodično posodabljati tako da na vodilo pošilja sporočila tipa \texttt{EVENT\_LOCATION\_UPDATE}. V kolikor tega ne stori vsake 60 sekund je brisan iz imenika.
+
+Vsako sporočilo preprosto vsebuje koordinate lokacije na kateri se trenutno nahaja agent:
+\begin{verbatim}
+message LocationUpdate {
+  // Coordinates
+  required float x = 1;
+  required float y = 2;
+  required float z = 3;
+}
+\end{verbatim}
+
+\noindent
+Katerikoli agent, ki prejme tako sporočilo posodobi vnos v imeniku v kolikor le-ta že obstaja. V kolikor pa vnosa ni (kar se lahko zgodi v kolikor je agent ravno prispel na vodilo ali pa ker je morebiti ciljni agent zgrešil kakšno sporočilo), izvornemu agentu (in samo njemu) nemudoma pošlje svoj razglas.
+
+Periodično sporočanje lokacije tako služi dvem nalogam, po eni strani omogoča sledenje premikom posameznih agentov (to izkorišča tudi podsistem za navigacijo, da se iz premikov ostalih agentov uči topografije sveta), po drugi strani pa služi kot indikator da je agent še vedno povezan na vodilo (samo vodilo samo po sebi namreč ne omogoča nikakršne evidence o tem kdo je nanj povezan, to informacijo morajo vzdrževati agenti sami).
+
+\subsubsection{Obveščanje agentov o premikih videnih entitet}
+
+Za potrebe celostnega pogleda na svet, se agenti med seboj obveščajo o vseh dinamičnih entitetah, ki jih v svetu vidijo. Pogled vsakega izmed agentov je namreč (s strani virtualnega sveta, torej Quake II strežnika) omejen na njegovo lokalno okolico, skupaj pa imajo tako možnost da pridobijo dodatne informacije, ki jih vsak posamezen agent nima.
+
+Sporočila se pošiljajo zgolj v kolikor se stanje določene vidne entitete na kakršenkoli način spremeni in so naslednje oblike:
+\begin{verbatim}
+message EntityUpdate {
+  // Coordinates
+  required float x = 1;
+  required float y = 2;
+  required float z = 3;
+  
+  // Entity identifier
+  required uint32 entityId = 4;
+  
+  // Model index
+  required uint32 modelIndex = 5;
+  
+  // Player or not
+  required bool player = 6;
+}
+\end{verbatim}
+
+\noindent
+Vsak agent, ki prejme takšna sporočila lahko integrira podatke o entiteti v svojo notranjo predstavitev sveta. Prav tako se ta spročila uporabljajo za hitrejše učenje topografije sveta, saj lahko agenti na tak način sledijo večjemu številu drugih igralcev. 
 
 \section{Možne izboljšave}
 
