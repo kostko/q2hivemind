@@ -291,11 +291,17 @@ Hitra lokalizacija posameznih vozlišč je za ta pristop ključnega pomena, zato
 
 Za boljšo vizualizacijo tako naučenega grafa smo v ogrodje dodali možnost izvoza grafa v format, ki je primeren za obdelavo v programskem paketu Pajek \cite{batagelj97}, primer izrisa je viden v sliki \ref{fig:grid-graph}.
 
+\subsubsection{Posodabljanje topografije glede na zunanje informacije}
+
+Naš agent ima sposobnost, da znanje o svetu dinamično prilagaja. V ta namen ima komponento, ki se odziva na dogodke o na novo odkritih entitetah in njihovih premikih. V kolikor agent nastopa v skupini, si te informacije izmenjuje tudi z drugimi agenti znotraj skupine. Vsako točko, ki jo na tak način vidi oz. zazna, takoj doda v notranjo predstavitev sveta, kljub temu da mogoče še ni dosegljiva. Takoj ko kasneje opazi povezavo med takšno točko (ali celo nepovezano komponento grafa) in preostalim delom sveta jo poveže, tako da so vse informacije nemudoma na voljo.
+
+To izboljša hitrost grajenja predstave o svetu, saj omogoča da se topografija gradi vzporedno glede na znanje celotne skupine oz. drugih entitet, ki so morda vidne, vendar se nahajajo zunaj znanega grafa.
+
 \subsection{Iskanje poti skozi svet}
 
 Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od njegove trenutne lokacije do nekih določenih koordinat v svetu. V ta namen smo za učinkovito preiskovanje grafa uporabili algoritem A*.
 
-% TODO
+Razdalje med vozlišči so kar evklidske razdalje med točkami, ki predstavljajo središče posameznega vozlišča. Prav tako se kot hevristika dobro izkaže kar evklidska razdalja med trenutnim in ciljnim vozliščem. Iskanje poti preko kompaktnega grafa tako ne predstavlja bistvenega problema in je mogoče v realnem času.
 
 \section{Stanja agenta}
 Stanja agenta določajo trenutno obnašanje in cilje agenta na najvišjem nivoju. Če na agenta gledamo kot na končni avtomat, predstavljajo posamezna stanja agenta posamezna stanja v končnem avtomatu. V nadaljevanju bomo opisali katera stanja smo implementirali, kako deluje prehajanje med stanji in na kakšne težave smo pri tem naleteli.
