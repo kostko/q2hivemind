@@ -238,15 +238,53 @@ Ker spremenljivke nimajo grobih mej in ker se razredi deloma prekrivajo, dobimo 
 
 \subsection{Evaluacija rešitve}
 
-Rešitev z mehko logiko se je izkazala kot zelo robustna, agent se je uspešno izogibal prepadom, vodnim pastem in stenam. Sistem smo testirali tako, da smo agentu preprosto "ukazali" naj hodi naprej. Zaradi vključenega sistema za izogibanje oviram je brez večjih težav hodil po svetu brez da bi kam padel. S tem razlogom smo to rešitev ocenili kot dobro in jo obdržali v sistemu.
+Rešitev z mehko logiko se je izkazala kot zelo robustna, agent se je uspešno izogibal prepadom, vodnim pastem in stenam. Sistem smo testirali tako, da smo agentu preprosto "ukazali" naj hodi naprej. Zaradi vključenega sistema za izogibanje oviram je brez večjih težav hodil po svetu brez da bi kam padel ali se zaletel v kakšno steno. S tem razlogom smo to rešitev ocenili kot dobro in jo obdržali v sistemu.
 
 \section{Navigacija po svetu}
 
-\subsection{Statična geometrija iz BSP map}
+Vmesnik do navideznega sveta skupaj z nadzornim sistemom gibanja torej že omogoča premikanje po svetu. Vendar se agent ne zaveda kje hodi, niti ne more načrtovati poti do določenih lokacij. V ta namen ima naš sistem vgrajen podsistem za navigacijo, ki omogoča da se agent sam nauči možnih poti po svetu (tako iz svojih izkušenj kot iz opazovanja drugih entitet). Takega pristopa nismo uporabili takoj na začetku, tako da bomo ponovno najprej predstavili prvotno rešitev in razloge zakaj se ta ni obnesla, ter potem zadnjo rešitev, ki uporablja omenjeno učenje.
+
+\subsection{Statična geometrija iz BSP dreves}
+
+Prvotna zamisel je bila, da bi graf sveta zgradili kar iz podatkov, ki so nam na voljo s pomočjo BSP drevesa v opisu sveta. Samo BSP drevo je torej sestavljeno iz množice ploskev, ki opisujejo geometrijo (statične) okolice. Iz povezave teh ploskev (stičnih robov med njimi) je mogoče zgraditi graf povezljivosti in ga uporabiti za iskanje poti.
+
+Takšna rešitev pa ima ključni problem in sicer to, da ne temelji na dejanskih možnih premikih agenta, temveč le opisuje geometrijske relacije med ploskvami, ki predstavljajo svet. To pomeni, da so lahko povezane lokacije, ki v resnici niso prehodne zaradi najrazličnejših vplivov v sami igri. To se da do neke mere izločiti vendar v tem primeru dobimo območja, ki niso dobro povezana, pa v resnici so prehodna.
+
+Rešitev je slaba tudi zato, ker je vezana na opis geometrije, ki v osnovi ni namenjen takšni interpretaciji (namenjen je geometrijskim poizvedbam ter izrisu sveta v običajnih odjemalcih). Zaradi teh pomanjkljivosti smo takšno rešitev opustili.
 
 \subsection{Samodejno učenje topografije}
 
+Naša naslednja ideja je bila: zakaj se agent ne bi sam naučil kateri premiki po svetu so mogoči in kateri ne? Tako bi lahko bil bolje prepričan kaj se da in kaj ni mogoče. Za hitrejše učenje (in ker agent včasih nima dovolj domišljije) pa bi lahko opazoval tudi druge dinamične entitete (igralce) v lokalni okolici in se učil tudi na podlagi njihovih premikov.
+
+Bistvo ideje je naslednje - v kolikor sem se uspešno premaknil iz točke A na točko B, obstaja velika verjetnost da sta ti dve točki povezani. Potrebno je zgolj definirati način, kako te premike učinkovito spraviti v obliko, ki je ustrezna za kasnejše preiskovanje (torej graf).
+
+\begin{figure}[h]
+ \centering
+ \subfloat[Tipične poti agenta skozi svet]{\label{fig:grid-path}\includegraphics[width=253px]{hm-grid-path.png}}
+ \subfloat[Graf zgrajen na podlagi premikov]{\label{fig:grid-graph}\includegraphics[width=253px]{hm-grid-graph.png}}
+ \caption{Samodejno učenje topografije sveta transformira poti v kompaktnejši graf, ki je primeren za iskanje}
+ \label{fig:grid}
+\end{figure}
+
+\noindent
+Na sliki \ref{fig:grid-path} lahko vidimo poti agenta skozi svet. Ker se agent nikoli ne premika enako, lahko posamezne točke na isti poti precej odstopajo ena od druge. Kljub temu bi želeli da so v grafu vse te točke predstavljene zgolj kot eno vozlišče, saj v nasprotnem primeru to nepotrebno povečuje graf.
+
+V ta namen smo uvedli dva koncepta:
+\begin{enumerate}
+  \item \textbf{Točke} (\textit{waypoints}) predstavljajo poljubne lokacije v prostoru, kjer se je agent lahko nahajal.
+  
+  \item \textbf{Vozlišča} (\textit{nodes}) predstavljajo lokacijo v grafu, ki lahko zajema večje število bližnjih točk. V kolikor vozlišča na določeni lokaciji ni, se samodejno ustvari ko obstaja prva točka na tej lokaciji. Vsako vozlišče ima svoj radij in vse točke, ki padejo v ta radij se nahajajo v istem vozlišču.
+\end{enumerate}
+
+Hitra lokalizacija posameznih vozlišč je za ta pristop ključnega pomena, zato smo uporabili podatkovno strukturo kd-drevesa (v našem primeru $k = 3$, saj je svet opisan v treh dimenzijah). Ta nam omogoča da v logaritemskem času najdemo vozlišče, ki je najbližje določenim koordinatam in s tem zmanjšanje vozlišč v grafu. V ogrodju uporabljamo C++ implementacijo kd-dreves iz \cite{harris08}.
+
+Za boljšo vizualizacijo tako naučenega grafa smo v ogrodje dodali možnost izvoza grafa v format, ki je primeren za obdelavo v programskem paketu Pajek \cite{batagelj97}, primer izrisa je viden v sliki \ref{fig:grid-graph}.
+
 \subsection{Iskanje poti skozi svet}
+
+Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od njegove trenutne lokacije do nekih določenih koordinat v svetu. V ta namen smo za učinkovito preiskovanje grafa uporabili algoritem A*.
+
+% TODO
 
 \section{Stanja robota}
 
@@ -289,6 +327,18 @@ Rešitev z mehko logiko se je izkazala kot zelo robustna, agent se je uspešno i
   School of Computing,
   University of Tasmania,
   2006.
+
+\bibitem{batagelj97}
+  Batagelj V., Mrvar A.
+  \emph{Pajek - Program for Large Network Analysis}.
+  Sunbelt,
+  1997.
+
+\bibitem{harris08}
+  Paul Harris, Sylvain Bougerel,
+  \emph{libkdtree++, C++ kd-tree Library}.
+  http://libkdtree.alioth.debian.org/,
+  2008.
 
 \end{thebibliography}
 
