@@ -9,7 +9,12 @@
 \usepackage{subfig}
 \usepackage{textcomp}
 \usepackage{tikz}
+\usepackage{hyperref}
+
 \usetikzlibrary{positioning,shapes,shadows,arrows,calc}
+
+\def\sectionautorefname{poglavje}
+\def\subsectionautorefname{podpoglavje}
 
 \begin{document}
 \begin{titlepage}
@@ -148,6 +153,8 @@ Tekom raziskovanja smo zgradili relativno preprosto ogrodje, ki omogoča impleme
 \end{tikzpicture}
 \end{center}
 
+
+
 Osnovna arhitektura močno sledi podproblemom, ki smo jih predstavili v uvodu. Posamezne komponente so organizirane kot C++ razredi, povezani preko neposrednih klicev ali pa preko dogodkov.
 
 Celoten sistem je predstavljen s pomočjo centralne komponente imenovane \texttt{Context}. Ta komponenta povezuje vse ostale v celoto in skrbi za uspešno inicializacijo vmesnika do virtualnega sveta, komunikacijskega podsistema, dispečerja dogodkov ipd. Omogoča tudi nekaj osnovnih storitev kot je izpis sporočil za potrebe spremljanja poteka izvajanja programa.
@@ -242,7 +249,7 @@ Ker spremenljivke nimajo grobih mej in ker se razredi deloma prekrivajo, dobimo 
 
 Rešitev z mehko logiko se je izkazala kot zelo robustna, agent se je uspešno izogibal prepadom, vodnim pastem in stenam. Sistem smo testirali tako, da smo agentu preprosto "ukazali" naj hodi naprej. Zaradi vključenega sistema za izogibanje oviram je brez večjih težav hodil po svetu brez da bi kam padel ali se zaletel v kakšno steno. S tem razlogom smo to rešitev ocenili kot dobro in jo obdržali v sistemu.
 
-\section{Navigacija po svetu}
+\section{Navigacija po svetu} \label{sec:navigacija-po-svetu}
 
 Vmesnik do navideznega sveta skupaj z nadzornim sistemom gibanja torej že omogoča premikanje po svetu. Vendar se agent ne zaveda kje hodi, niti ne more načrtovati poti do določenih lokacij. V ta namen ima naš sistem vgrajen podsistem za navigacijo, ki omogoča da se agent sam nauči možnih poti po svetu (tako iz svojih izkušenj kot iz opazovanja drugih entitet). Takega pristopa nismo uporabili takoj na začetku, tako da bomo ponovno najprej predstavili prvotno rešitev in razloge zakaj se ta ni obnesla, ter potem zadnjo rešitev, ki uporablja omenjeno učenje.
 
@@ -288,12 +295,42 @@ Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od njegove t
 
 % TODO
 
-\section{Stanja robota}
+\section{Stanja agenta}
+Stanja agenta določajo trenutno obnašanje in cilje agenta na najvišjem nivoju. Če na agenta gledamo kot na končni avtomat, predstavljajo posamezna stanja agenta posamezna stanja v končnem avtomatu. V nadaljevanju bomo opisali katera stanja smo implementirali, kako deluje prehajanje med stanji in na kakšne težave smo pri tem naleteli.
+\subsection{Opis stanj}
+Iz definicije stanja v končnem avtomatu sledi, da so stanja diskretna in je lahko agent v danem trenutku v natanko enem stanju naenkrat. Osnovna naloga vsakega stanja je, da zna lokalnemu planerju odgovoriti na vprašanje: "Kam naj v tem trenutku premaknem agenta?" Odgovor na to vprašanje je seveda odvisen od tega, kaj je cilj oziroma naloga stanja. Akcija agenta v danem trenutku je torej odvisna od tega, v katerem stanju se agent trenutno nahaja.
 
-\subsection{Arbitraža}
+V ločenih podpoglavjih bomo našteli in opisali stanja, ki jih naši agenti poznajo.
 
-\subsection{Reinforcement learning}
-% TODO a obstaja kakšen boljši slovenski izraz za RL?
+\subsubsection{Wander}
+To je osnovno stanje agenta, v katerem se znajde takoj po povezavi na strežnik. Glavna naloga tega stanja je, da se agent sprehaja po mapi in se uči iz okolice (glej tudi \ref{sec:navigacija-po-svetu} \nameref{sec:navigacija-po-svetu}). Stanje ima \textit{fazo planiranja} in \textit{fazo izvajanja}. 
+
+V \textit{fazi planiranja} agent iz dane točke v svetu skonstruira pot naključne dolžine, ki nima podvojenih lokacij (pri dani poti agent torej ne bo dvakrat prečkal iste lokacije). Pri prvotni implementaciji nismo upoštevali omejitve, da v konstruirani poti ne sme biti podvojenih lokacij, zato so morale biti generirane poti nesorazmerno velike, da se je agent sploh kam premaknil. Poleg tega je bilo optimiziranje danega K-D-drevesa (poti) izredno profesorsko intenzivno, zaradi česar smo razmislili o alternativni rešitvi. Gradnjo poti smo implementirali kot DFS\footnote{Depth First Search ali iskanje v globino} iz trenutne lokacije do naključne globine. V danem koraku algoritma se odločamo katerega od N naslednjikov bomo dodali v seznam vozlišč na poti. Možne kandidate (lokacijska vozlišča) sortiramo po času zadnje obiskanosti. Na ta način favoriziramo vozlišča, ki jih še nismo obiskali ali smo jih obiskali največ časa nazaj. S tem "prisilimo" agenta, da obišče še neobiskane kotičke mape in se nerad vrača na točke, kjer je bil ravno pred kratkim. Naj izpostavimo probleme, ki jih ima ta pristop in rešitve, ki smo jih uporabili pri tem:
+\begin{itemize}
+ \item Ker obstajajo v grafu lokacijskih vozlišč tudi cikli, nam omejitev, da se v dani poti vozlišča ne smejo ponoviti včasih predstavlja problem. V tem primeru moramo od zadnje lokacijske točke v poti nazaj izvajati sestopanje (t.i. back-tracking) in iskati alternativne poti.
+ \item V ekstremnih primerih, ko se agent na določenem delu sveta zatakne, nam favoriziranje vozlišč, ki smo jih največ časa nazaj obiskali predstavlja problem. Agent namreč vedno znova poskuša najti isto pot, saj se ne premika in s tem časi obiskanosti sosednjih lokacijskih točk ostajajo enaki. Ker vedno izbiramo prvo točko iz sortiranega seznama naslednjikov, pademo v neskončno zanko. Ko tak primer zaznamo, opustimo favoriziranje in izberemo naslednjika naključno, kar se je izkazalo za ugodno rešitev.
+\end{itemize}
+
+V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo jo generirali v \textit{fazi planiranja} lokalnemu planerju sporočamo koordinate premika agenta. Na tem mestu zaznavamo morebitne zastoje agenta, kar se lahko zgodi zaradi naslednjih razlogov:
+\begin{itemize}
+ \item Agent je nekam padel in pot postane neveljavna. V tem primeru mora faza planiranja zgraditi novo naključno pot.
+ \item Agent kroži okrog neke točke. V tem primeru preskočimo to točko in jo označimo za obiskano.
+ \item Agent se zatakne v geometrijo mape (na primer poševne stopnice), ker povezava ni prehodna. V tem primeru označimo povezavo za neprehodno in konstruiramo novo naključno pot.
+\end{itemize}
+
+Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
+  
+\subsubsection{Swim}
+\subsubsection{Shoot}
+\subsubsection{Respawn}
+\subsubsection{GotoAmmo}
+\subsubsection{GotoHealth}
+\subsubsection{GotoWeapon}
+
+\subsection{Preklapljanje med stanji}
+
+\section{Nagrajevalno učenje}
+% aka. Reinforcement Learning
 
 \section{Komunikacija med instancami}
 
