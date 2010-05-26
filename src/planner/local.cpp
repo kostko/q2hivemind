@@ -214,13 +214,6 @@ void LocalPlanner::process()
     if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
 
-    /*typedef std::pair<std::string, int> InventoryPair;
-    if (m_gameState) {
-    BOOST_FOREACH(InventoryPair element, m_gameState->inventory) {
-      getLogger()->info(format("%s :: %d ammo") % element.first % element.second);
-    }
-    }*/
-
     // Sleep some 200ms
     usleep(200000);
   }
