@@ -13,6 +13,7 @@
 #include "rl/action.h"
 #include "rl/brainstate.h"
 #include "brains/soldier.h"
+#include "network/gamestate.h"
 
 #include <boost/foreach.hpp>
 #include <limits>

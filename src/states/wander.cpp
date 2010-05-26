@@ -81,8 +81,8 @@ void WanderState::processFrame()
   timestamp_t now = Timing::getCurrentTimestamp();
   Vector3f origin = m_gameState->player.origin;
 
-  // By default we stand still and do not fire or jump
-  m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
+  // By default we just run aside (even if there is no path found)
+  m_moveTarget = m_moveDestination = Vector3f(1, 1, 0);
   m_moveFire = false;
   m_moveJump = false;
 

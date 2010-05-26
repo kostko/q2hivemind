@@ -231,7 +231,7 @@ Na tem mestu pa je nastopila precejšnja težava. Genetski algoritem za konverge
 
 Edina možnost, da bi lahko preizkusili dani algoritem in povečali možnost konvergence v doglednem času je bila da na nek način pospešimo simulacijo. Za ta namen smo našemu ogrodju dodali možnost neposredne integracije v naslovni prostor simulatorja (torej igre Quake II), kjer smo lahko hitrost delovanja prilagodili. Tako smo dosegli približno 30-kratno pospešitev simulacije.
 
-Na žalost tudi po vsem tem naporu željenih rezultatov nismo dobili, konvergenca genetskega algoritma se je ustavila v nekem popolnoma neuporabnem naboru uteži. Razloge za to gre verjetno iskati v neprilagojenosti vrednosti parametrov kriterijske funkcije ali pa morebiti v kakšnem hrošču v implementaciji. Na žalost nismo imeli časa, da bi odkrili vzrok, tako da je to ena izmed možnosti za nadaljne raziskave. Smo pa v tem procesu našemu ogrodju dodali funkcionalnost potrebno za pospešeno simulacijo ter za uporabo genetskih algoritmov in umetnih nevronskih mrež.
+Na žalost tudi po vsem tem naporu željenih rezultatov nismo dobili, konvergenca genetskega algoritma se je ustavila v nekem popolnoma neuporabnem naboru uteži. Razloge za to gre verjetno iskati v neprilagojenosti vrednosti parametrov kriterijske funkcije ali pa morebiti v kakšnem hrošču v implementaciji. Na žalost nismo imeli časa, da bi odkrili vzrok, tako da je to ena izmed možnosti za nadaljnje raziskave. Smo pa v tem procesu našemu ogrodju dodali funkcionalnost potrebno za pospešeno simulacijo ter za uporabo genetskih algoritmov in umetnih nevronskih mrež.
 
 \subsection{Nadzorni sistem z mehko logiko}
 
@@ -352,9 +352,9 @@ To se mogoče zdi v redu, vendar je sama implementacija CAST-a in njegov pristop
 \begin{enumerate}
   \item Neverjetno pomanjkanje dokumentacije ter predvsem opisa notranjega delovanja ogrodja. Manjkajo relacije med posameznimi deli in podroben opis postopka serializacije ter hranjenja sporočil.
   
-  \item Za serializacijo se uporablja neka pretirano obsežna knjižnjica imenovana ICE, ki je sama po sebi skoraj tako velika kot CAST.
+  \item Za serializacijo se uporablja neka pretirano obsežna knjižnica imenovana ICE, ki je sama po sebi skoraj tako velika kot CAST.
   
-  \item Ogrodje želi poleg problema same komunikacije (nespametno) reševati tudi problem postavitve (\textit{deployment}). Na tak način se programu ne predstavlja kot knjižnjica, temveč želi postati kar vstopna točka (\textit{entry point}) za izvajanje celotnega programa. To komplicira sistem prevajanja in tudi onemogoča fleksibilnost rešitve.
+  \item Ogrodje želi poleg problema same komunikacije (nespametno) reševati tudi problem postavitve (\textit{deployment}). Na tak način se programu ne predstavlja kot knjižnica, temveč želi postati kar vstopna točka (\textit{entry point}) za izvajanje celotnega programa. To komplicira sistem prevajanja in tudi onemogoča fleksibilnost rešitve.
 \end{enumerate}
 
 Zaradi teh razlogov smo se odločili, da bo lažje v kolikor implementiramo svoj lasten protokol komunikacije. Imenovali smo ga MOLD, temelji pa na nekaj precej enostavnih principih.
@@ -365,7 +365,7 @@ Osrednja ideja MOLD-a je zastavljena kot podatkovno vodilo. Posamezni agenti se 
 
 \subsubsection{Serializacijski format}
 
-Vsak fleksibilen protokol potrebuje tudi fleksibilen in učinkovit serializacijski format, ki se bo prenašal neposredno preko TCP/IP povezave. Takšna odlična knjižnjica razvita prav v ta namen je Googlova knjižnjica Protocol Buffers. Zelo dobra lastnost je to, da je \texttt{protobuf} namenjena zgolj serializaciji in ne poskuša implementirati tudi drugih stvari mrežne komunikacije (za razliko od ICE-a in CAST-a). Nadaljni primeri sporočil bodo zapisani v \texttt{protobuf} notaciji, zato priporočamo da se bralec z njo na tem mestu seznani.
+Vsak fleksibilen protokol potrebuje tudi fleksibilen in učinkovit serializacijski format, ki se bo prenašal neposredno preko TCP/IP povezave. Takšna odlična knjižnica razvita prav v ta namen je Googlova knjižnica Protocol Buffers. Zelo dobra lastnost je to, da je \texttt{protobuf} namenjena zgolj serializaciji in ne poskuša implementirati tudi drugih stvari mrežne komunikacije (za razliko od ICE-a in CAST-a). Nadaljnji primeri sporočil bodo zapisani v \texttt{protobuf} notaciji, zato priporočamo, da se bralec z njo na tem mestu seznani.
 
 \subsubsection{Sporočila}
 
@@ -402,7 +402,7 @@ To je osnovna ovojnica vsakega sporočila in takšna sporočila se prenašajo pr
 
 \subsection{Potek komunikacije}
 
-Kot že rečeno si agenti med sabo izmenjujejo sporočila. Za izmenjevanje sporočil z drugimi agenti je odgovoren komunikacijski podsistem ogrodja. Edino temu podsistemu je dovoljeno, da neposredno sprejema in pošilja MOLD sporočila. Na tak način je pretok sporočil in notranjih dogodkov nadzorovan, kar olajša razhroščevanje.
+Kot že rečeno si agenti med sabo izmenjujejo sporočila. Za izmenjevanje sporočil z drugimi agenti je odgovoren komunikacijski podsistem ogrodja. Le temu podsistemu je dovoljeno, da neposredno sprejema in pošilja MOLD sporočila. Na tak način je pretok sporočil in notranjih dogodkov nadzorovan, kar olajša razhroščevanje.
 
 Posamezni deli agenta lahko v vsakem trenutku sprožijo notranje dogodke. Ti dogodki se npr. prožijo v primeru da agent odkrije neko novo entiteto ali pa npr. umre. Takšni notranji dogodki služijo za komunikacijo med posameznimi deli agenta, prav tako pa jih prestreže komunikacijski podsistem, da o dogajanjih obvešča tudi druge agente. Le-ta je odgovoren tudi za procesiranje prispelih sporočil ter morebitnemu proženju notranjih dogodkov ostalim komponentam.
 

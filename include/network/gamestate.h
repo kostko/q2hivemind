@@ -18,6 +18,14 @@ namespace HiveMind {
 
 class Player {
 public:
+
+  /**
+   * Returns the name of current weapon in hand.
+   * 
+   * @return string Weapon name
+   */
+  std::string getWeaponName();
+
   Vector3f angles;
   Vector3f origin;
   Vector3f velocity;
