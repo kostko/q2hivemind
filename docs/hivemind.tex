@@ -429,11 +429,11 @@ message Announcement {
 \noindent
 Vsebuje unikatni naziv agenta, identifikator njegove entitete na Quake II strežniku ter oznako ali gre za odgovor ali ne. Vsak agent, povezan na vodilo, ki prejme takšno sporočilo odgovori s svojim razglasom, le da oznako \texttt{reply} postavi na \texttt{true}. Ta oznaka preprečuje neskončne odgovore na razglase.
 
-Ti razglasi pa pri vsakem od agentov povzročijo dodajanje agenta v lokalni imenik (tega ima vsak agent pri sebi), ki omogoča poizvedbe ali je določena entiteta prijatelj ali sovražnik ter tudi sledenje lokacije agenta.
+Ti razglasi pa pri vsakem od agentov povzročijo dodajanje agenta v lokalni imenik (tega ima vsak agent pri sebi), ki omogoča poizvedbe ali je določena entiteta prijatelj ali sovražnik ter tudi sledenje lokaciji agenta.
 
 \subsubsection{Sporočanje lokacije agenta in potrjevanje prisotnosti}
 
-Lokacijo agenta, ki se prav tako hrani v imeniku, mora vsak agent periodično posodabljati tako da na vodilo pošilja sporočila tipa \texttt{EVENT\_LOCATION\_UPDATE}. V kolikor tega ne stori vsake 60 sekund je brisan iz imenika.
+Lokacijo agenta, ki se prav tako hrani v imeniku, mora vsak agent periodično posodabljati tako da na vodilo pošilja sporočila tipa \texttt{EVENT\_LOCATION\_UPDATE}. V kolikor tega ne stori vsaj vsakih 60 sekund je brisan iz imenika. V resnici agenti svojo lokacijo obnavljajo veliko bolj pogosto (ob vsaki spremembi ali vsakih 500 milisekund, kar pride prej).
 
 Vsako sporočilo preprosto vsebuje koordinate lokacije na kateri se trenutno nahaja agent:
 \begin{verbatim}
