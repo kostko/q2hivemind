@@ -37,6 +37,25 @@
 
 \section{Predstavitev in razdelitev problema}
 
+Cilj naše seminarske naloge je bil izdelava skupine avtonomnih botov (agentov), ki so zmožni navigacije po navideznem svetu ter medsebojne komunikacije. Navidezni svet smo si izbrali zaradi lažje izdelave senzorjev, saj se nam pri tem ni bilo potrebno ukvarjati s težavami računalniškega vida, ki sam po sebi predstavlja široko področje.
+
+Da bi se torej izognili tem težavam, smo si za navidezno okolje v katerem bodo agenti delovali izbrali svet Quake II. Razlog za to izbiro je, da je implementacija tega sveta že na voljo in sicer pod odprtokodno licenco. To omogoča boljše razumevanje delovanja in tudi morebitne popravke ter integracijo.
+
+Problem smo razdelili na nekaj ključnih podproblemov, katere je potrebno rešiti, da bo avtonomni agent v takem okolju deloval zadovljivo:
+\begin{enumerate}
+  \item \textbf{Vmesnik do navideznega sveta} je prvi korak, ki omogoča našemu agentu interakcijo z objekti v svetu in tudi povratno informacijo o rezultatih njegovih akcij.
+  
+  \item \textbf{Nadzor gibanja} je najnižja komponenta sistema, ki omogoča da se agent premika po svetu. Zadovoljiv nadzor gibanja mora omogočati \textit{reaktivno in samodejno izogibanje oviram} transparentno glede na to kaj zahtevajo višji nivoji. Sem spadajo tudi osnovni senzorji potrebni za pridobitev informacij o geometriji sveta.
+  
+  \item \textbf{Navigacija po svetu} omogoča agentu, da si zgradi notranjo predstavitev virtualnega sveta okoli njega, ki mu omogoča učinkovito načrtovanje poti v njem.
+  
+  \item \textbf{Stanja agenta} določajo trenutno obnašanje in cilje agenta na najvišjem nivoju.
+  
+  \item \textbf{Komunikacija} omogoča da se večje število agentov poveže v skupino, katere člani si lahko izmenjujejo znanje o svetu in ga tako hitreje spoznajo. Komunikacija omogoča tudi sodelovanje med člani skupine ter identifikacijo pripadnosti (nekakšen IFF\footnote{Identification Friend or Foe}) v primeru napadov.
+\end{enumerate}
+
+Tekom raziskovanja smo zgradili relativno preprosto ogrodje, ki omogoča implementacijo zgoraj omenjenih delov takšnega sistema. V nadaljevanju bomo najprej predstavili hiter pregled arhitekture ter potem lastnosti vsake komponente. Med razvojem so se nekatere prvotno zamišljene rešitve izkazale kot slabe in primorani smo jih bili zamenjati. Tudi te smo dokumentirali in opisali njihove pomanjkljivosti.
+
 \section{Pregled arhitekture rešitve}
 
 % Shema arhitekture
@@ -127,7 +146,22 @@
 \end{tikzpicture}
 \end{center}
 
+Osnovna arhitektura močno sledi podproblemom, ki smo jih predstavili v uvodu. Posamezne komponente so organizirane kot C++ razredi, povezani preko neposrednih klicev ali pa preko dogodkov.
+
+Celoten sistem je predstavljen s pomočjo centralne komponente imenovane \texttt{Context}. Ta komponenta povezuje vse ostale v celoto in skrbi za uspešno inicializacijo vmesnika do virtualnega sveta, komunikacijskega podsistema, dispečerja dogodkov ipd. Omogoča tudi nekaj osnovnih storitev kot je izpis sporočil za potrebe spremljanja poteka izvajanja programa.
+
 \section{Vmesnik do virtualnega sveta}
+
+Kot naš virtualni svet smo vzeli svet Quake II, ki omogoča dva načina vključitve v sam svet:
+\begin{enumerate}
+  \item \textbf{UDP/IP povezava odjemalca} se v osnovi obnaša popolnoma enako kot uraden Quake II odjemalec, ki je namenjen večigralstvu. Za to je potrebno razumevanje in implementacija Quake II protokola.
+  
+  \item \textbf{Integracija v naslovni prostor igre} je v osnovni namenjena t.i. \textit{strežniškim botom} pa tudi najrazličnejšim dodatkom in razširitev igre.
+\end{enumerate}
+
+Ker je cilj narediti avtonomne agente, ki niso na nikakršen način priviligirani nad ostalimi igralci, poleg tega pa morajo biti tudi sposobni delovanja iz različnih sistemov IP\footnote{V mrežo povezanih računalnikov} je edina smiselna možnost prva. Zaradi tega je bil prvi korak razumevanje in implementacija Quake II protokola. % TODO
+
+Vendar pa naše ogrodje relativno transparentno podpira tudi drugi način za potrebe pospešene simulacije. Razlogi za to so opisani v enem izmed kasnejših poglavij, ki opisuje \textit{evolucijske umetne nevronske mreže}. Čeprav samega pristopa kasneje nismo uporabili, se je podpora za takšen način simulacije ohranila.
 
 \section{Nadzor gibanja in izogibanje oviram}
 
