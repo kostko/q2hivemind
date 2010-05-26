@@ -120,6 +120,13 @@ public:
     void updateEligibleStates();
 
     /**
+     * Prune this state from eligible states set.
+     *
+     * @param state Name of the state
+     */
+    void pruneState(const std::string &state);
+
+    /**
      * Is the given state eligible for transition?
      */
     inline bool isEligible(State *state) const { return m_eligibleStates.find(state) != m_eligibleStates.end(); }

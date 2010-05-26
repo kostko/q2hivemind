@@ -115,6 +115,30 @@ void LocalPlanner::addEligibleState(State *state)
   //getLogger()->info(format("Adding %s to eligible states set.") % state->getName());
 }
 
+void LocalPlanner::pruneState(const std::string &state)
+{
+  if (m_states.find(state) == m_states.end())
+    getLogger()->error(format("Attempted to prune unregistered state '%s'!") % state);
+
+  State* stateObject = m_states[state];
+
+  // Some states are not to be pruned
+  if (!stateObject->isPrunable())
+    return;
+
+  // If the state is not in eligible states set, we can't prune it
+  if (m_eligibleStates.find(stateObject) == m_eligibleStates.end())
+    return;
+
+  getLogger()->info(format("Pruning %s from eligible states set.") % state);
+
+  m_eligibleStates.erase(stateObject);
+
+  // If we are in the state that needs to be pruned, mark state as completed
+  if (stateObject == m_currentState)
+    m_currentState->m_complete = true;
+}
+
 void LocalPlanner::updateEligibleStates()
 {
   // Go through all states and check for event triggers
@@ -128,27 +152,17 @@ void LocalPlanner::updateEligibleStates()
   std::list<State*> pruneList;
 
   BOOST_FOREACH(State *state, m_eligibleStates) {
-    // Some states are not to be pruned
-    if (!state->isPrunable())
-      continue;
-
     int delta = Timing::getCurrentTimestamp() - state->getEventStart();
 
     // If state is too old add it to prune list
-    if (delta > state->getEligibilityTime()) {
-      getLogger()->info(format("Pruning %s from eligible states set.") % state->getName());
-
+    if (delta > state->getEligibilityTime()) 
       pruneList.push_back(state);
-
-      // If we are in the state that needs to be pruned, mark state as completed
-      if (state == m_currentState) 
-        m_currentState->m_complete = true;       
-    }
+    
   }
 
   // Prune all states that are too old
   BOOST_FOREACH(State *state, pruneList) {
-    m_eligibleStates.erase(state);
+    pruneState(state->getName());
   }
 
 }
@@ -199,6 +213,13 @@ void LocalPlanner::process()
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
+
+    /*typedef std::pair<std::string, int> InventoryPair;
+    if (m_gameState) {
+    BOOST_FOREACH(InventoryPair element, m_gameState->inventory) {
+      getLogger()->info(format("%s :: %d ammo") % element.first % element.second);
+    }
+    }*/
 
     // Sleep some 200ms
     usleep(200000);
