@@ -37,7 +37,7 @@ void DropWeaponState::botRespawned(BotRespawnEvent *event)
     // 1) Check if I am near enough
     // 2) Check if I have anything to drop
     // 3) Say via MOLD that I am coming to drop a weapon
-    // 4) Go there
+    // 4) If bot has confirmed, then go there
     // 5) Drop a weapon
   }
 }

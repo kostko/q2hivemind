@@ -22,7 +22,7 @@
 
 namespace HiveMind {
 
-Connection::Connection(Context *context, const std::string &id, const std::string &host, int port)
+Connection::Connection(Context *context, const std::string &id, const std::string &host, int port, const std::string &skin)
   : m_host(host),
     m_port(boost::lexical_cast<std::string>(port)),
     m_connected(false),
@@ -53,7 +53,7 @@ Connection::Connection(Context *context, const std::string &id, const std::strin
   m_config["rate"] = "25000";
   m_config["msg"] = "1";
   m_config["fov"] = "90";
-  m_config["skin"] = "male/flak";
+  m_config["skin"] = skin;
   m_config["name"] = "hm_" + id;
   m_config["hand"] = "2";
   

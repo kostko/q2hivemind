@@ -31,6 +31,7 @@ int main(int argc, char **argv)
     ("quake2-server", po::value<std::string>()->default_value("::1"), "connection to specified quake2 server")
     ("quake2-dir", po::value<std::string>()->default_value("/usr/share/games/quake2"), "specify quake2 directory")
     ("bot-id", po::value<std::string>(), "override bot id (must be unique)")
+    ("skin", po::value<std::string>()->default_value("male/flak"), "override skin")
   ;
   
   po::variables_map vm;
@@ -56,9 +57,9 @@ int main(int argc, char **argv)
   if (vm.count("bot-id")) {
     uniqueId = vm["bot-id"].as<std::string>();
   }
-  
+
   // Create a context
-  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>(), vm["data-dir"].as<std::string>());
+  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>(), vm["data-dir"].as<std::string>(), vm["skin"].as<std::string>());
   
   // Start MOLD server when requested
   if (vm.count("mold-server")) {

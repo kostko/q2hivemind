@@ -39,8 +39,9 @@ public:
      * @param id A unique bot identifier
      * @param host Quake 2 server host
      * @param port Quake 2 server port
+     * @param skin Bot skin
      */
-    Connection(Context *context, const std::string &id, const std::string &host, int port);
+    Connection(Context *context, const std::string &id, const std::string &host, int port, const std::string &skin);
     
     /**
      * Class destructor.

@@ -40,8 +40,9 @@ public:
      * @param id Unique bot identifier
      * @param gamedir Quake 2 resource directory
      * @param datadir Hivemind learned data directory
+     * @param skin Bot skin
      */
-    Context(const std::string &id, const std::string &gamedir, const std::string &datadir);
+    Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin);
     
     /**
      * Class destructor.
@@ -153,6 +154,7 @@ private:
     std::string m_botId;
     std::string m_gamedir;
     std::string m_datadir;
+    std::string m_skin;
     
     // Connection to Quake 2 server
     Connection *m_connection;
