@@ -9,8 +9,8 @@
 
 namespace HiveMind {
 
-std::string Player::getWeaponName() {  
-
+std::string Player::getWeaponName()
+{
   if (std::string::npos != weaponModel.find("v_blast")) return "Blaster";
   else if (std::string::npos != weaponModel.find("v_shotg")) return "Shotgun";
   else if (std::string::npos != weaponModel.find("v_shotg2")) return "Super Shotgun";
@@ -25,4 +25,6 @@ std::string Player::getWeaponName() {
 
   return "Blaster";
 }
+
 }
+
