@@ -82,7 +82,6 @@ void DynamicMapper::processEntity(const Entity &entity)
 
         // Add an appropriate state to eligible list
         checkEligible(model);
-
       } else if (model.find("models/objects/dmspot/tris.md2") != std::string::npos) {
         // Spawn point
         node->setType(GridNode::SpawnPoint);

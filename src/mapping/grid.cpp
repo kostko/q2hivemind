@@ -324,6 +324,9 @@ void Grid::collectAllExpired()
     }
     
     BOOST_FOREACH(Item &item, queue) {
+      GridWaypoint wp(item.getLocation());
+      m_items[item.getType()].erase(wp);
+      m_itemWaypointMap.erase(wp);
       node->removeItem(item);
     }
   }
@@ -765,12 +768,16 @@ bool Grid::findPath(const Vector3f &start, const Vector3f &end, GridPath *path, 
 
 GridNode *Grid::getNearestItemNode(Item::Type type, const Vector3f &origin)
 {
+  // First check if tree of this type is actually available
+  if (m_items.find(type) == m_items.end())
+    return NULL;
+
+  // It is, so perform a lookup
   GridWaypoint target(origin);
-  GridTree tree = m_items[type];
+  GridTree tree = m_items.at(type);
   GridNode *node = NULL;
 
   std::pair<GridTree::const_iterator, float> found = tree.find_nearest(target);
-
   if (found.first != tree.end()) {
     GridWaypoint wp = *found.first;
     node = m_itemWaypointMap[wp];
