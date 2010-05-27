@@ -474,7 +474,41 @@ message EntityUpdate {
 \end{verbatim}
 
 \noindent
-Vsak agent, ki prejme takšna sporočila lahko integrira podatke o entiteti v svojo notranjo predstavitev sveta. Prav tako se ta spročila uporabljajo za hitrejše učenje topografije sveta, saj lahko agenti na tak način sledijo večjemu številu drugih igralcev. 
+Vsak agent, ki prejme takšna sporočila lahko integrira podatke o entiteti v svojo notranjo predstavitev sveta. Prav tako se ta spročila uporabljajo za hitrejše učenje topografije sveta, saj lahko agenti na tak način sledijo večjemu številu drugih igralcev.
+
+\subsubsection{API za glasovanja}
+
+Velikokrat se lahko zgodi, da se morajo agenti v skupini skupaj odločiti kdo bo nekaj napravil. V ta namen smo v naše ogrodje vključili API, ki naredi takšno glasovanje transparentno. Vsak agent lahko ustvari anketo določene kategorije in zahteva od skupine da zanjo glasujejo. Do glasovanja so upravičeni vsi člani, ki so bili v trenutku začetka znani v agentovem lokalnem imeniku.
+
+Vsaki anketi je dodeljen unikatni identifikator, sporočilo, ki zahteva novo anketo je tipa \texttt{POLL\_CREATE} in ima naslednjo strukturo:
+\begin{verbatim}
+message PollCreate {
+  // Unique poll identifier
+  required string pollId = 1;
+  
+  // Expiry timestamp
+  required uint32 closesOn = 2;
+  
+  // Voting category
+  required string category = 3;
+}
+\end{verbatim}
+
+Vsak agent lahko glasuje v kolikor ima za dano kategorijo registriran \textit{glasovalni modul}. Naloga tega modula je da se na podlagi lokalnih informacij, ki so agentu na voljo, odloči in odda svoj glas. Glasovanje poteka s sporočili tipa \texttt{POLL\_VOTE} z naslednjo strukturo:
+\begin{verbatim}
+message PollVote {
+  // Unique poll identifier
+  required string pollId = 1;
+  
+  // Choice and amount of votes
+  required string choice = 2;
+  required float votes = 3;
+}
+\end{verbatim}
+
+Agentje svoje glasove oddajo neposredno tistemu, ki je anketo ustvaril, tako da ne obremenjujejo vodila in ostalih agentov z nepotrebnimi sporočili. Kdor je anketo zahteval je odgovoren tudi za štetje glasov po končanem glasovanju. Glasovanje se samodejno zaključi ko ali glasujejo vsi agenti, ki so do glasovanja upravičeni, ali pa preteče čas, ki je odvisen od dane ankete.
+
+Znotraj posameznega agenta se ob končani anketi generira ustrezen dogodek, ki je na voljo posameznim komponentam agenta. 
 
 \section{Možne izboljšave}
 
