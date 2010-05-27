@@ -48,6 +48,9 @@ void Brains::init(vector<int> &stateComponents, vector<int> &actionComponents)
 
 void Brains::interact()
 {
+  if (!m_localPlanner->getCurrentState())
+    return;
+  
   // If current state is not complete or if we don't have possible alternative states to transition to, then skip
   if (!m_localPlanner->getCurrentState()->isComplete() || !m_localPlanner->alternativeStates())
     return;  
