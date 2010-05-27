@@ -10,6 +10,7 @@ gotohealth.cpp
 gotoupgrade.cpp
 gotoweapon.cpp
 dropweapon.cpp
+camper.cpp
 )
 
 add_library(states STATIC ${states_src})

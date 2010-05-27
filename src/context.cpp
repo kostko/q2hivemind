@@ -26,6 +26,7 @@
 #include "states/gotoweapon.h"
 #include "states/gotoupgrade.h"
 #include "states/dropweapon.h"
+#include "states/camper.h"
 
 // MOLD message bus
 #include "mold/server.h"
@@ -86,6 +87,7 @@ void Context::simulationStart(const std::string &map)
   m_localPlanner->registerState(new GoToUpgradeState(this));
   m_localPlanner->registerState(new GoToWeaponState(this));
   m_localPlanner->registerState(new DropWeaponState(this));
+  m_localPlanner->registerState(new CamperState(this));
   m_localPlanner->addEligibleState(m_localPlanner->getStateFromName("wander"));
   m_localPlanner->start();
   
@@ -155,6 +157,7 @@ void Context::execute()
   m_localPlanner->registerState(new GoToUpgradeState(this));
   m_localPlanner->registerState(new GoToWeaponState(this));
   m_localPlanner->registerState(new DropWeaponState(this));
+  m_localPlanner->registerState(new CamperState(this));
   m_localPlanner->addEligibleState(m_localPlanner->getStateFromName("wander"));
   m_localPlanner->start();
   
