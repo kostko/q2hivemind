@@ -311,7 +311,7 @@ void LocalPlanner::process()
 
     // Periodically save gained knowledge
     timestamp_t now = Timing::getCurrentTimestamp();
-    if (now - m_lastSave > 30000) {
+    if (now - m_lastSave > 30000 && m_brains->learnMode()) {
       m_brains->save();
       m_lastSave = now;
     }

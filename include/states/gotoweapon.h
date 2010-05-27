@@ -23,6 +23,8 @@ public:
      * Evaluates the items based on the current needs.
      */
     virtual void evaluate();
+private:
+    boost::unordered_map<Item, std::string> m_itemStringMap;
 };
 
 }

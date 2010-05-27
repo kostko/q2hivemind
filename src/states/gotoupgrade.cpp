@@ -15,22 +15,20 @@ GoToUpgradeState::GoToUpgradeState(Context *context)
 {
   // At the beginning all items are equally valuable
   m_items.push_back(ItemValue(Item::BodyArmor, 1));
-  m_items.push_back(ItemValue(Item::CombatArmor, 1));
-  m_items.push_back(ItemValue(Item::JacketArmor, 1));
-  m_items.push_back(ItemValue(Item::PowerScreen, 1));
-  m_items.push_back(ItemValue(Item::ArmorShard, 1));
-  m_items.push_back(ItemValue(Item::PowerShield, 1));
+  m_items.push_back(ItemValue(Item::CombatArmor, 2));
+  m_items.push_back(ItemValue(Item::JacketArmor, 3));
+  m_items.push_back(ItemValue(Item::PowerScreen, 4));
+  m_items.push_back(ItemValue(Item::ArmorShard, 5));
+  m_items.push_back(ItemValue(Item::PowerShield, 6));
   m_items.push_back(ItemValue(Item::Bandolier, 1));
-  m_items.push_back(ItemValue(Item::Invulnerability, 1));
+  m_items.push_back(ItemValue(Item::Invulnerability, 10));
   m_items.push_back(ItemValue(Item::Backpack, 1));
-  m_items.push_back(ItemValue(Item::Quad, 1));
+  m_items.push_back(ItemValue(Item::Quad, 10));
   m_items.push_back(ItemValue(Item::Silencer, 1));
 }
 
 void GoToUpgradeState::evaluate()
 {
-  // TODO
-  m_items.sort(item_cmp);
 }
 
 }

@@ -15,15 +15,13 @@ GoToHealthState::GoToHealthState(Context *context)
 {
   // At the beginning all items are equally valuable
   m_items.push_back(ItemValue(Item::MediumHealth, 1));
-  m_items.push_back(ItemValue(Item::LargeHealth, 1));
-  m_items.push_back(ItemValue(Item::StimPack, 1));
-  m_items.push_back(ItemValue(Item::MegaHealth, 1));
+  m_items.push_back(ItemValue(Item::LargeHealth, 2));
+  m_items.push_back(ItemValue(Item::StimPack, 3));
+  m_items.push_back(ItemValue(Item::MegaHealth, 4));
 }
 
 void GoToHealthState::evaluate()
 {
-  // TODO give higher values to the weapons in our inventory
-  m_items.sort(item_cmp);
 }
 
 }

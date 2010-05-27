@@ -14,21 +14,19 @@ GoToWeaponState::GoToWeaponState(Context *context)
   : GoToState(context, "gotoweapon")
 {
   // At the beginning all items are equally valuable
-  m_items.push_back(ItemValue(Item::Shotgun, 1));
-  m_items.push_back(ItemValue(Item::SuperShotgun, 1));
-  m_items.push_back(ItemValue(Item::Machinegun, 1));
-  m_items.push_back(ItemValue(Item::Chaingun, 1));
-  m_items.push_back(ItemValue(Item::GrenadeLauncher, 1));
-  m_items.push_back(ItemValue(Item::RocketLauncher, 1));
-  m_items.push_back(ItemValue(Item::HyperBlaster, 1));
-  m_items.push_back(ItemValue(Item::Railgun, 1));
-  m_items.push_back(ItemValue(Item::BFG, 1));
+  m_items.push_back(ItemValue(Item::Shotgun, 2));
+  m_items.push_back(ItemValue(Item::SuperShotgun, 3));
+  m_items.push_back(ItemValue(Item::Machinegun, 4));
+  m_items.push_back(ItemValue(Item::Chaingun, 5));
+  m_items.push_back(ItemValue(Item::GrenadeLauncher, 6));
+  m_items.push_back(ItemValue(Item::RocketLauncher, 7));
+  m_items.push_back(ItemValue(Item::HyperBlaster, 8));
+  m_items.push_back(ItemValue(Item::Railgun, 9));
+  m_items.push_back(ItemValue(Item::BFG, 10));
 }
 
 void GoToWeaponState::evaluate()
 {
-  // TODO 
-  m_items.sort(item_cmp);
 }
 
 }

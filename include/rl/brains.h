@@ -85,6 +85,11 @@ public:
      * Save the gained knowledge.
      */
     virtual void save() = 0;
+
+    /**
+     * Return the current mode.
+     */
+    inline bool learnMode() const { return m_learn; }
 protected:
     /**
      * What really defines the "brain" is the reward function.

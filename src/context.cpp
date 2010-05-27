@@ -15,6 +15,7 @@
 #include "planner/local.h"
 #include "planner/global.h"
 #include "dispatcher.h"
+#include "rl/brains.h"
 
 // States
 #include "states/wander.h"
@@ -37,7 +38,7 @@
 
 namespace HiveMind {
 
-Context::Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin)
+Context::Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin, const std::string &mode)
   : m_botId(id),
     m_gamedir(gamedir),
     m_datadir(datadir),
@@ -46,7 +47,8 @@ Context::Context(const std::string &id, const std::string &gamedir, const std::s
     m_abort(false),
     m_dispatcher(new Dispatcher(this)),
     m_simulatorInitialized(false),
-    m_skin(skin)
+    m_skin(skin),
+    m_mode(mode)
 {
   Object::init();
   
@@ -163,6 +165,10 @@ void Context::execute()
   m_localPlanner->registerState(new DropWeaponState(this));
   m_localPlanner->registerState(new CamperState(this));
   m_localPlanner->addEligibleState(m_localPlanner->getStateFromName("wander"));
+
+  // Set learn to true if explore mode is set, otherwise exploit
+  // the already gained knowledge
+  m_localPlanner->getBrains()->setBrainMode(m_mode == "explore");
   m_localPlanner->start();
   
   // Create and start global planner

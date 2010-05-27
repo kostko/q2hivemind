@@ -23,6 +23,9 @@ protected:
      * Evaluates the items based on the current needs.
      */
     virtual void evaluate();
+
+    boost::unordered_map<std::string, int> m_weapons;
+    boost::unordered_map<std::string, Item::Type> m_weaponsAmmo;
 };
 }
 
