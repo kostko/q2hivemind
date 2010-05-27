@@ -159,13 +159,18 @@ void LocalPlanner::tryUseBetterWeapon()
   weapons["Railgun"] = 9;
   weapons["BFG10K"] = 10;
 
+  
+  if (weapons.find(currentWeapon) == weapons.end() || weapons.find(bestWeapon) == weapons.end())
+    return;
+
   // Change the weapon to better one
   if (weapons[currentWeapon] < weapons[bestWeapon])
     getContext()->getConnection()->use(bestWeapon);
 
 }
 
-const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeapon) {
+const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeapon)
+{
   boost::unordered_map<std::string, int> weapons;
 
   weapons["Grenades"] = 0;
@@ -199,14 +204,29 @@ const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeap
   BOOST_FOREACH(InventoryPair element, m_gameState->inventory) {
     std::string w = element.first;
 
-    if (weapons[w] > maxPriority && m_gameState->inventory[weaponsAmmo[w]] > 0 && w != notWeapon) {
+    if (weapons.find(w) == weapons.end())
+      continue;
+
+    if (weaponsAmmo.find(w) == weaponsAmmo.end())
+      continue;
+
+    std::string ammo = weaponsAmmo.at(w);
+
+    if (m_gameState->inventory.find(ammo) == m_gameState->inventory.end())
+      continue;
+
+    if (weapons[w] > maxPriority && m_gameState->inventory.at(ammo) > 0 && w != notWeapon) {
       // There is a better weapon in our inventory and we have ammo for it
 
       // Special case can happen because of inventory not being up2date
-      if (notWeapon != "" && weapons[notWeapon] <= weapons[w])
-        continue;    
+/*      getLogger()->info(format(">>> notWeapon = %s") % notWeapon);
+      if (weapons.find(notWeapon) != weapons.end())
+        if (weapons.at(notWeapon) <= weapons.at(w))
+          continue;
 
-      maxPriority = weapons[w];
+      getLogger()->info(format("<<< notWeapon = %s") % notWeapon);
+*/
+      maxPriority = weapons.at(w);
       currentWeapon = w;
     }
   }

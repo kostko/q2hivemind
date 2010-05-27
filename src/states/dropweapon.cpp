@@ -11,6 +11,7 @@
 #include "context.h"
 #include "dispatcher.h"
 #include "network/connection.h"
+#include "planner/directory.h"
 
 namespace HiveMind {
 
@@ -19,10 +20,26 @@ DropWeaponState::DropWeaponState(Context *context)
     m_lastDropTime(0)
 {
   Object::init();
+  getContext()->getDispatcher()->signalBotRespawn.connect(boost::bind(&DropWeaponState::botRespawned, this, _1));
 }
 
 DropWeaponState::~DropWeaponState()
 {
+}
+
+void DropWeaponState::botRespawned(BotRespawnEvent *event)
+{
+  if (event->getBot() == NULL) {
+    // We have respawned
+  } else {
+    // Some other bot has respawned
+    // TODO:
+    // 1) Check if I am near enough
+    // 2) Check if I have anything to drop
+    // 3) Say via MOLD that I am coming to drop a weapon
+    // 4) Go there
+    // 5) Drop a weapon
+  }
 }
 
 void DropWeaponState::initialize(const boost::any &metadata)
@@ -44,6 +61,12 @@ void DropWeaponState::initialize(const boost::any &metadata)
 
   getContext()->getConnection()->refreshInventory();
 
+  if (m_gameState->inventory.find(currentWeapon) == m_gameState->inventory.end())
+    return;
+
+  if (weaponsAmmo.find(currentWeapon) == weaponsAmmo.end())
+    return;
+
   if (m_gameState->inventory[currentWeapon] > 1) {
     getLogger()->info(format("I can drop %s, as I have %d") % currentWeapon % m_gameState->inventory[currentWeapon]);
     getContext()->getConnection()->say("Dropping "+currentWeapon + " and " + weaponsAmmo[currentWeapon]);
@@ -51,6 +74,12 @@ void DropWeaponState::initialize(const boost::any &metadata)
     getContext()->getConnection()->writeConsoleAsync("drop " + weaponsAmmo[currentWeapon]);
   } else {
     std::string secondBestWeapon = getLocalPlanner()->bestWeaponInInventory(currentWeapon);
+
+    if (m_gameState->inventory.find(secondBestWeapon) == m_gameState->inventory.end())
+      return;
+
+    if (weaponsAmmo.find(secondBestWeapon) == weaponsAmmo.end())
+      return;
 
     if (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0) {
       getLogger()->info(format("2I can drop %s, as I have %d and %d ammo for it") % secondBestWeapon % m_gameState->inventory[secondBestWeapon] % m_gameState->inventory[weaponsAmmo[secondBestWeapon]]);
@@ -82,15 +111,16 @@ void DropWeaponState::checkEvent()
   std::string currentWeapon = m_gameState->player.getWeaponName();
   std::string secondBestWeapon = getLocalPlanner()->bestWeaponInInventory(currentWeapon);
 
-  //getLogger()->info(format("currentweap = '%s'[%d]; secondBestWeapon = '%s'[%d]") % currentWeapon % m_gameState->inventory[currentWeapon] % secondBestWeapon % m_gameState->inventory[secondBestWeapon]);
+  if (m_gameState->inventory.find(currentWeapon) == m_gameState->inventory.end())
+    return;
+
+  if (m_gameState->inventory.find(secondBestWeapon) == m_gameState->inventory.end())
+    return;
+
   if (Timing::getCurrentTimestamp() - m_lastDropTime > 11000 &&
       (m_gameState->inventory[currentWeapon] > 1 || (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0))) {
     getLocalPlanner()->requestTransition("dropweapon");
-    m_lastDropTime = Timing::getCurrentTimestamp();
-    
-    // Emit respawn event
-    //BotRespawnEvent event(NULL);
-    //getContext()->getDispatcher()->emit(&event);
+    m_lastDropTime = Timing::getCurrentTimestamp();    
   }
 }
 

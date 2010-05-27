@@ -18,6 +18,7 @@
 namespace HiveMind {
 
 class Context;
+class BotRespawnEvent;
 
 /**
  * Drop weapon state.
@@ -35,6 +36,11 @@ public:
      * Class destructor.
      */
     virtual ~DropWeaponState();
+
+    /**
+     * This method gets called when a bot has respawned.
+     */
+    void botRespawned(BotRespawnEvent *event);
 
     /**
      * Prepare for entry into this state.
