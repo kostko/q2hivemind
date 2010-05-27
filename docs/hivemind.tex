@@ -478,7 +478,25 @@ Vsak agent, ki prejme takšna sporočila lahko integrira podatke o entiteti v sv
 
 \section{Možne izboljšave}
 
+Med razvojem ogrodja in raziskovanjem področja smo odkrili nekaj možnosti za izboljšave, katerih na žalost zaradi pomanjkanja časa nismo uspeli preveriti.
+
+\begin{itemize}
+  \item Implementirati iskalni algoritem, omenjen v \cite{champandard02}, za inkrementalno izboljševanje poti od trenutne pozicije do vseh ostalih točk. Bistvena lastnost algoritma je, da lahko pri gradnji poti upošteva da se na nekaterih vozliščih nahajajo nagrade (različni predmeti) za katere je včasih dobro vzeti malo daljšo pot. Dobra stvar je tudi, da se drevo poti gradi postopoma in upošteva majhne spremembe korena (tako da ni potrebno vsakič zgraditi drevesa popolnoma na novo, kar močno izboljša performanse).
+  
+  \item Ugotoviti zakaj naš sistem EANN ni konvergiral v doglednem času.
+  
+  \item Raziskati možnost arhitekture, ki omogoča zlivanje različnih stanj. Na tak način bi agent lahko kombiniral svoje zmožnosti, kar bi mu dodalo veliko večjo fleksibilnost.
+  
+  \item Raziskati možnost sledenja gladkim potem skozi več točk, ki so generirane s pomočjo Catmull-Romovih zlepkov. Prav tako bi lahko iskanje poti upoštevalo kote med zaporednimi točkami in izbiralo takšne točke, ki minimizirajo zavoje.
+\end{itemize}
+
 \section{Zaključek}
+
+Vsa izvorna koda je izdana pod licenco GPLv3 in se skupaj z dnevnikom razvoja nahaja na:
+
+\begin{center}
+\texttt{http://code.google.com/p/q2hivemind}
+\end{center}
 
 %
 % Literatura
