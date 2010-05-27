@@ -372,7 +372,8 @@ namespace KDTree
       void
       erase(const_iterator const& __IT)
       {
-         assert(__IT != this->end());
+        if (__IT == this->end())
+          return;
         _Link_const_type target = __IT.get_raw_node();
         _Link_const_type n = target;
         size_type level = 0;
