@@ -219,13 +219,10 @@ const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeap
       // There is a better weapon in our inventory and we have ammo for it
 
       // Special case can happen because of inventory not being up2date
-/*      getLogger()->info(format(">>> notWeapon = %s") % notWeapon);
       if (weapons.find(notWeapon) != weapons.end())
         if (weapons.at(notWeapon) <= weapons.at(w))
           continue;
 
-      getLogger()->info(format("<<< notWeapon = %s") % notWeapon);
-*/
       maxPriority = weapons.at(w);
       currentWeapon = w;
     }
