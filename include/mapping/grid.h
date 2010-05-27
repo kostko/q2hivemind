@@ -10,7 +10,7 @@
 
 #include "object.h"
 #include "timing.h"
-#include "kdtree++/kdtree.hpp"
+#include "kdtree/kdtree.hpp"
 #include "mapping/items.h"
 
 #include <boost/random/mersenne_twister.hpp>
