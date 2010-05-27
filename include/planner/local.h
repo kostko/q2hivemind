@@ -125,6 +125,10 @@ public:
      */
     void updateEligibleStates();
 
+    void tryUseBetterWeapon();
+
+    const std::string bestWeaponInInventory(const std::string &notWeapon = "");
+
     /**
      * Prune this state from eligible states set.
      *

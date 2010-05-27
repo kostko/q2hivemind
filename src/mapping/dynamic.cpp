@@ -77,7 +77,7 @@ void DynamicMapper::processEntity(const Entity &entity)
         item.setLocation(entity.origin);
         item.updateLastSeen();
         node->setType(GridNode::Item);
-        node->addItem(item);
+        node->addItem(item);        
         m_grid->learnItem(node);
 
         // Add an appropriate state to eligible list
@@ -169,7 +169,7 @@ void DynamicMapper::checkEligible(const std::string &model)
 
   if (model.find("models/items/ammo") != std::string::npos) {
     stateName = "gotoammo";
-  } else if (model.find("models/items/weapons") != std::string::npos) {
+  } else if (model.find("models/weapons") != std::string::npos) {
     stateName = "gotoweapon";
   } else if (model.find("models/items/healing") != std::string::npos) {
     stateName = "gotohealth";

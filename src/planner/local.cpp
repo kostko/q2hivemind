@@ -14,6 +14,7 @@
 #include "rl/brainstate.h"
 #include "brains/soldier.h"
 #include "network/gamestate.h"
+#include "network/connection.h"
 
 #include <boost/foreach.hpp>
 #include <limits>
@@ -140,6 +141,79 @@ void LocalPlanner::pruneState(const std::string &state)
     m_currentState->m_complete = true;
 }
 
+void LocalPlanner::tryUseBetterWeapon()
+{
+  std::string currentWeapon = m_gameState->player.getWeaponName();
+  std::string bestWeapon = bestWeaponInInventory();
+
+  boost::unordered_map<std::string, int> weapons;
+  weapons["Grenades"] = 0;
+  weapons["Blaster"] = 1;
+  weapons["Shotgun"] = 2;
+  weapons["Super Shotgun"] = 3;
+  weapons["Machinegun"] = 4;
+  weapons["Chaingun"] = 5;
+  weapons["Grenade Launcher"] = 6;
+  weapons["Rocket Launcher"] = 7;
+  weapons["HyperBlaster"] = 8;
+  weapons["Railgun"] = 9;
+  weapons["BFG10K"] = 10;
+
+  // Change the weapon to better one
+  if (weapons[currentWeapon] < weapons[bestWeapon])
+    getContext()->getConnection()->use(bestWeapon);
+
+}
+
+const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeapon) {
+  boost::unordered_map<std::string, int> weapons;
+
+  weapons["Grenades"] = 0;
+  weapons["Blaster"] = 1;
+  weapons["Shotgun"] = 2;
+  weapons["Super Shotgun"] = 3;
+  weapons["Machinegun"] = 4;
+  weapons["Chaingun"] = 5;
+  weapons["Grenade Launcher"] = 6;
+  weapons["Rocket Launcher"] = 7;
+  weapons["HyperBlaster"] = 8;
+  weapons["Railgun"] = 9;
+  weapons["BFG10K"] = 10;
+
+  boost::unordered_map<std::string, std::string> weaponsAmmo;
+  weaponsAmmo["Blaster"] = "Blaster";
+  weaponsAmmo["Shotgun"] = "Shells";
+  weaponsAmmo["Super Shotgun"] = "Shells";
+  weaponsAmmo["Machinegun"] = "Bullets";
+  weaponsAmmo["Chaingun"] = "Bullets";
+  weaponsAmmo["Grenade Launcher"] = "Grenades";
+  weaponsAmmo["Rocket Launcher"] = "Rockets";
+  weaponsAmmo["HyperBlaster"] = "Cells";
+  weaponsAmmo["Railgun"] = "Slugs";
+  weaponsAmmo["BFG10K"] = "Cells";
+
+  int maxPriority = 0;
+  std::string currentWeapon = "Blaster";
+
+  typedef std::pair<std::string, int> InventoryPair;
+  BOOST_FOREACH(InventoryPair element, m_gameState->inventory) {
+    std::string w = element.first;
+
+    if (weapons[w] > maxPriority && m_gameState->inventory[weaponsAmmo[w]] > 0 && w != notWeapon) {
+      // There is a better weapon in our inventory and we have ammo for it
+
+      // Special case can happen because of inventory not being up2date
+      if (notWeapon != "" && weapons[notWeapon] <= weapons[w])
+        continue;    
+
+      maxPriority = weapons[w];
+      currentWeapon = w;
+    }
+  }
+
+  return currentWeapon;
+}
+
 void LocalPlanner::updateEligibleStates()
 {
   // Go through all states and check for event triggers
@@ -195,6 +269,8 @@ void LocalPlanner::worldUpdated(const GameState &state)
 
   // Update eligible states set
   updateEligibleStates();
+
+  tryUseBetterWeapon();
 
   // Let the brain process what to do
   m_brains->interact();

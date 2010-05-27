@@ -67,7 +67,7 @@ void GoToState::processPlanning()
 
   // Plan a path if none is currently available
   if (!m_hasNextPoint) {
-    getLogger()->info("Planning a path to a useful item.");
+    getLogger()->info(format("[%s] Planning a path to a useful item.") % getName());
 
     // Re-check our needs
     evaluate();
@@ -77,7 +77,7 @@ void GoToState::processPlanning()
 
     // Loop from the most needed to the least needed item
     BOOST_FOREACH(ItemValue t, m_items) {
-      
+      //getLogger()->info(format("%d Item -> %d") % t.second % t.first);
       // Find the nearest node that contains our item
       GridNode *node = grid->getNearestItemNode(t.first, p);
       if (node == NULL) {

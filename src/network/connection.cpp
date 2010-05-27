@@ -176,7 +176,7 @@ void Connection::refreshInventory()
 {
   boost::lock_guard<boost::mutex> g(m_gameStateMutex);
   timestamp_t now = Timing::getCurrentTimestamp(); 
-  if (now - m_lastInventoryUpdate > 5000 || (m_cs->player.stats[3] == 0 && m_lastPlayerAmmo > 0)) { 
+  if (now - m_lastInventoryUpdate > 5000 || (m_cs->player.stats[3] == 0 && m_lastPlayerAmmo > 0)) {
     writeConsoleAsync("inven");
     m_lastInventoryUpdate = now; 
   }
