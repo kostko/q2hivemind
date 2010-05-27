@@ -63,8 +63,6 @@ public:
     virtual void checkEvent();
 private:
     timestamp_t m_lastDropTime;
-
-    int m_i;
 };
 
 }

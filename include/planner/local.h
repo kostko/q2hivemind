@@ -125,8 +125,17 @@ public:
      */
     void updateEligibleStates();
 
+    /**
+     * If there is a better weapon in bot's inventory, bot will switch to this weapon.
+     */
     void tryUseBetterWeapon();
 
+    /**
+     * Get the name of the best weapon currently in bot's inventory.
+     *
+     * @param notWeapon Optional name of weapon name that should be ommited when searching for the best weapon.
+     * @return string Best weapon currently in inventory 
+     */
     const std::string bestWeaponInInventory(const std::string &notWeapon = "");
 
     /**

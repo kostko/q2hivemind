@@ -77,7 +77,6 @@ void GoToState::processPlanning()
 
     // Loop from the most needed to the least needed item
     BOOST_FOREACH(ItemValue t, m_items) {
-      //getLogger()->info(format("%d Item -> %d") % t.second % t.first);
       // Find the nearest node that contains our item
       GridNode *node = grid->getNearestItemNode(t.first, p);
       if (node == NULL) {
