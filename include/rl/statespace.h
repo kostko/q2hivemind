@@ -13,13 +13,14 @@
 #include "rl/enumvector.h"
 #include "rl/action.h"
 #include "rl/brainstate.h"
+#include "object.h"
 
 using namespace std;
 
 namespace HiveMind {
 
 
-class StateSpace {
+class StateSpace : public Object {
 public:
     /**
      * Constructor.
@@ -65,7 +66,16 @@ public:
      * Sum of all elements.
      */
     double sum();
-  
+
+    /**
+     * Load the knowledge from the given file.
+     */
+    void load(const std::string &name);
+
+    /**
+     * Save the knowledge to the given file.
+     */
+    void save(const std::string &name);
 private:
     BrainState  *m_state;           // These two vectors define the space
     BrainAction *m_action;

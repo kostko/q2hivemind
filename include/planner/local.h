@@ -25,6 +25,10 @@ namespace HiveMind {
 class Brains;
 class BrainAction;
 
+enum {
+    SAVE_INTERVAL = 30000
+};
+
 /**
  * Local planner and state manager.
  */
@@ -198,6 +202,9 @@ private:
     // This set should always be up-to-date for the current situation, so the Brains
     // will choose only from states that are eligible for the current situation.
     std::set<State*> m_eligibleStates;
+
+    // Last save time
+    timestamp_t m_lastSave;
 };
 
 }

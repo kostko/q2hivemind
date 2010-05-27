@@ -80,7 +80,11 @@ public:
      * Get new empty BrainAction object.
      */
     BrainAction *newBrainAction(std::string name = "");
-          
+
+    /**
+     * Save the gained knowledge.
+     */
+    virtual void save() = 0;
 protected:
     /**
      * What really defines the "brain" is the reward function.
@@ -119,7 +123,7 @@ protected:
 
     BrainState *m_currState;
     BrainState *m_tempState;         // To avoid constant allocations
-private:
+    
     /**
      * Update Q function.
      */ 

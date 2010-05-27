@@ -27,7 +27,8 @@ LocalPlanner::LocalPlanner(Context *context)
     m_worldUpdated(false),
     m_abort(false),
     m_brains(new SoldierBrains(this)),
-    m_motionController(context)
+    m_motionController(context),
+    m_lastSave(0)
 {
   Object::init();
 }
@@ -307,6 +308,14 @@ void LocalPlanner::process()
     // Perform current state planning processing
     if (m_currentState && m_worldUpdated)
       m_currentState->processPlanning();
+
+    // Periodically save gained knowledge
+    timestamp_t now = Timing::getCurrentTimestamp();
+    if (now - m_lastSave > 30000) {
+      m_brains->save();
+      m_lastSave = now;
+    }
+
     // Sleep some 200ms
     usleep(200000);
   }

@@ -65,6 +65,11 @@ void SoldierBrains::init()
   m_currAction->setExecutionState(m_actionStateMap[WANDER]);
   m_currAction->setName("wander");
 
+  // Load the data according to the bot's id
+  std::string id = m_localPlanner->getContext()->getBotId();
+  m_Q->load("data/" + id + ".knowledge");
+  m_numQ->load("data/" + id + ".visits");
+
   getLogger()->info("Brains initialized.");
 }
 
@@ -185,6 +190,13 @@ bool SoldierBrains::eligibleAction(BrainAction *action)
 std::string SoldierBrains::defaultActionName()
 {
   return m_actionStateMap[alwaysEligibleId()]->getName();
+}
+
+void SoldierBrains::save()
+{
+  std::string id = m_localPlanner->getContext()->getBotId();
+  m_Q->save("data/" + id + ".knowledge");
+  m_numQ->save("data/" + id + ".visits");
 }
 
 }

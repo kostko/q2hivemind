@@ -104,6 +104,11 @@ public:
      * Init the brain.
      */
     void init();
+
+    /**
+     * Save the gained knowledge.
+     */
+    virtual void save();
 private:
     /**
      * What really defines the "brain" is the reward function.
