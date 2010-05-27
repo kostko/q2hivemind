@@ -42,12 +42,12 @@ DynamicMapper::~DynamicMapper()
 
 void DynamicMapper::botLocationUpdated(BotLocationUpdateEvent *event)
 {
-  // TODO incorporate team member movements to learn paths
+  // Learn from team member movements
+  if (m_lastBotOrigin.find(event->getBot()) != m_lastBotOrigin.end()) {
+    learnFromMovement(m_lastBotOrigin.at(event->getBot()), event->getOrigin());
+  }
   
-  // TODO unordered map, last position for each path
-  
-  // TODO respawn event invalidates the previous location and does not
-  //      learn a path (otherwise invalid links would be established)
+  m_lastBotOrigin[event->getBot()] = event->getOrigin();
 }
 
 void DynamicMapper::entityUpdated(EntityUpdatedEvent *event)
@@ -113,7 +113,8 @@ void DynamicMapper::botRespawned(BotRespawnEvent *event)
     // Local bot, reset last origin so we don't learn this path
     m_haveLastOrigin = false;
   } else {
-    // TODO non-local bot
+    // Invalidate last known bot position so we don't learn this path
+    m_lastBotOrigin.erase(event->getBot());
   }
 }
 

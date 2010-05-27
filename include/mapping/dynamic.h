@@ -16,6 +16,7 @@ namespace HiveMind {
 
 class Context;
 class Grid;
+class Bot;
 class BotLocationUpdateEvent;
 class BotRespawnEvent;
 class EntityUpdatedEvent;
@@ -94,6 +95,7 @@ private:
     
     // For tracking other entities
     boost::unordered_map<int, Vector3f> m_lastEntityOrigin;
+    boost::unordered_map<Bot*, Vector3f> m_lastBotOrigin;
 };
 
 }
