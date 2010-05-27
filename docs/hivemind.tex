@@ -209,7 +209,7 @@ Sami senzorji pa so zgolj orodje, ki ga mora učinkovito uporabiti nadzorni sist
 
 Najprej smo želeli nadzorni sistem implementirati s t.i. evolucijskimi umetnimi nevronskimi mrežami. Gre za koncept, kjer za učenje nevronske mreže uporabljamo genetski algoritem, ki ga vodi kriterijska funkcija. V literaturi \cite{champandard02} smo zasledili da se omenjena kombinacija dobro obnese na problemski domeni nadzornih sistemov takšnih agentov, zato smo jo poskušali uporabiti.
 
-V našem primeru so namreč tako vhodi (razdalje do ovir s senzorjev ter prejšnji izhod mreže) kot izhodi (zahtevani popravek kota) zvezne vrednosti za kar so nevronske mreže še posebej primerne (v kolikor uporabljamo ustrezno sigmoidno odzivno funkcijo).
+V našem primeru so namreč tako vhodi (razdalje do ovir s senzorjev ter prejšnji izhod mreže) kot izhodi (zahtevani popravek kota) zvezne vrednosti za kar so nevronske mreže še posebej primerne (v kolikor uporabljamo ustrezno sigmoidno odzivno funkcijo), saj ne zahtevajo diskretizacije vrednosti.
 
 \subsubsection{Topologija nevronske mreže in genetski algoritem}
 Za topologijo nevronske mreže smo izbrali znani perceptron in sicer z enim skritim nivojem petih nevronov. Genom za genetski algoritem je bil tako sestavljen kar iz uteži nevronske mreže, na začetku pa so bile te uteži postavljene naključno. Osebke za križanje pri generiranju naslednje generacije smo iz populacije izbirali tako, da je bila verjetnost izbire vsakega osebka proporcionalna njegovi ustreznosti glede na kriterijsko funkcijo (ta način izbire se sicer imenuje \textit{roulette-wheel selection}).
