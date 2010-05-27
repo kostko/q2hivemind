@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "mold/client.h"
 #include "planner/directory.h"
+#include "planner/poll.h"
 #include "network/connection.h"
 #include "dispatcher.h"
 #include "event.h"
@@ -19,6 +20,7 @@
 
 #include <sstream>
 #include <ctime>
+#include <boost/foreach.hpp>
 
 using namespace HiveMind::MOLD;
 
@@ -28,7 +30,8 @@ GlobalPlanner::GlobalPlanner(Context *context)
   : m_context(context),
     m_directory(new Directory(context)),
     m_lastCollection(0),
-    m_lastBotUpdate(0)
+    m_lastBotUpdate(0),
+    m_lastPollTest(Timing::getCurrentTimestamp())
 {
   Object::init();
   
@@ -101,6 +104,38 @@ void GlobalPlanner::worldUpdated(const GameState &state)
     // Reset timer and last bot origin
     m_lastBotUpdate = now;
     m_lastBotOrigin = origin;
+  }
+  
+  // Process active polls
+  std::list<std::string> clearQueue;
+  typedef std::pair<std::string, Poll*> PollPair;
+  BOOST_FOREACH(PollPair p, m_polls) {
+    Poll *poll = p.second;
+    poll->process();
+    
+    // Check if voting has been completed and in this case emit proper event then
+    // mark poll for removal
+    if (!poll->isActive()) {
+      PollVoteCompletedEvent event(poll);
+      m_context->getDispatcher()->emit(&event);
+      clearQueue.push_back(p.first);
+    }
+  }
+  
+  // Mutex must be held while erasing polls as events might still be delivered
+  // while the polls are being deleted
+  {
+    boost::lock_guard<boost::mutex> g(m_pollMutex);
+    BOOST_FOREACH(std::string pollId, clearQueue) {
+      delete m_polls[pollId];
+      m_polls.erase(pollId);
+    }
+  }
+  
+  // Test the voting system once in a while
+  if (now - m_lastPollTest >= 60000) {
+    createPoll(new Poll(m_context, Poll::VoteBot, 5000, "System.PollTest"));
+    m_lastPollTest = now;
   }
 }
 
@@ -202,6 +237,51 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
       break;
     }
     
+    case Protocol::Message::POLL_CREATE: {
+      // Poll create event
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        // Check to see if we have a voter registered for this purpuse and let it
+        // vote immediately
+        Protocol::PollCreate pcr = message_cast<Protocol::PollCreate>(msg);
+        if (m_pollVoters.find(pcr.category()) != m_pollVoters.end()) {
+          // Request the voter to vote immediately
+          PollVoter *voter = m_pollVoters[pcr.category()];
+          PollVote vote = voter->vote(bot, pcr.category());
+          
+          // Dispatch the vote back
+          Protocol::PollVote vt;
+          vt.set_pollid(pcr.pollid());
+          vt.set_choice(vote.getChoice());
+          vt.set_votes(vote.getVotes());
+          client->deliver(Protocol::Message::POLL_VOTE, &vt, msg.sourceid());
+          
+          // Log voting
+          getLogger()->info(format("Voted in poll '%s' in category '%s'.") % pcr.pollid() % pcr.category());
+        } else {
+          // Unknown vote category, we can do nothing
+          getLogger()->warning(format("Bot has requested a poll on '%s', but we are missing a voter!") % pcr.category());
+        }
+      }
+      break;
+    }
+    
+    case Protocol::Message::POLL_VOTE: {
+      // Poll vote event
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        // Check to see if we have a running poll under this identifier
+        Protocol::PollVote vt = message_cast<Protocol::PollVote>(msg);
+        boost::lock_guard<boost::mutex> g(m_pollMutex);
+        
+        if (m_polls.find(vt.pollid()) != m_polls.end()) {
+          // A poll has been found, let's vote
+          m_polls[vt.pollid()]->addVote(PollVote(bot, vt.votes(), vt.choice()));
+        }
+      }
+      break;
+    }
+    
     default: {
       // Message code not recongnized, emit a warning
       getLogger()->warning("Unrecognized MOLD message received from bus!");
@@ -246,6 +326,31 @@ void GlobalPlanner::entityUpdated(EntityUpdatedEvent *event)
     upd.set_player(entity.isPlayer());
     client->deliver(Protocol::Message::EVENT_ENTITY_UPDATE, &upd);
   }
+}
+
+void GlobalPlanner::createPoll(Poll *poll)
+{
+  MOLD::ClientPtr client = m_context->getMOLDClient();
+  if (!client || !client->isConnected()) {
+    delete poll;
+    return;
+  }
+  
+  getLogger()->info(format("Starting a new poll %s for category '%s'.") % poll->getId() % poll->getCategory());
+  m_polls[poll->getId()] = poll;
+  
+  // Notify other members that this poll is on
+  Protocol::PollCreate msg;
+  msg.set_pollid(poll->getId());
+  msg.set_closeson(poll->getExpiryTimestamp());
+  msg.set_category(poll->getCategory());
+  client->deliver(Protocol::Message::POLL_CREATE, &msg);
+}
+
+void GlobalPlanner::registerVoter(const std::string &category, PollVoter *voter)
+{
+  getLogger()->info(format("Registering poll voter for category '%s'...") % category);
+  m_pollVoters[category] = voter;
 }
 
 }

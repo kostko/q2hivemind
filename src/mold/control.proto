@@ -48,3 +48,32 @@ message EntityUpdate {
   required bool player = 6;
 }
 
+//
+// Poll create message is used to start a new voting process
+// within the group.
+//
+message PollCreate {
+  // Unique poll identifier
+  required string pollId = 1;
+  
+  // Expiry timestamp
+  required uint32 closesOn = 2;
+  
+  // Voting category
+  required string category = 3;
+}
+
+//
+// Poll vote message is used to cast an actual vote in the poll.
+//
+message PollVote {
+  // Unique poll identifier
+  required string pollId = 1;
+  
+  // Choice and amount of votes
+  required string choice = 2;
+  required float votes = 3;
+}
+
+
+

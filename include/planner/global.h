@@ -12,6 +12,8 @@
 #include "timing.h"
 #include "network/gamestate.h"
 
+#include <boost/thread.hpp>
+
 namespace HiveMind {
 
 namespace MOLD {
@@ -25,6 +27,8 @@ class Directory;
 class Bot;
 class BotRespawnEvent;
 class EntityUpdatedEvent;
+class Poll;
+class PollVoter;
 
 /**
  * Global planner.
@@ -65,6 +69,23 @@ public:
      * Returns the bot directory.
      */
     inline Directory *getDirectory() const { return m_directory; }
+    
+    /**
+     * Creates and starts a new poll within the team. After calling
+     * this method, the global planner will own this Poll instance.
+     * You will be notified of poll completion via an event.
+     *
+     * @param poll Poll descriptor
+     */
+    void createPoll(Poll *poll);
+    
+    /**
+     * Registers a new voter module.
+     *
+     * @param category Vote category
+     * @param voter Voter instance
+     */
+    void registerVoter(const std::string &category, PollVoter *voter);
 protected:
     /**
      * Called when a message is received via MOLD.
@@ -102,6 +123,14 @@ private:
     // Updates
     timestamp_t m_lastBotUpdate;
     Vector3f m_lastBotOrigin;
+    
+    // Registered active polls and local voters
+    boost::unordered_map<std::string, Poll*> m_polls;
+    boost::unordered_map<std::string, PollVoter*> m_pollVoters;
+    boost::mutex m_pollMutex;
+    
+    // Last poll test
+    timestamp_t m_lastPollTest;
 };
 
 }

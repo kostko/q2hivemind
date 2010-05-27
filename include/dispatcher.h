@@ -60,6 +60,7 @@ public:
     boost::signals2::signal<void (BotRespawnEvent *event)> signalBotRespawn;
     boost::signals2::signal<void (OpponentSpottedEvent *event)> signalOpponentSpotted;
     boost::signals2::signal<void (EntityUpdatedEvent *event)> signalEntityUpdated;
+    boost::signals2::signal<void (PollVoteCompletedEvent *event)> signalPollVoteCompleted;
 private:
     // Context
     Context *m_context;

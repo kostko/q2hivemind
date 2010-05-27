@@ -100,6 +100,17 @@ void Directory::collect()
   }
 }
 
+BotSet Directory::getRegisteredBots() const
+{
+  BotSet set;
+  typedef std::pair<std::string, Bot*> BotPair;
+  BOOST_FOREACH(BotPair p, m_names) {
+    set.insert(p.second);
+  }
+  
+  return set;
+}
+
 }
 
 

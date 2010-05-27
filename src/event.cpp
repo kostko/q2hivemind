@@ -30,6 +30,7 @@ std::string Event::getTypeAsString() const
     case BotRespawn: return "BotRespawn";
     case OpponentSpotted: return "OpponentSpotted";
     case EntityUpdated: return "EntityUpdated";
+    case PollVoteCompleted: return "PollVoteCompleted";
     default: return "Invalid";
   }
 }
@@ -61,6 +62,12 @@ EntityUpdatedEvent::EntityUpdatedEvent(const Entity &entity, bool external)
   : Event(EntityUpdated),
     m_entity(entity),
     m_external(external)
+{
+}
+
+PollVoteCompletedEvent::PollVoteCompletedEvent(Poll *poll)
+  : Event(PollVoteCompleted),
+    m_poll(poll)
 {
 }
 

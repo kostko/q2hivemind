@@ -28,6 +28,9 @@
 #include "states/dropweapon.h"
 #include "states/camper.h"
 
+// Voters
+#include "voters/dummy.h"
+
 // MOLD message bus
 #include "mold/server.h"
 #include "mold/client.h"
@@ -164,6 +167,7 @@ void Context::execute()
   
   // Create and start global planner
   m_globalPlanner = new GlobalPlanner(this);
+  m_globalPlanner->registerVoter("System.PollTest", new DummyVoter());
   m_globalPlanner->start();
   
   while (!m_abort) {

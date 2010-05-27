@@ -11,6 +11,8 @@
 #include "object.h"
 #include "timing.h"
 
+#include <boost/unordered_set.hpp>
+
 namespace HiveMind {
 
 class Context;
@@ -87,6 +89,9 @@ private:
     int m_fragCount;
 };
 
+// Set of bots
+typedef boost::unordered_set<Bot*> BotSet;
+
 /**
  * Bot team directory.
  */
@@ -121,6 +126,11 @@ public:
      * a friend (a bot registered with the system).
      */
     inline bool isFriend(int entityId) const { return getBotByEntityId(entityId) != NULL; }
+    
+    /**
+     * Returns a set of currently registered bots.
+     */
+    BotSet getRegisteredBots() const;
 protected:
     /**
      * Registers a new bot with the directory.

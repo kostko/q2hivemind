@@ -6,6 +6,7 @@ global.cpp
 directory.cpp
 sensors.cpp
 motion.cpp
+poll.cpp
 )
 
 add_library(planner STATIC ${planner_src})

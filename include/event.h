@@ -16,6 +16,7 @@
 namespace HiveMind {
 
 class Bot;
+class Poll;
 
 /**
  * Represents an event that is used for communication between bot
@@ -32,6 +33,7 @@ public:
       BotRespawn,
       EntityUpdated,
       OpponentSpotted,
+      PollVoteCompleted,
       
       // This represents any event and should be the last one
       Any
@@ -165,6 +167,26 @@ private:
     // Current entity origin
     Entity m_entity;
     bool m_external;
+};
+
+class PollVoteCompletedEvent : public Event {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param poll Poll that has been completed
+     */
+    PollVoteCompletedEvent(Poll *poll);
+    
+    /**
+     * Returns the poll that has just been completed. Do not save
+     * this pointer as the poll will be deleted right after this
+     * event is delivered to all subscribers!
+     */
+    inline Poll *getPoll() const { return m_poll; }
+private:
+    // Completed poll
+    Poll *m_poll;
 };
 
 }

@@ -8,6 +8,7 @@ add_subdirectory(rl)
 add_subdirectory(brains)
 add_subdirectory(eann)
 add_subdirectory(fuzzy)
+add_subdirectory(voters)
 
 set(hivemind_core_src
 algebra.cpp
@@ -29,6 +30,7 @@ set(hivemind_libraries
   brains
   eann
   fuzzy
+  voters
 
   # External libraries
   ${PROTOBUF_LIBRARY}

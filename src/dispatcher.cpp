@@ -36,6 +36,7 @@ void Dispatcher::emit(Event *event)
     case Event::BotRespawn: signalBotRespawn(static_cast<BotRespawnEvent*>(event)); break;
     case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
     case Event::EntityUpdated: signalEntityUpdated(static_cast<EntityUpdatedEvent*>(event)); break;
+    case Event::PollVoteCompleted: signalPollVoteCompleted(static_cast<PollVoteCompletedEvent*>(event)); break;
     default: break;
   }
   
