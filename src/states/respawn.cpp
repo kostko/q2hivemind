@@ -47,7 +47,7 @@ void RespawnState::processFrame()
   m_i++;
 
   if (m_i % 10 == 0)
-    getLocalPlanner()->requestTransition("wander");
+    getLocalPlanner()->requestTransition("camper");
 }
 
 void RespawnState::checkEvent()
