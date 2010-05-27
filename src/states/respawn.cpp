@@ -37,8 +37,8 @@ void RespawnState::goodbye()
 
 void RespawnState::processFrame()
 {
-  Vector3f dest = Vector3f(0.0, 0.0, 0.0);
-  m_moveTarget = m_moveDestination = dest;
+  Vector3f origin = m_gameState->player.origin;
+  m_moveTarget = m_moveDestination = origin;
   if (m_i % 2 == 0)
     m_moveFire = true;
   else
