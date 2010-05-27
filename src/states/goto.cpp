@@ -28,8 +28,6 @@ GoToState::GoToState(Context *context, const std::string &name)
 
 void GoToState::initialize(const boost::any &metadata)
 {
-  getLogger()->info(format("Now entering %s state.") % getName());
-
   // Remember last state entry
   m_lastTime = Timing::getCurrentTimestamp();
   m_atDestination = false;
@@ -43,7 +41,6 @@ void GoToState::initialize(const boost::any &metadata)
 
 void GoToState::goodbye()
 {
-  getLogger()->info(format("Now leaving %s state.") % getName());
 }
 
 void GoToState::checkEvent()
