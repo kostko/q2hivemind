@@ -352,7 +352,7 @@ To se mogoče zdi v redu, vendar je sama implementacija CAST-a in njegov pristop
 \begin{enumerate}
   \item Neverjetno pomanjkanje dokumentacije ter predvsem opisa notranjega delovanja ogrodja. Manjkajo relacije med posameznimi deli in podroben opis postopka serializacije ter hranjenja sporočil.
   
-  \item Za serializacijo se uporablja neka pretirano obsežna knjižnica imenovana ICE, ki je sama po sebi skoraj tako velika kot CAST.
+  \item Za serializacijo se uporablja neka pretirano obsežna knjižnica imenovana ICE, ki je sama po sebi skoraj tako velika kot CAST. Prav tako ICE hkrati rešuje dva problema, serializacijo in komunikacijo, kar naredi rešitev nefleksibilno za takšno preprosto uporabo kot je naš sistem.
   
   \item Ogrodje želi poleg problema same komunikacije (nespametno) reševati tudi problem postavitve (\textit{deployment}). Na tak način se programu ne predstavlja kot knjižnica, temveč želi postati kar vstopna točka (\textit{entry point}) za izvajanje celotnega programa. To komplicira sistem prevajanja in tudi onemogoča fleksibilnost rešitve.
 \end{enumerate}
