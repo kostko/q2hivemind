@@ -32,7 +32,7 @@ PollVote DroperVoter::vote(Bot *requestor, const std::string &category)
     distance = 0;
   else
     distance = 1.0/(requestor->getOrigin() - m_context->getLocalPlanner()->getGameState()->player.origin).norm();
-  
+
   return PollVote(me, distance);
 }
 

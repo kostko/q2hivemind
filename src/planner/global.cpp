@@ -257,7 +257,7 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
           client->deliver(Protocol::Message::POLL_VOTE, &vt, msg.sourceid());
           
           // Log voting
-          getLogger()->info(format("Voted in poll '%s' in category '%s'.") % pcr.pollid() % pcr.category());
+          getLogger()->info(format("Voted [%f] in poll '%s' in category '%s'.") % vt.votes() % pcr.pollid() % pcr.category());
         } else {
           // Unknown vote category, we can do nothing
           getLogger()->warning(format("Bot has requested a poll on '%s', but we are missing a voter!") % pcr.category());

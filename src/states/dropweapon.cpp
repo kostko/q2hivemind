@@ -109,8 +109,8 @@ void DropWeaponState::processFrame()
 void DropWeaponState::checkEvent()
 {
   if (Timing::getCurrentTimestamp() - m_lastDropTime > 11000 && getLocalPlanner()->canDropWeapon()) {
-    getLocalPlanner()->requestTransition("dropweapon");
-    m_lastDropTime = Timing::getCurrentTimestamp();    
+    //getLocalPlanner()->requestTransition("dropweapon");
+    //m_lastDropTime = Timing::getCurrentTimestamp();
   }
 }
 

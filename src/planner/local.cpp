@@ -161,6 +161,10 @@ bool LocalPlanner::canDropWeapon()
 
 void LocalPlanner::tryUseBetterWeapon()
 {
+
+  if (m_gameState->player.health < 0)
+    return;
+  
   std::string currentWeapon = m_gameState->player.getWeaponName();
   std::string bestWeapon = bestWeaponInInventory();
 
@@ -256,8 +260,13 @@ void LocalPlanner::updateEligibleStates()
   typedef std::pair<std::string, State*> StatePair;
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
+
+    if (m_gameState->player.health < 0 && state->getName() != "respawn")
+      continue;
+
     state->checkEvent();
   }
+
 
   std::list<State*> pruneList;
 

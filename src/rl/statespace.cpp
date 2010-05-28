@@ -95,7 +95,7 @@ void StateSpace::load(const std::string &name)
   in >> dim;
 
   if (dim != m_state->permutations() * m_action->permutations()) {
-    getLogger()->error(format("Number of elements in the file doesn't match the needed number.") % name);
+    getLogger()->error(format("Number of elements in the file %s doesn't match the needed number.") % name);
   }
 
   for (int i = 0; i < dim; i++) {
