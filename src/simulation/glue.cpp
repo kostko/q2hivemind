@@ -17,7 +17,7 @@ using namespace HiveMind;
  */
 context_t create_hivemind_context()
 {
-  Context *context = new Context("hSimul", "/usr/share/games/quake2", "/home/kostko/development/sola/pipt/hivemind/data", "male/flak", "explore");
+  Context *context = new Context("hSimul", "/usr/share/games/quake2", "/home/kostko/development/sola/pipt/hivemind/data", "male/flak", "explore", "default");
   context->simulationStart("maps/q2dm1.bsp");
   return static_cast<context_t>(context);
 }

@@ -145,6 +145,9 @@ private:
 
     // Action ID to State map
     boost::unordered_map<int, State*> m_actionStateMap;
+
+    // Knowledge filepath
+    std::string m_knFilePath;
 };
 
 }

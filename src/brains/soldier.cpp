@@ -68,8 +68,9 @@ void SoldierBrains::init()
   // Load the data according to the bot's id
   std::string id = m_localPlanner->getContext()->getBotId();
   std::string dataDir = m_localPlanner->getContext()->getDataDir();
-  m_Q->load(dataDir + id + ".knowledge");
-  m_numQ->load(dataDir + id + ".visits");
+  m_knFilePath = dataDir + "/" + id;
+  m_Q->load(m_knFilePath + ".knowledge");
+  m_numQ->load(m_knFilePath + ".visits");
 
   getLogger()->info("Brains initialized.");
 }
@@ -195,10 +196,8 @@ std::string SoldierBrains::defaultActionName()
 
 void SoldierBrains::save()
 {
-  std::string id = m_localPlanner->getContext()->getBotId();
-  std::string dataDir = m_localPlanner->getContext()->getDataDir();
-  m_Q->save(dataDir + id + ".knowledge");
-  m_numQ->save(dataDir + id + ".visits");
+  m_Q->save(m_knFilePath + ".knowledge");
+  m_numQ->save(m_knFilePath + ".visits");
 }
 
 }

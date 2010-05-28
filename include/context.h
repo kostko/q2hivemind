@@ -41,8 +41,10 @@ public:
      * @param gamedir Quake 2 resource directory
      * @param datadir Hivemind learned data directory
      * @param skin Bot skin
+     * @param mode Use the gained knowledge or learn
+     * @param knowledge Knowledge filename
      */
-    Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin, const std::string &mode);
+    Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin, const std::string &mode, const std::string &knowledge);
     
     /**
      * Class destructor.
@@ -63,6 +65,11 @@ public:
      * Returns this bot's identifier.
      */
     inline std::string getBotId() const { return m_botId; }
+
+    /**
+     * Get the knowledge filename.
+     */
+    inline std::string getKnowledgeFilename() const { return m_knowledge; }
     
     /**
      * Returns the current map instance.
@@ -156,6 +163,7 @@ private:
     std::string m_datadir;
     std::string m_skin;
     std::string m_mode;
+    std::string m_knowledge;
     
     // Connection to Quake 2 server
     Connection *m_connection;

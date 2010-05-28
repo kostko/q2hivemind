@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     ("bot-id", po::value<std::string>(), "override bot id (must be unique)")
     ("skin", po::value<std::string>()->default_value("male/flak"), "override skin")
     ("mode", po::value<std::string>()->default_value("explore"), "the mode of the bot; explore or exploit")
+    ("knowledge", po::value<std::string>()->default_value("default"), "Knowledge filename (without the suffix)")
   ;
   
   po::variables_map vm;
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
   }
 
   // Create a context
-  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>(), vm["data-dir"].as<std::string>(), vm["skin"].as<std::string>(), vm["mode"].as<std::string>());
+  Context context("h" + uniqueId, vm["quake2-dir"].as<std::string>(), vm["data-dir"].as<std::string>(), vm["skin"].as<std::string>(), vm["mode"].as<std::string>(), vm["knowledge"].as<std::string>());
   
   // Start MOLD server when requested
   if (vm.count("mold-server")) {
