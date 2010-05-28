@@ -9,6 +9,7 @@
 \usepackage{subfig}
 \usepackage{textcomp}
 \usepackage{tikz}
+\usetikzlibrary{calc,through,backgrounds}
 \usepackage{hyperref}
 
 \usetikzlibrary{positioning,shapes,shadows,arrows,calc}
@@ -337,7 +338,55 @@ Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno kon
 
 \subsection{Preklapljanje med stanji}
 
-\section{Nagrajevalno učenje}
+Za potrebe preklapljanja med stanji smo najprej razvili sistem, ki je uporabljal \textit{sklad stanj} in \textit{zakasnjene zahteve za preklop stanja}. V tem sistemu je imela vsaka zahteva za preklop stanja svojo prioriteto in zahteve z višjimi prioritetami so prekinjale stanja in zahteve z nižjimi prioritetami. V primeru, ko je neka zahteva prekinila stanje z nižjo prioriteto, smo novo stanje dodali na sklad in vanj tudi preklopili. Ko je določeno stanje svoje delo zaključilo, pa je sistem prešel v stanje nižje na skladu (torej stanje, katerega je pravkar zaključeno stanje nekoč prekinilo). 
+  Izkazalo se je, da je ta postopek premalo fleksibilen in preveč omejujoč, saj ne pokrije vseh scenarijev, ki smo jih potrebovali, predvsem pa sta problematični naslednji komponenti:
+\begin{enumerate}
+ \item \textbf{Sklad stanj} - Stanja, ki so odvisna od določenih dogodkov so časovno odvisna. To pomeni, da mora biti dogodek prisoten, da je stanje sploh smiselno. Na primer, agent mora videti sovražnika, da je preklop v stanje \textit{Shoot} smiseln. Recimo, da je agent v stanju \textit{Shoot} in medtem pade v vodo, kar prekine prej omenjeno stanje in novo stanje \textit{Swim} se doda na sklad. Ko sedaj agent splava iz vode in se stanje \textit{Swim} zaključi, sistem preklopi nazaj v stanje \textit{Shoot} (ki je ostalo na skladu). Vendar pa je lahko sovražnik med tem že pobegnil in torej stanje \textit{Shoot} ni več ustrezno. 
+ \item \textbf{Prioritete zahtevkov} - Nastavljanje prioritet zahtev za preklop stanja je nepotrebno omejujoče. Nadzor nad tem, kater zahtevek za preklop stanja bo resnično izveden naj ima raje posebna komponenta sistema - možgani (glej tudi \ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}).
+\end{enumerate}
+
+Zaradi zgoraj omenjenih razlogov smo preklop med stanji naredili na način, ki ga bomo opisali spodaj. \\
+
+Vpeljali smo pojem seznama stanj - \texttt{eligibleStates}, ki so v danem trenutku ustrezna. Ta seznam, ki je podmnožica vseh stanj, vsebuje stanja, v katera je v danem trenutku smiselno preklopiti. Tako se arbiter stanj (možgani) v trenutku odločanja menjave stanja odloča le med stanji v tem seznamu. 
+
+Vsako stanje lahko definira metodo \texttt{checkEvent()}, ki skrbi za to, da preko dispečerja sproži ustrezen notranji dogodek, kot odziv na stanje agenta ali njegovo okolico. Tako na primer že omenjeno stanje \textit{Shoot} sproži notranji dogodek \texttt{OpponentSpotted} če opazi sovražnika. To ima za posledico, da se stanje doda na seznam trenutno ustreznih stanj. Vsako stanje prav tako definira, koliko časa (od trenutka, ko je bil sprožen dogodek) naj ostane v seznamu trenutno ustreznih stanj, preden se iz seznama izbriše. \\
+
+Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v stanju \textit{Wander} in da mu prijateljski agent sporoči, da je na neki lokaciji opazil orožje. Agent je trenutek pred tem sam opazil paket zdravja, prav tako pa se mu je približal sovražni agent. V trenutku odločanja se bo torej arbiter stanj odločal le med stanji \textit{GoToWeapon}, \textit{GoToHealth} in \textit{Shoot}, kar izboljša odločanje, saj izloči neustrezna stanja. Ta situacija je predstavljena na sliki \ref{fig:eligible-set-example}. 
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[thick]
+    % zunanji krog
+    \coordinate [] (C) at (2.0,2.3);
+    \node [draw,gray, circle through=(C)] at (0:0) {};      
+    
+    % labela in povezava
+    \draw (3,3.5) node(c) {Vsa stanja};
+    \draw (C) -- (c);
+
+    % notranji krog
+    \coordinate [] (A) at (2.6,1);
+    \filldraw[black,fill opacity=0.2] (12:1cm) circle (18mm);      
+    
+    % labela in povezava
+    \draw (5,1.5) node(a) {\texttt{eligibleStates}};    
+    \draw (A) -- (a);
+
+    % stanja
+    \draw (1cm,1cm) node {\textit{GoToWeapon}};
+    \draw (1cm,0.2) node {\textit{GoToHealth}};
+    \draw (1,-0.6) node {\textit{Shoot}};
+    \draw [darkgray] (0,2.5) node {\textit{GoToAmmo}};
+    \draw [darkgray] (-1.5,1.3) node {\textit{Swim}};
+    \draw [darkgray] (-1.8,0) node {\textit{Respawn}};
+    \draw [darkgray] (-1.5,-1.3) node {\textit{Camper}};
+    \draw [darkgray] (0,-2.3) node(b) {\textit{DropWeapon}};
+  \end{tikzpicture}
+  \caption{Seznam ustreznih stanj v trenutku odločanja, med katerimi izbira arbiter stanj}
+  \label{fig:eligible-set-example}
+\end{figure}
+
+\section{Nagrajevalno učenje} \label{sec:nagrajevalno-ucenje}
 % aka. Reinforcement Learning
 
 \section{Komunikacija med agenti}
