@@ -7,6 +7,8 @@
  */
 #include "states/respawn.h"
 #include "planner/local.h"
+#include "planner/global.h"
+#include "planner/poll.h"
 #include "logger.h"
 #include "context.h"
 #include "dispatcher.h"
@@ -27,6 +29,13 @@ RespawnState::~RespawnState()
 
 void RespawnState::initialize(const boost::any &metadata)
 {
+  // Emit respawn event
+  BotRespawnEvent event(NULL);
+  getContext()->getDispatcher()->emit(&event);
+
+  // Request a WhoWillDrop poll
+  getContext()->getGlobalPlanner()->createPoll(new Poll(getContext(), Poll::VoteBot, 2000, "System.WhoWillDrop"));
+
   m_complete = false;
   getLocalPlanner()->clearEligibleStates();
 }
@@ -54,13 +63,9 @@ void RespawnState::checkEvent()
 {
   int health = m_gameState->player.health;
 
-  if (Timing::getCurrentTimestamp() - m_killedTime > 1000 && health < 0) {
+  if (Timing::getCurrentTimestamp() - m_killedTime > 6000 && health < 0) {
     getLocalPlanner()->requestTransition("respawn");
-    m_killedTime = Timing::getCurrentTimestamp();
-    
-    // Emit respawn event
-    BotRespawnEvent event(NULL);
-    getContext()->getDispatcher()->emit(&event);
+    m_killedTime = Timing::getCurrentTimestamp();    
   }
 }
 
