@@ -31,6 +31,7 @@
 
 // Voters
 #include "voters/dummy.h"
+#include "voters/droper.h"
 
 // MOLD message bus
 #include "mold/server.h"
@@ -175,6 +176,7 @@ void Context::execute()
   // Create and start global planner
   m_globalPlanner = new GlobalPlanner(this);
   m_globalPlanner->registerVoter("System.PollTest", new DummyVoter());
+  m_globalPlanner->registerVoter("System.WhoWillDrop", new DroperVoter(this));
   m_globalPlanner->start();
   
   while (!m_abort) {

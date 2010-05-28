@@ -142,6 +142,23 @@ void LocalPlanner::pruneState(const std::string &state)
     m_currentState->m_complete = true;
 }
 
+bool LocalPlanner::canDropWeapon()
+{
+  std::string currentWeapon = m_gameState->player.getWeaponName();
+  std::string secondBestWeapon = bestWeaponInInventory(currentWeapon);
+
+  if (m_gameState->inventory.find(currentWeapon) == m_gameState->inventory.end())
+    return false;
+
+  if (m_gameState->inventory.find(secondBestWeapon) == m_gameState->inventory.end())
+    return false;
+
+  if (m_gameState->inventory[currentWeapon] > 1 || (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0))
+    return true;
+
+  return false;
+}
+
 void LocalPlanner::tryUseBetterWeapon()
 {
   std::string currentWeapon = m_gameState->player.getWeaponName();

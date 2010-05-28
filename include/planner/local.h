@@ -135,6 +135,13 @@ public:
     void tryUseBetterWeapon();
 
     /**
+     * Checks if we can drop a weapon.
+     *
+     * @return True if we can drop a weapon.
+     */
+    bool canDropWeapon();
+
+    /**
      * Get the name of the best weapon currently in bot's inventory.
      *
      * @param notWeapon Optional name of weapon name that should be ommited when searching for the best weapon.

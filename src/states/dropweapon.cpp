@@ -108,17 +108,7 @@ void DropWeaponState::processFrame()
 
 void DropWeaponState::checkEvent()
 {
-  std::string currentWeapon = m_gameState->player.getWeaponName();
-  std::string secondBestWeapon = getLocalPlanner()->bestWeaponInInventory(currentWeapon);
-
-  if (m_gameState->inventory.find(currentWeapon) == m_gameState->inventory.end())
-    return;
-
-  if (m_gameState->inventory.find(secondBestWeapon) == m_gameState->inventory.end())
-    return;
-
-  if (Timing::getCurrentTimestamp() - m_lastDropTime > 11000 &&
-      (m_gameState->inventory[currentWeapon] > 1 || (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0))) {
+  if (Timing::getCurrentTimestamp() - m_lastDropTime > 11000 && getLocalPlanner()->canDropWeapon()) {
     getLocalPlanner()->requestTransition("dropweapon");
     m_lastDropTime = Timing::getCurrentTimestamp();    
   }
