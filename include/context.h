@@ -43,8 +43,11 @@ public:
      * @param skin Bot skin
      * @param mode Use the gained knowledge or learn
      * @param knowledge Knowledge filename
+     * @param shootMode Shoot with or without reinforcement
      */
-    Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin, const std::string &mode, const std::string &knowledge);
+    Context(const std::string &id, const std::string &gamedir, const std::string &datadir, 
+            const std::string &skin, const std::string &mode, const std::string &knowledge,
+            const std::string &shootMode);
     
     /**
      * Class destructor.
@@ -70,6 +73,11 @@ public:
      * Get the knowledge filename.
      */
     inline std::string getKnowledgeFilename() const { return m_knowledge; }
+
+    /**
+     * Force shoot mode?
+     */
+    inline bool forceShooting() const { return m_shootMode == "force"; }
     
     /**
      * Returns the current map instance.
@@ -164,6 +172,7 @@ private:
     std::string m_skin;
     std::string m_mode;
     std::string m_knowledge;
+    std::string m_shootMode;
     
     // Connection to Quake 2 server
     Connection *m_connection;

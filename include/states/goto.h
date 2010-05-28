@@ -78,6 +78,14 @@ public:
      * Does at least one item exist?
      */
     inline bool itemExists() const { return m_exists; }
+
+    /**
+     * Requests path recomputation from current location to our
+     * destination.
+     *
+     * @param randomize True means to pick the next node at random
+     */
+    void recomputePath(bool randomize = false);
 protected:
     /**
      * Evaluates the items based on the current needs.
@@ -92,6 +100,12 @@ protected:
 
     // True if the bot knows for at least one useful item
     bool m_exists;
+
+    // Should we seek a different item
+    bool m_recompute;
+
+    // The item we are currently looking for
+    Item::Type m_currItem;
 };
 
 }

@@ -10,9 +10,6 @@
 
 #include "rl/brains.h"
 
-// Maximum number of frags
-#define MAX_FRAGS 5    // TODO: get information from server
-
 namespace HiveMind {
 
 class State;
@@ -23,8 +20,7 @@ enum StateComponentSize {
     N_STATE0 = 3,
     N_STATE1 = 9,
     N_STATE2 = 2,
-    N_STATE3 = 2,
-    N_STATE4 = MAX_FRAGS + 2
+    N_STATE3 = 2
 };
 
 // Index to vector
@@ -32,8 +28,7 @@ enum ComponentToIndex {
     HEALTH,
     WEAPON,
     AMMO,
-    ENEMY,
-    FRAGS
+    ENEMY
 };
 
 // Action enumerator
@@ -80,11 +75,6 @@ enum State3 {
     NOT_VISIBLE
 };
 
-// State component for frags
-enum State4 {
-    NEGATIVE_FRAGS = MAX_FRAGS + 1,
-};
-
 /**
  * Implements a basic brain behaviour.
  */
@@ -109,6 +99,11 @@ public:
      * Save the gained knowledge.
      */
     virtual void save();
+
+    /**
+     * Set current number of frags.
+     */
+    inline void setFrags(int frags) { m_prevFrags = frags; }
 private:
     /**
      * What really defines the "brain" is the reward function.
@@ -148,6 +143,9 @@ private:
 
     // Knowledge filepath
     std::string m_knFilePath;
+
+    // Previous frag state
+    int m_prevFrags;
 };
 
 }

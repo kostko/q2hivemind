@@ -9,6 +9,7 @@
 #include "planner/local.h"
 #include "planner/global.h"
 #include "planner/directory.h"
+#include "rl/brains.h"
 #include "mapping/map.h"
 #include "logger.h"
 #include "context.h"
@@ -50,6 +51,20 @@ void ShootState::checkEvent()
     // Emit a signal
     OpponentSpottedEvent event(m_gameState->entities[enemyId].origin);
     getContext()->getDispatcher()->emit(&event);
+
+    State *curr = getLocalPlanner()->getCurrentState();
+    if (curr != this && curr->getName() != "swim") {      
+      // Force complete the current state
+      curr->setComplete(true);
+
+      if (getLocalPlanner()->getContext()->forceShooting()) {
+        // Force shoot mode
+        getLocalPlanner()->requestTransition("shoot");
+      } else {
+        // Let the brains decide what to do now that we see an enemy
+        getLocalPlanner()->getBrains()->interact();
+      }
+    }
   }
 }
 
@@ -127,6 +142,5 @@ void ShootState::makeEligible(OpponentSpottedEvent *event)
 {
   getLocalPlanner()->addEligibleState(this);
 }
-
 
 }

@@ -39,7 +39,8 @@
 
 namespace HiveMind {
 
-Context::Context(const std::string &id, const std::string &gamedir, const std::string &datadir, const std::string &skin, const std::string &mode, const std::string &knowledge)
+Context::Context(const std::string &id, const std::string &gamedir, const std::string &datadir, 
+                 const std::string &skin, const std::string &mode, const std::string &knowledge, const std:: string &shootMode)
   : m_botId(id),
     m_gamedir(gamedir),
     m_datadir(datadir),
@@ -50,7 +51,8 @@ Context::Context(const std::string &id, const std::string &gamedir, const std::s
     m_simulatorInitialized(false),
     m_skin(skin),
     m_mode(mode),
-    m_knowledge(knowledge)
+    m_knowledge(knowledge),
+    m_shootMode(shootMode)
 {
   Object::init();
   

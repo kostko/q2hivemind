@@ -55,7 +55,7 @@ public:
      * Brain-specific initialization.
      */
     virtual void init() = 0;
-
+    
     /**
      * Interact with the world (selects the next action) and learns from it.
      */

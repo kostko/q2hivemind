@@ -30,7 +30,6 @@ void SoldierBrains::init()
   stateComps.push_back(N_STATE1);
   stateComps.push_back(N_STATE2);
   stateComps.push_back(N_STATE3);
-  stateComps.push_back(N_STATE4);
 
   std::vector<int> actionComps;
   actionComps.push_back(N_ACTIONS);
@@ -88,9 +87,8 @@ double SoldierBrains::reward(BrainState *prevState, BrainState *currState)
   if (dAmmo < 0)
     reward += 1;
 
-  // Big reward for a frag
-  int dFrags = (*prevState)[FRAGS] - (*currState)[FRAGS];
-  if (dFrags < 0) 
+  int dFrags = m_prevFrags - m_localPlanner->getGameState()->player.frags;
+  if (dFrags < 0)
     reward += 5;
   
   return reward;
@@ -156,16 +154,6 @@ BrainState *SoldierBrains::observe()
   }
   (*m_tempState)[ENEMY] = enemy ? VISIBLE : NOT_VISIBLE;
   
-  int frags = gs->player.frags;
-  if (frags < 0) {
-    (*m_tempState)[FRAGS] = NEGATIVE_FRAGS;
-  } else if (frags > MAX_FRAGS) {
-    getLogger()->warning("Number of frags exceeded the server limit? Check the MAX_FRAG definition.");
-    (*m_tempState)[FRAGS] = MAX_FRAGS;
-  } else {
-    (*m_tempState)[FRAGS] = frags;
-  }
-  
   return m_tempState;
 }
 
@@ -178,6 +166,9 @@ void SoldierBrains::execute(BrainAction *action)
   *m_currAction = *action;
   m_currAction->setExecutionState(executionState);
   m_currAction->setName(executionState->getName());
+
+  // Set the number of frags
+  m_prevFrags = m_localPlanner->getGameState()->player.frags;
   
   // Request the transition
   m_localPlanner->requestTransition(executionState->getName());

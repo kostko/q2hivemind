@@ -60,7 +60,7 @@ void GoToAmmoState::evaluate()
     if (m_weapons.find(w) == m_weapons.end())
       continue;
 
-    if (w == "Blaster")
+    if (w == "Blaster" || w == "Grenades")
       continue;
     
     // Assign the proper values for the ammo we actually need

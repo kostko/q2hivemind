@@ -89,6 +89,11 @@ public:
     inline bool isComplete() const { return m_complete; };
 
     /**
+     * Set complete.
+     */
+    inline void setComplete(bool complete) { m_complete = complete; }
+
+    /**
      * Should we learn from this transition?
      *
      * For example if we switch to shoot state for 0.5 seconds we

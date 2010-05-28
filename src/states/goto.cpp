@@ -32,6 +32,7 @@ void GoToState::initialize(const boost::any &metadata)
   m_lastTime = Timing::getCurrentTimestamp();
   m_atDestination = false;
   m_complete = false;
+  m_shouldLearn = false;
 
   m_hasNextPoint = false;
   m_speed = 0;
@@ -56,6 +57,7 @@ void GoToState::processPlanning()
 {
   // We have (supposedly) picked up an item
   if (m_atDestination) {
+    m_shouldLearn = true;
     m_complete = true;
     getLocalPlanner()->pruneState(getName());
     return;
@@ -77,6 +79,11 @@ void GoToState::processPlanning()
 
     // Loop from the most needed to the least needed item
     BOOST_FOREACH(ItemValue t, m_items) {
+
+      if (m_recompute && t.first == m_currItem) {
+        continue;
+      }
+
       // Find the nearest node that contains our item
       GridNode *node = grid->getNearestItemNode(t.first, p);
       if (node == NULL) {
@@ -93,6 +100,8 @@ void GoToState::processPlanning()
 
       if (grid->findPath(p, loc, &m_currentPath)) {
         getLogger()->info(format("Discovered a path of length %d to an item.") % m_currentPath.size());
+        m_currItem = t.first;
+        m_recompute = false;
         m_hasNextPoint = true;
         m_complete = false;
         break;
@@ -116,6 +125,13 @@ void GoToState::processPlanning()
 void GoToState::makeEligible()
 {
   getLocalPlanner()->addEligibleState(this);
+}
+
+void GoToState::recomputePath(bool randomize)
+{
+  m_speed = -1;
+  m_hasNextPoint = false;
+  m_recompute = true;
 }
 
 }
