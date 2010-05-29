@@ -329,7 +329,9 @@ V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo
 Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
   
 \subsubsection{Swim}
-%TODO
+V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.\\ 
+Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani. Lahko bi rekli, da je 
+\textit{refleksno} in se je nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
 \subsubsection{Shoot}
 V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. 
 S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete 
@@ -382,7 +384,7 @@ Vsako stanje lahko definira metodo \texttt{checkEvent()}, ki skrbi za to, da pre
 
 Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v stanju \textit{Wander} in da mu prijateljski agent sporoči, da je na neki lokaciji opazil orožje. Agent je trenutek pred tem sam opazil paket zdravja, prav tako pa se mu je približal sovražni agent. V trenutku odločanja se bo torej arbiter stanj odločal le med stanji \textit{GoToWeapon}, \textit{GoToHealth} in \textit{Shoot}, kar izboljša odločanje, saj izloči neustrezna stanja. Ta situacija je predstavljena na sliki \ref{fig:eligible-set-example}. 
 
-\begin{figure}
+\begin{figure}[h]
   \centering
   \begin{tikzpicture}[thick]
     % zunanji krog
@@ -415,6 +417,7 @@ Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v st
   \label{fig:eligible-set-example}
 \end{figure}
 
+\pagebreak
 \section{Nagrajevalno učenje} \label{sec:nagrajevalno-ucenje}
 % aka. Reinforcement Learning
 \subsection{Splošno o nagrajevalnem učenju}
