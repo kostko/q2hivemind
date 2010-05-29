@@ -329,6 +329,7 @@ V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo
 Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
   
 \subsubsection{Swim}
+%TODO
 \subsubsection{Shoot}
 V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. 
 S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete 
@@ -337,6 +338,7 @@ Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To st
 agenta zahtevajo možgani (glej poglavje \textit{Nagrajevalno učenje}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj.
 Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
 \subsubsection{Respawn}
+%TODO
 \subsubsection{GoTo[Ammo, Health, Weapon, Upgrade]}
 Za potrebe bolj napredne interakcije z okoljem smo implementirali tudi stanja v katerih agent poišče pot do predmetov, ki jih potrebuje.
 Definirali smo stanje \verb+GoTo+ in njegove izpeljanke:
@@ -358,6 +360,10 @@ Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hi
 Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".\\
 Podobno kot stanje \verb+Shot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja so označena kot zaključena,
 ko agent pobere željen predmet ali pa, ko se kje med izvajanjem agent zatakne. 
+\subsubsection{DropWeapon}
+%TODO
+\subsubsection{Camper}
+%TODO
 
 \subsection{Preklapljanje med stanji}
 
