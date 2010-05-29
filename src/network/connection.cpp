@@ -355,14 +355,19 @@ void Connection::workerConsole()
   
   try {
     for (;;) {
-      boost::unique_lock<boost::mutex> lock(m_consoleMutex);
-      while (m_consoleQueue.empty()) {
-        m_consoleCond.wait(lock);
+      std::string msg;
+      {
+        boost::unique_lock<boost::mutex> lock(m_consoleMutex);
+        while (m_consoleQueue.empty()) {
+          m_consoleCond.wait(lock);
+        }
+        
+        msg = m_consoleQueue.front();
+        m_consoleQueue.pop_front();
       }
       
       // Process queued data
-      writeConsoleSync(m_consoleQueue.front());
-      m_consoleQueue.pop_front();
+      writeConsoleSync(msg);
     }
   } catch (boost::thread_interrupted e) {
     getLogger()->info("Console thread is terminating.");
