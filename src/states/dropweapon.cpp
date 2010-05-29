@@ -16,13 +16,19 @@
 #include "planner/directory.h"
 #include "rl/brains.h"
 #include "mapping/grid.h"
+#include "mold/client.h"
+
+// Protocol buffer messages
+#include "src/mold/control.pb.h"
+
 
 namespace HiveMind {
 
 DropWeaponState::DropWeaponState(Context *context)
   : WanderState(context, "dropweapon", 5000, true),
     m_i(0),
-    m_dropLocation(Vector3f(0,0,0))
+    m_dropLocation(Vector3f(0,0,0)),
+    m_dropRequester(NULL)
 {
   Object::init();
 
@@ -39,7 +45,7 @@ void DropWeaponState::dropOrderReceived(GoToAndDropWeaponEvent *event)
   getLogger()->info(format("I AM NOW AT %f %f %f") % m_gameState->player.origin.x() % m_gameState->player.origin.y() % m_gameState->player.origin.z());
 
   m_dropLocation = event->getBot()->getOrigin();
-  
+  m_dropRequester = event->getBot();
   getLocalPlanner()->requestTransition("dropweapon");  
 
 }
@@ -89,6 +95,11 @@ void DropWeaponState::dropWeapon()
 
 void DropWeaponState::goodbye()
 {
+  // Send a confirmation message to the winner
+  MOLD::ClientPtr client = getContext()->getMOLDClient();
+  client->deliver(MOLD::Protocol::Message::STOP_WAITING_FOR_DROP, m_dropRequester->getName());
+
+  getLogger()->info("Sending MOLD message to drop requester that he should stop waiting!");
 }
 
 void DropWeaponState::processFrame()

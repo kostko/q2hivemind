@@ -20,6 +20,7 @@ namespace HiveMind {
 
 class Context;
 class GoToAndDropWeaponEvent;
+class Bot;
 
 /**
  * Drop weapon state.
@@ -72,6 +73,7 @@ public:
     void dropWeapon();
 private:
     Vector3f m_dropLocation;
+    Bot *m_dropRequester;
     int m_i;
 };
 

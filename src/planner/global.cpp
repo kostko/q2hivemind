@@ -11,6 +11,7 @@
 #include "mold/client.h"
 #include "planner/directory.h"
 #include "planner/poll.h"
+#include "planner/local.h"
 #include "network/connection.h"
 #include "dispatcher.h"
 #include "event.h"
@@ -285,10 +286,6 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
     case Protocol::Message::DROP_CHOSEN: {
       Bot *bot = getBotOrRequestAnnounce(msg);
       if (bot) {
-        // Generate a local respawn event
-        //BotRespawnEvent event(bot);
-        //m_context->getDispatcher()->emit(&event);
-
         getLogger()->info(format("I HAVE RECEIVED DROP_CHOSEN MOLD MESSAGE from %s. YUHUUUU!!!!") % bot->getName());
 
         // Generate a local drop weapon event
@@ -298,7 +295,15 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
       }
       break;
     }
-    
+
+    case Protocol::Message::STOP_WAITING_FOR_DROP: {
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        getLogger()->info(format("I HAVE RECEIVED STOP_WAITING_FOR_DROP MOLD MESSAGE from %s. YUHUUUU!!!!") % bot->getName());
+        m_context->getLocalPlanner()->requestTransition("wander");
+      }
+      break;
+    }
     default: {
       // Message code not recongnized, emit a warning
       getLogger()->warning("Unrecognized MOLD message received from bus!");
