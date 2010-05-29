@@ -62,10 +62,17 @@ public:
      */
     virtual void processPlanning();
 
+    /**
+     * This method should implement state specific processing on
+     * each frame update. This method is called in main thread
+     * context.
+     */
+    virtual void processFrame();
+
     void dropWeapon();
 private:
-    timestamp_t m_lastDropTime;
     Vector3f m_dropLocation;
+    int m_i;
 };
 
 }

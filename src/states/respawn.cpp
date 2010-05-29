@@ -50,7 +50,7 @@ void RespawnState::processFrame()
 
   m_i++;
 
-  if (m_i % 10 == 0)
+  if (m_i % 50 == 0)
     getLocalPlanner()->requestTransition("camper");
 }
 
@@ -58,7 +58,7 @@ void RespawnState::checkEvent()
 {
   int health = m_gameState->player.health;
 
-  if (Timing::getCurrentTimestamp() - m_killedTime > 6000 && health < 0) {
+  if (Timing::getCurrentTimestamp() - m_killedTime > 5000 && health < 0) {
     getLocalPlanner()->requestTransition("respawn");
     m_killedTime = Timing::getCurrentTimestamp();    
   }
