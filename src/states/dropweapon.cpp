@@ -54,7 +54,7 @@ void DropWeaponState::initialize(const boost::any &metadata)
 void DropWeaponState::dropWeapon()
 {
   std::string currentWeapon = m_gameState->player.getWeaponName();
-  getContext()->getConnection()->refreshInventory();
+  //getContext()->getConnection()->refreshInventory();
 
   boost::unordered_map<std::string, std::string> weaponsAmmo;
   weaponsAmmo["Blaster"] = "Blaster";
@@ -74,7 +74,7 @@ void DropWeaponState::dropWeapon()
 
   if (m_gameState->inventory[currentWeapon] > 1 && getLocalPlanner()->getAmmoForWeapon(currentWeapon) > 0) {
     getLogger()->info(format("I can drop %s, as I have %d") % currentWeapon % m_gameState->inventory[currentWeapon]);
-    getContext()->getConnection()->say("Dropping "+currentWeapon + " and " + weaponsAmmo[currentWeapon]);
+    //getContext()->getConnection()->say("Dropping "+currentWeapon + " and " + weaponsAmmo[currentWeapon]);
     getContext()->getConnection()->writeConsoleAsync("drop " + currentWeapon);
     getContext()->getConnection()->writeConsoleAsync("drop " + weaponsAmmo[currentWeapon]);
   } else {
@@ -84,7 +84,7 @@ void DropWeaponState::dropWeapon()
       getLogger()->info(format("2I can drop %s, as I have %d and %d ammo for it") % secondBestWeapon % m_gameState->inventory[secondBestWeapon] % m_gameState->inventory[weaponsAmmo[secondBestWeapon]]);
       getContext()->getConnection()->writeConsoleAsync("drop " + secondBestWeapon);
       getContext()->getConnection()->writeConsoleAsync("drop " + weaponsAmmo[secondBestWeapon]);
-      getContext()->getConnection()->say("Dropping "+secondBestWeapon + " and " + weaponsAmmo[secondBestWeapon]);
+      //getContext()->getConnection()->say("Dropping "+secondBestWeapon + " and " + weaponsAmmo[secondBestWeapon]);
     }
   }
 }

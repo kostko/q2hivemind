@@ -42,7 +42,7 @@ GoToAmmoState::GoToAmmoState(Context *context)
 void GoToAmmoState::evaluate()
 {
   // All ammo equally valued if we only have a blaster
-  if (getLocalPlanner()->bestWeaponInInventory("") == "Blaster") {
+  if (getLocalPlanner()->getGameState()->player.getWeaponName() == "Blaster") {
     m_items.push_back(ItemValue(Item::Bullets, 1));
     m_items.push_back(ItemValue(Item::Cells, 1));
     m_items.push_back(ItemValue(Item::Grenades, 1));
