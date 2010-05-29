@@ -387,6 +387,114 @@ Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v st
 
 \section{Nagrajevalno učenje} \label{sec:nagrajevalno-ucenje}
 % aka. Reinforcement Learning
+\subsection{Splošno o nagrajevalnem učenju}
+Ideja, ki se nam je zdela zanimiva je, da se naši agenti na najvišjem nivoji ne bi odločali glede na v naprej zakljenjena pravila, ampak, da bi se vsak agent znal
+na podlagi izkušenj naučiti katere akcije so primerne v danem trenutku in katere ne. 
+
+Za realizacijo naše ideje nam je mentor predlagal uporabo metode \textit{nagrajevalnega učenja}\footnote{Reinforcement Learning}. Bistvo te metode je, da se 
+agent poskuša z raziskovanjem naučiti kako mora izvajati akcije v svojem okolju, da bo na dolgi rok čimbolje nagrajen.
+
+Prednost uporabe nagrajevalnega učenja, pred npr. nadzorovanim učenjem, je v tem, da nam pri tej metodi ni potrebno eksplicitno specificirati katera akcija
+je pravilna za dano stanje - tega se agent nauči z raziskovanjem in preko dobljenih nagrad. Druga prednost je fleksibilen učni postopek, saj lahko brez težav prehajamo med raziskovanjem 
+(med katerim se agent uči) in med uporabo dobljenega znanja.
+
+Naloga algoritma za nagrajevalno učenje je, da bo vsota nagrad, ki jih agent dobi z izvajanjem svojih akcije na dolgi rok čimvečja; iščemo torej primerno
+\textit{politiko} po kateri se bo ravnal agent. 
+
+\subsection{Q-learning}
+Algoritmov s katerimi lahko dosežemo (aproksimacijo) optimalne politike je veliko. V našem primeru vsak agent
+uporablja pristop imenovan \textit{Q-learning}\cite{rl}. Prednosti, ki smo jih videli v tem pristopu so:
+\begin{itemize}
+ \item za ocenjevanje tega kako dobro se bo posamezna akcija obnesla ne potrebujemo modela okolja,
+ \item enostavna implementacija in
+ \item možnost nadgraditve v SARSA pristop.
+\end{itemize}
+Okolje s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja),
+zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
+vir \cite{rl}.\\\\
+Q-learning sloni na podatkovni strukturi, ki za dani par $(stanje, akcija)$ pove vrednost te odločitve (imenovane tudi \textit{Q-value}):
+$$Q: S\times A \rightarrow \mathbb{R}$$
+Skozi postopek učenja se te vrednosti iterativno popravlja na podlagi dobljene nagrade, stare Q-vrednosti in najvišje možne Q-vrednosti, ki lahko sledi po tej 
+akciji (glej \cite{ql}).\\
+Čez čas te vrednosti konvergirajo. Če takrat za dano stanje $s$ vedno izberemo tisto akcijo $a$, ki ima največjo Q-vrednost $Q(s, a)$, potem bo agent sledil
+optimalni politiki.
+
+\subsection{Integracija v Hivemind}
+Problem nagrajevalnega učenja je formuliran kot Markovski odločitveni problem\footnote{Markov decision process ali MDP}. To pomeni, da model nagrajevalnega učenja
+predstavimo z
+\begin{itemize}
+ \item množico stanj,
+ \item množico akcij ter
+ \item množico realnih števil, ki predstavlja možne nagrade agentu.
+\end{itemize}
+V našem primeru smo se odločili za naslednjo predstavitev problema. Agent je predstavljen z:
+\begin{itemize}
+ \item množico stanj, kjer vsako stanje predstavlja agentovo \textit{notranje} ("mentalno") stanje,
+ \item množico akcij, ki je v resnici podmnožica \textit{fizičnih} stanj (v prostoru igre), ki jih lahko zavzame agent (npr. stanje Shoot; glej poglavje \textit{Stanja agenta}) in
+ \item funkcijo nagrade, ki nagradi akcije, ki so v prid agentu.
+\end{itemize}
+Odločanje o nadaljnih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih 
+stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta 
+(lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja ipd). Zaradi pomanjkanja časa imamo 
+tako le eno različico možgan. Delovanje teh pa podrobneje razložijo naslednja podpoglavja.
+
+\subsubsection{Notranja stanja agenta}
+Problem pri nagrajevalnemu učenju lahko nastopi pri prevelikem številu možnih stanj agenta. Takrat lahko postane prostor, ki ga agent raziskuje 
+(pri učenju naključno) enostavno prevelik, da bi v doglednem času prišli do optimalne politike obnašanja. Da bi se temu izognili smo morali nekatere 
+komponente, ki predstavljajo notranje stanje agenta diskretizirati.\\
+Odločili smo se za naslednjo strukturo stanja našega agenta (vsako stanje je vektor, ki lahko zavzame navedene vrednosti):
+$$(health \in \{low, mid, high\}, weapon \in \{blaster, shotgun, \ldots\}, ammo \in \{low, high\}, enemyVisible \in \{true, false\})$$
+Informacije o tem kakšne so vrednosti komponent možgani dobijo preko posodobitev, ki jih o igralcu pošlje Quake II strežnik in zato niso
+nič bolj napredne kot bi jih imel pri igranju človek. Kot smo že omenili, smo želeli, da naši agenti ne goljufajo kot je to običajno pri računalniško
+gnanih igralcih pri takih igrah - ponavadi imajo na voljo precej več informacij o svetu kot pa človek.
+
+\subsubsection{Množica akcij}
+Agent lahko na okolje vpliva preko množice akcij. Omenili smo že, da je vsaka taka akcija predstavljena s fizičnim stanjem agenta (poglavje \textit{Stanja agenta}),
+ki govori o tem kako naj se v vsakem trenutku agent obnaša v svetu.\\
+Značilnosti okolja kot ga vidi naš agent je, da je zelo kompleksno in posledično so kompleksne tudi akcije s katerimi agent lahko vpliva na svet - akcije trajajo 
+določen čas, agent se lahko med tem fizično premakne, pade v vodo, sreča sovražnika, ipd. Zaradi tega smo se odločili, da akcije modeliramo kot stanja, ki se v 
+nekem trenutku zaključijo. \\
+Primer: možgani se odločijo naj agent izvede akcijo Shoot. Agent bo šel v fizično stanje Shoot in začel streljati najbližjega sovražnika. Ko sovražnika ne bo 
+več ali pa ko sam umre, se bo stanje označilo kot končano. V tem primeru možgani vedo, da se je akcija končala in oceni kako je bila uspešna ter posodobi 
+Q-vrednost za dani par $(stanje, akcija)$.\\
+Možne akcije, ki jih lahko izvaja agent so:
+$$A = \{wander, shootAt, findAmmo, findBetterWeapon, findUpgrade\}$$
+Na tem mestu je potrebno omeniti, da se v svetu v katerem so naši agenti ni smiselno ``učiti'' vseh akcij. Za določene akcije lahko rečemo, da so take, da jih
+agent izvede kot \textit{refleks}. Primer take akcije oz. fizičnega stanja je iti v stanje plavanja, ko agent pade v vodo, saj je ta akcija ob taki situaciji 
+edina smiselna in se prehod v to stanje zgodi brez posredovanja možganov.\\
+Omenili smo že, da s številom možnih akcij in stanj narašča prostor, ki ga mora potencialno raziskati agent. Modifikacija, ki smo jo lahko uvedli v našem okolju
+je že omenjen seznam \verb+eligibleStates+, ki pove katera stanja so sploh na voljo v danem momentu. To pomeni, da bodo možgani v nekem trenutku imeli
+na voljo le akcije (oz. fizična stanja), ki so sploh možne. S tem seveda onemogočimo nesmiselno raziskovanje, ki bi lahko sledilo v nasprotnem primeru.
+
+\subsection{Funkcija nagrade}
+Postopka po katerem bi dobili uspešno funkcijo nagrade ni. Vprašati se je bilo potrebno po cilju h kateremu bo vsak agent stremel. Agenti skupaj v skupini
+tekmujejo proti drugi skupini agentov in zmagovalna bo tista ekipa, ki bo prva dosegla določeno število pobojev nasprotnikov.\\
+Pri nagrajevalnem učenju seveda ne moremo eksplicitno govoriti o pravilnih akcijah, ampak le posredno preko nagrad. Odločili smo se, da je agent nagrajen v 
+treh primerih:
+\begin{itemize}
+ \item ko se mu zviša nivo zdravja (nagrada velikosti 1),
+ \item ko pobere naboje (nagrada velikosti 1),
+ \item ko ubije kakega sovražnika (nagrada velikosti 5).
+\end{itemize}
+Predpostavljali smo, da če agent stremi po akcijah, ki mu prinašajo zgornje nagrade, potem bo deloval skladno s skupnim ciljem ekipe.
+
+\subsection{Implementacija}
+Najbolj običajna implementacija Q-learning postopka je preko \textit{look-up} tabele v kateri se hranijo Q-vrednosti. Taka podatkovna struktura pa 
+postane težavna, če imamo veliko množico stanj. V našem primeru to ni bilo težavno, saj je bilo kombinacij stanj sorazmerno malo, lahko pa bi bilo
+problematično, če nekaterih vrednosti ne bi diskretizirali.\\
+Alternativna možnost za implementacijo pa je z uporabo prilagojene umetne nevronske mreže \cite{ql}. V tem primeru nevronska mreža vrača kar
+Q-vrednosti. To pa predstavlja tudi možnost za nadaljne delo - preskusiti kako bi se obneslo nagrajevalno učenje skupaj z nevronsko mrežo, saj
+v tem primeru diskretizacija komponent vektorja stanja agenta morda ne bi bila potrebna in zanimivo bi bilo videti kakšna bi bila v tem primeru
+videti optimalna politika obnašanja.\\
+V sklopu našega projekta se Q-vrednosti hranijo v \textit{look-up} tabeli. Taka tabela je abstrahirana v posebno podatkovno strukturo, ki na podlagi dejstva, 
+da imamo končno število stanj in akcij, oštevilči vsak tak vektor (ali stanja ali akcije, če bi akcija imela več komponent) in tako na podlagi te enolične 
+identifikacije dostopa do Q-vrednosti, ki jo hrani za tak par $(stanje, akcija)$.
+
+\subsection{Obstojnost znanja}
+V sistemu, ki smo ga razvili lahko ob zagonu z zastavico povemo ali naj se v tej seji agent uči oz. ali naj uporablja že pridobljeno znanje (specificirano
+z datoteko). 
+Če se agent uči, potem na določene časovne intervale shranjujemo vso znanje (Q-vrednosti), ki jih je agent pridobil do tega trenutka, v datoteko. Tako datoteko lahko potem
+agent v naslednjih sejah spet uvozi in jo uporablja naprej.
 
 \section{Komunikacija med agenti}
 
@@ -623,6 +731,17 @@ Vsa izvorna koda je izdana pod licenco GPLv3 in se skupaj z dnevnikom razvoja na
   \emph{libkdtree++, C++ kd-tree Library}.
   http://libkdtree.alioth.debian.org/,
   2008.
+
+\bibitem{rl}
+  Mark Humphrys,
+  \emph{Action Selection methods using Reinforcement Learning},
+  PhD thesis, 2. poglavje,
+  http://www.compapp.dcu.ie/~humphrys/PhD/index.html
+
+\bibitem{ql}
+  Wikipedia,
+  \emph{Q-learning},
+  http://en.wikipedia.org/wiki/Q\_learning
 
 \end{thebibliography}
 
