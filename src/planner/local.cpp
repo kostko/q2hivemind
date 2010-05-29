@@ -15,6 +15,7 @@
 #include "brains/soldier.h"
 #include "network/gamestate.h"
 #include "network/connection.h"
+#include "dispatcher.h"
 
 #include <boost/foreach.hpp>
 #include <limits>

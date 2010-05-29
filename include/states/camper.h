@@ -17,7 +17,14 @@
 
 namespace HiveMind {
 
+namespace MOLD {
+  namespace Protocol {
+    class Message;
+  }
+}
+
 class Context;
+class PollVoteCompletedEvent;
 
 /**
  * Camper state.
@@ -61,6 +68,8 @@ public:
      * needed. This method is called in main thread context.
      */
     virtual void checkEvent();
+
+    void voteCompleted(PollVoteCompletedEvent *event);
 private:
     // When was this state entered
     timestamp_t m_lastEntered;

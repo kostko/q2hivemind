@@ -14,6 +14,7 @@
 #include "dispatcher.h"
 #include "rl/brains.h"
 #include "mapping/grid.h"
+#include "mold/client.h"
 
 #include <limits>
 
@@ -25,8 +26,7 @@ CamperState::CamperState(Context *context)
     m_lastLocation(Vector3f(0,0,0))
 {
   Object::init();
-  
-  // TODO We should subscribe to some drop event and reset m_lastEntered when received
+  getContext()->getDispatcher()->signalPollVoteCompleted.connect(boost::bind(&CamperState::voteCompleted, this, _1));
 }
 
 CamperState::~CamperState()
@@ -35,6 +35,24 @@ CamperState::~CamperState()
 
 void CamperState::checkEvent()
 {
+}
+
+void CamperState::voteCompleted(PollVoteCompletedEvent *event)
+{
+  if (event->getPoll()->getCategory() == "System.WhoWillDrop") {
+
+    Bot *bot = event->getPoll()->getWinnerBot();
+    if (bot) {
+      // Send a confirmation message to the winner
+      MOLD::ClientPtr client = getContext()->getMOLDClient();
+      client->deliver(MOLD::Protocol::Message::DROP_CHOSEN, bot->getName());
+
+      getLogger()->info(format("Sending a DROP_CHOSEN msg to %s.") % bot->getName());
+    } else {
+      // If there is no winner, don't wait in camper state
+      getContext()->getLocalPlanner()->requestTransition("wander");
+    }
+  }
 }
 
 void CamperState::initialize(const boost::any &metadata)
@@ -60,13 +78,8 @@ void CamperState::processFrame()
     m_alreadyStartedPoll = true;
   }
 
-  // Check if we have been in this state too long and exit state if so
-  //if (Timing::getCurrentTimestamp() - m_lastEntered > 40000) {
-  //  getLocalPlanner()->requestTransition("wander");
-  //}
-
+  // As we are camping, we stand still and are a sitting duck
   m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
-    // As we are camping, we stand still and are a sitting duck
 
   m_moveFire = false;
   m_moveJump = false;

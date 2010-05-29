@@ -124,24 +124,11 @@ void Poll::close()
     m_winnerBot = bot;
     
     // Log winner
-    if (bot) {
-      if (m_category == "System.WhoWillDrop") {
-        // Send a confirmation message to the winner
-        MOLD::ClientPtr client = m_context->getMOLDClient();
-        client->deliver(MOLD::Protocol::Message::DROP_CHOSEN, bot->getName());
-
-        getLogger()->info(format("Sending a DROP_CHOSEN msg to %s.") % bot->getName());        
-      }
-      getLogger()->info(format("Poll %s has closed, winner is %s with %f votes.") % m_pollId % bot->getName() % votes);
-    }
-    else {
-      if (m_category == "System.WhoWillDrop") {
-        // If there is no winner, don't wait in camper state
-        m_context->getLocalPlanner()->requestTransition("wander");
-      }
-
+    if (bot) 
+      getLogger()->info(format("Poll %s has closed, winner is %s with %f votes.") % m_pollId % bot->getName() % votes);    
+    else 
       getLogger()->info(format("Poll %s has closed, no candidates voted.") % m_pollId);
-    }
+    
   } else if (m_type == VoteChoice) {
     // Determine the choice that received most votes
     boost::unordered_map<std::string, float> ballot;
