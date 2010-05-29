@@ -25,15 +25,14 @@ DroperVoter::~DroperVoter()
 
 PollVote DroperVoter::vote(Bot *requestor, const std::string &category)
 {
-  double distance;
-  Bot *me = m_context->getGlobalPlanner()->getDirectory()->getBotByName(m_context->getBotId());
+  float distance;
   
   if (!m_context->getLocalPlanner()->canDropWeapon())
     distance = 0;
   else
-    distance = 1.0/(requestor->getOrigin() - m_context->getLocalPlanner()->getGameState()->player.origin).norm();
+    distance = std::min(1000.0f, 1.0f/(requestor->getOrigin() - m_context->getLocalPlanner()->getGameState()->player.origin).norm());
 
-  return PollVote(me, distance);
+  return PollVote(distance);
 }
 
 }
