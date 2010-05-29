@@ -53,7 +53,7 @@ void ShootState::checkEvent()
     getContext()->getDispatcher()->emit(&event);
 
     State *curr = getLocalPlanner()->getCurrentState();
-    if (curr != this && curr->getName() != "swim") {      
+    if (curr != this && curr->getName() != "swim" && curr->getName() != "dropweapon") {
       // Force complete the current state
       curr->setComplete(true);
 

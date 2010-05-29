@@ -28,7 +28,8 @@ LocalPlanner::LocalPlanner(Context *context)
     m_abort(false),
     m_brains(new SoldierBrains(this)),
     m_motionController(context),
-    m_lastSave(0)
+    m_lastSave(0),
+    m_lastWeapChange(0)
 {
   Object::init();
 }
@@ -153,7 +154,7 @@ bool LocalPlanner::canDropWeapon()
   if (m_gameState->inventory.find(secondBestWeapon) == m_gameState->inventory.end())
     return false;
 
-  if (m_gameState->inventory[currentWeapon] > 1 || (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0))
+  if (m_gameState->inventory[currentWeapon] > 1|| (secondBestWeapon != "Blaster" && m_gameState->inventory[secondBestWeapon] > 0))
     return true;
 
   return false;
@@ -162,11 +163,15 @@ bool LocalPlanner::canDropWeapon()
 void LocalPlanner::tryUseBetterWeapon()
 {
 
-  if (m_gameState->player.health < 0)
+  if (Timing::getCurrentTimestamp() - m_lastWeapChange < 2000 || m_gameState->player.health < 0)
     return;
-  
+
   std::string currentWeapon = m_gameState->player.getWeaponName();
   std::string bestWeapon = bestWeaponInInventory();
+
+  if (getAmmoForWeapon(currentWeapon) == 0) {
+    currentWeapon = "Blaster";
+  }
 
   boost::unordered_map<std::string, int> weapons;
   weapons["Grenades"] = 0;
@@ -186,27 +191,15 @@ void LocalPlanner::tryUseBetterWeapon()
     return;
 
   // Change the weapon to better one
-  if (weapons[currentWeapon] < weapons[bestWeapon])
+  if (weapons[currentWeapon] < weapons[bestWeapon]) {
     getContext()->getConnection()->use(bestWeapon);
+    m_lastWeapChange = Timing::getCurrentTimestamp();
+  }
 
 }
 
-const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeapon)
+int LocalPlanner::getAmmoForWeapon(const std::string &weapon)
 {
-  boost::unordered_map<std::string, int> weapons;
-
-  weapons["Grenades"] = 0;
-  weapons["Blaster"] = 1;
-  weapons["Shotgun"] = 2;
-  weapons["Super Shotgun"] = 3;
-  weapons["Machinegun"] = 4;
-  weapons["Chaingun"] = 5;
-  weapons["Grenade Launcher"] = 6;
-  weapons["Rocket Launcher"] = 7;
-  weapons["HyperBlaster"] = 8;
-  weapons["Railgun"] = 9;
-  weapons["BFG10K"] = 10;
-
   boost::unordered_map<std::string, std::string> weaponsAmmo;
   weaponsAmmo["Blaster"] = "Blaster";
   weaponsAmmo["Shotgun"] = "Shells";
@@ -219,6 +212,33 @@ const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeap
   weaponsAmmo["Railgun"] = "Slugs";
   weaponsAmmo["BFG10K"] = "Cells";
 
+  if (weaponsAmmo.find(weapon) == weaponsAmmo.end())
+    return 0;
+
+  std::string ammo = weaponsAmmo.at(weapon);
+
+  if (m_gameState->inventory.find(ammo) == m_gameState->inventory.end())
+    return 0;
+
+  return m_gameState->inventory.at(ammo);
+}
+
+const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeapon)
+{
+  boost::unordered_map<std::string, int> weapons;
+
+  weapons["Grenades"] = 0;
+  weapons["Blaster"] = 1;
+  weapons["Shotgun"] = 2;
+  weapons["Super Shotgun"] = 3;
+  weapons["Machinegun"] = 4;
+  weapons["Chaingun"] = 5;
+  weapons["Grenade Launchewer"] = 6;
+  weapons["Rocket Launcher"] = 7;
+  weapons["HyperBlaster"] = 8;
+  weapons["Railgun"] = 9;
+  weapons["BFG10K"] = 10;
+
   int maxPriority = 0;
   std::string currentWeapon = "Blaster";
 
@@ -229,15 +249,7 @@ const std::string LocalPlanner::bestWeaponInInventory(const std::string &notWeap
     if (weapons.find(w) == weapons.end())
       continue;
 
-    if (weaponsAmmo.find(w) == weaponsAmmo.end())
-      continue;
-
-    std::string ammo = weaponsAmmo.at(w);
-
-    if (m_gameState->inventory.find(ammo) == m_gameState->inventory.end())
-      continue;
-
-    if (weapons[w] > maxPriority && m_gameState->inventory.at(ammo) > 0 && w != notWeapon) {
+    if (weapons[w] > maxPriority && getAmmoForWeapon(w) > 0 && w != notWeapon) {
       // There is a better weapon in our inventory and we have ammo for it
 
       // Special case can happen because of inventory not being up2date

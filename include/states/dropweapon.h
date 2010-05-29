@@ -10,6 +10,7 @@
 
 #include "planner/state.h"
 #include "mapping/map.h"
+#include "states/wander.h"
 #include "timing.h"
 
 #include <list>
@@ -18,12 +19,12 @@
 namespace HiveMind {
 
 class Context;
-class BotRespawnEvent;
+class GoToAndDropWeaponEvent;
 
 /**
  * Drop weapon state.
  */
-class DropWeaponState : public State {
+class DropWeaponState : public WanderState {
 public:
     /**
      * Class constructor.
@@ -38,9 +39,9 @@ public:
     virtual ~DropWeaponState();
 
     /**
-     * This method gets called when a bot has respawned.
+     * This method gets called when a bot has been chosen to come and drop a weapon.
      */
-    void botRespawned(BotRespawnEvent *event);
+    void dropOrderReceived(GoToAndDropWeaponEvent *event);
 
     /**
      * Prepare for entry into this state.
@@ -55,20 +56,16 @@ public:
     virtual void goodbye();
 
     /**
-     * This method should implement state specific processing on
-     * each frame update. This method is called in main thread
+     * This method should implement state specific processing in
+     * planning mode. This method is called in planner thread
      * context.
      */
-    virtual void processFrame();
+    virtual void processPlanning();
 
-    /**
-     * This method should implement state specific event
-     * checking, so the state can emit a signal when
-     * needed. This method is called in main thread context.
-     */
-    virtual void checkEvent();
+    void dropWeapon();
 private:
     timestamp_t m_lastDropTime;
+    Vector3f m_dropLocation;
 };
 
 }

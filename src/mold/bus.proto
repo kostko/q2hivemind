@@ -9,6 +9,7 @@ message Message {
     EVENT_ENTITY_UPDATE = 4;
     POLL_CREATE = 5;
     POLL_VOTE = 6;
+    DROP_CHOSEN = 7;
   };
   
   // Source/dest bot identifiers

@@ -34,6 +34,7 @@ public:
       EntityUpdated,
       OpponentSpotted,
       PollVoteCompleted,
+      DropOrderIssued,
       
       // This represents any event and should be the last one
       Any
@@ -124,6 +125,16 @@ public:
      * @param bot Bot directory entry or NULL for local bot
      */
     BotRespawnEvent(Bot *bot);
+};
+
+class GoToAndDropWeaponEvent : public BotEvent {
+public:
+    /**
+     * Class constructor.
+     *
+     * @param bot Bot directory entry or NULL for local bot
+     */
+    GoToAndDropWeaponEvent(Bot *bot);
 };
 
 class OpponentSpottedEvent : public Event {

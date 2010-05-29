@@ -9,10 +9,16 @@
 #include "planner/global.h"
 #include "context.h"
 #include "logger.h"
+#include "mold/client.h"
+#include "planner/local.h"
 
 #include <boost/foreach.hpp>
 #include <boost/random.hpp>
 #include <boost/lexical_cast.hpp>
+
+// Protocol buffer messages
+#include "src/mold/control.pb.h"
+
 
 namespace HiveMind {
 
@@ -118,8 +124,18 @@ void Poll::close()
     m_winnerBot = bot;
     
     // Log winner
-    if (bot)
+    if (bot) {
+      if (m_category == "System.WhoWillDrop") {
+        // Send a confirmation message to the winner
+        MOLD::ClientPtr client = m_context->getMOLDClient();
+        client->deliver(MOLD::Protocol::Message::DROP_CHOSEN, bot->getName());
+
+        getLogger()->info(format("Sending a DROP_CHOSEN msg to %s.") % bot->getName());
+
+        // TODO: if there is no winner, don't wait in camper state
+      }
       getLogger()->info(format("Poll %s has closed, winner is %s with %f votes.") % m_pollId % bot->getName() % votes);
+    }
     else
       getLogger()->info(format("Poll %s has closed, no candidates voted.") % m_pollId);
   } else if (m_type == VoteChoice) {

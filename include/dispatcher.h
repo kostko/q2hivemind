@@ -61,6 +61,7 @@ public:
     boost::signals2::signal<void (OpponentSpottedEvent *event)> signalOpponentSpotted;
     boost::signals2::signal<void (EntityUpdatedEvent *event)> signalEntityUpdated;
     boost::signals2::signal<void (PollVoteCompletedEvent *event)> signalPollVoteCompleted;
+    boost::signals2::signal<void (GoToAndDropWeaponEvent *event)> signalDropOrder;
 private:
     // Context
     Context *m_context;

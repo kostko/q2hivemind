@@ -26,6 +26,7 @@ class GoToState;
  */
 class WanderState : public State {
 friend class GoToState;
+friend class DropWeaponState;
 public:
     /**
      * Class constructor.

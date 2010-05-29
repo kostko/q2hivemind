@@ -281,6 +281,23 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
       }
       break;
     }
+
+    case Protocol::Message::DROP_CHOSEN: {
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        // Generate a local respawn event
+        //BotRespawnEvent event(bot);
+        //m_context->getDispatcher()->emit(&event);
+
+        getLogger()->info(format("I HAVE RECEIVED DROP_CHOSEN MOLD MESSAGE from %s. YUHUUUU!!!!") % bot->getName());
+
+        // Generate a local drop weapon event
+        GoToAndDropWeaponEvent event(bot);
+        m_context->getDispatcher()->emit(&event);
+        
+      }
+      break;
+    }
     
     default: {
       // Message code not recongnized, emit a warning

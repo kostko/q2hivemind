@@ -37,6 +37,7 @@ void Dispatcher::emit(Event *event)
     case Event::OpponentSpotted: signalOpponentSpotted(static_cast<OpponentSpottedEvent*>(event)); break;
     case Event::EntityUpdated: signalEntityUpdated(static_cast<EntityUpdatedEvent*>(event)); break;
     case Event::PollVoteCompleted: signalPollVoteCompleted(static_cast<PollVoteCompletedEvent*>(event)); break;
+    case Event::DropOrderIssued: signalDropOrder(static_cast<GoToAndDropWeaponEvent*>(event)); break;
     default: break;
   }
   

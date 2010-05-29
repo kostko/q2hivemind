@@ -149,6 +149,8 @@ public:
      */
     const std::string bestWeaponInInventory(const std::string &notWeapon = "");
 
+    int getAmmoForWeapon(const std::string &weapon);
+
     /**
      * Prune this state from eligible states set.
      *
@@ -212,6 +214,8 @@ private:
 
     // Last save time
     timestamp_t m_lastSave;
+
+    timestamp_t m_lastWeapChange;
 };
 
 }

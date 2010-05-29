@@ -64,6 +64,10 @@ public:
 private:
     // When was this state entered
     timestamp_t m_lastEntered;
+
+    bool m_alreadyStartedPoll;
+
+    Vector3f m_lastLocation;
 };
 
 }

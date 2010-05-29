@@ -52,6 +52,11 @@ BotRespawnEvent::BotRespawnEvent(Bot *bot)
 {
 }
 
+GoToAndDropWeaponEvent::GoToAndDropWeaponEvent(Bot *bot)
+  : BotEvent(DropOrderIssued, bot)
+{
+}
+
 OpponentSpottedEvent::OpponentSpottedEvent(const Vector3f& origin)
   : Event(OpponentSpotted),
     m_origin(origin)

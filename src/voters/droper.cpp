@@ -27,9 +27,9 @@ PollVote DroperVoter::vote(Bot *requestor, const std::string &category)
 {
   float distance;
   
-  if (!m_context->getLocalPlanner()->canDropWeapon())
-    distance = 0;
-  else
+  //if (!m_context->getLocalPlanner()->canDropWeapon())
+  //  distance = 0;
+  //else
     distance = std::min(1000.0f, 1.0f/(requestor->getOrigin() - m_context->getLocalPlanner()->getGameState()->player.origin).norm());
 
   return PollVote(distance);
