@@ -39,7 +39,7 @@ public:
      * @param requestor Bot requesting the poll
      * @param category Poll category
      * @return A valid PollVote
-     */ 
+     */
     PollVote vote(Bot *requestor, const std::string &category);
 private:
     Context *m_context;
