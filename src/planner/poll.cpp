@@ -9,16 +9,10 @@
 #include "planner/global.h"
 #include "context.h"
 #include "logger.h"
-#include "mold/client.h"
-#include "planner/local.h"
 
 #include <boost/foreach.hpp>
 #include <boost/random.hpp>
 #include <boost/lexical_cast.hpp>
-
-// Protocol buffer messages
-#include "src/mold/control.pb.h"
-
 
 namespace HiveMind {
 
@@ -128,7 +122,6 @@ void Poll::close()
       getLogger()->info(format("Poll %s has closed, winner is %s with %f votes.") % m_pollId % bot->getName() % votes);    
     else 
       getLogger()->info(format("Poll %s has closed, no candidates voted.") % m_pollId);
-    
   } else if (m_type == VoteChoice) {
     // Determine the choice that received most votes
     boost::unordered_map<std::string, float> ballot;

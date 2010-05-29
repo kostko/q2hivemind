@@ -16,12 +16,6 @@
 
 namespace HiveMind {
 
-namespace MOLD {
-  namespace Protocol {
-    class Message;
-  }
-}
-
 class Context;
 
 class PollVote {
@@ -139,6 +133,9 @@ public:
      */
     std::string getWinnerChoice() const { return m_winnerChoice; }
 protected:
+    /**
+     * Closes this poll and counts the votes.
+     */
     void close();
 private:
     // Context

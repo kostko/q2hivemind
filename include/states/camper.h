@@ -67,7 +67,11 @@ public:
      * needed. This method is called in main thread context.
      */
     virtual void checkEvent();
-
+    
+    /**
+     * Handler for vote complete events used to select the bot
+     * that will bring us some goodies.
+     */
     void voteCompleted(PollVoteCompletedEvent *event);
 private:
     // When was this state entered
