@@ -17,12 +17,6 @@
 
 namespace HiveMind {
 
-namespace MOLD {
-  namespace Protocol {
-    class Message;
-  }
-}
-
 class Context;
 class PollVoteCompletedEvent;
 
