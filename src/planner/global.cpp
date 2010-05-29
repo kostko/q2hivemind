@@ -12,6 +12,7 @@
 #include "planner/directory.h"
 #include "planner/poll.h"
 #include "planner/local.h"
+#include "planner/state.h"
 #include "network/connection.h"
 #include "dispatcher.h"
 #include "event.h"
@@ -301,6 +302,17 @@ void GlobalPlanner::moldMessageReceived(const Protocol::Message &msg)
       if (bot) {
         getLogger()->info(format("I HAVE RECEIVED STOP_WAITING_FOR_DROP MOLD MESSAGE from %s. YUHUUUU!!!!") % bot->getName());
         m_context->getLocalPlanner()->requestTransition("wander");
+      }
+      break;
+    }
+    case Protocol::Message::STOP_TRYING_TO_DROP: {
+      Bot *bot = getBotOrRequestAnnounce(msg);
+      if (bot) {
+        getLogger()->info(format("Received mold msg: stop tryin to drop from %s.") % bot->getName());
+        State *curr = m_context->getLocalPlanner()->getCurrentState();
+        if (curr != NULL && curr->getName() == "dropweapon") {
+          m_context->getLocalPlanner()->requestTransition("wander");
+        }
       }
       break;
     }

@@ -18,7 +18,12 @@
 namespace HiveMind {
 
 class Context;
+class Poll;
 class PollVoteCompletedEvent;
+
+enum {
+    WAIT_TIME = 60000   // The time to wait for a bot
+};
 
 /**
  * Camper state.
@@ -71,6 +76,9 @@ private:
     bool m_alreadyStartedPoll;
 
     Vector3f m_lastLocation;
+
+    // Last poll
+    Poll *m_poll;
 };
 
 }

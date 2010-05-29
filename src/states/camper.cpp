@@ -16,6 +16,9 @@
 #include "mapping/grid.h"
 #include "mold/client.h"
 
+// Protocol buffer messages
+#include "src/mold/control.pb.h"
+
 #include <limits>
 
 namespace HiveMind {
@@ -73,7 +76,8 @@ void CamperState::processFrame()
   if (node->getType() == GridNode::SpawnPoint && !m_alreadyStartedPoll && (100.0 < (m_lastLocation - m_gameState->player.origin).norm())) {
 
     // Request a WhoWillDrop poll
-    getContext()->getGlobalPlanner()->createPoll(new Poll(getContext(), Poll::VoteBot, 2000, "System.WhoWillDrop"));
+    m_poll = new Poll(getContext(), Poll::VoteBot, 2000, "System.WhoWillDrop");
+    getContext()->getGlobalPlanner()->createPoll(m_poll);
     getLogger()->info(format("I HAVE JUST SPAWNED at %f %f %f") % m_gameState->player.origin.x() % m_gameState->player.origin.y() % m_gameState->player.origin.z());
     m_alreadyStartedPoll = true;
   }
@@ -84,6 +88,20 @@ void CamperState::processFrame()
   m_moveFire = false;
   m_moveJump = false;
   m_lastLocation = m_gameState->player.origin;
+
+  // Check for timeout
+  if (Timing::getCurrentTimestamp() - m_lastEntered > WAIT_TIME) {
+    // Send a message to the droper that we don't need the weapon anymore
+    Bot *droper = m_poll->getWinnerBot();
+    if (droper != NULL) {
+      MOLD::ClientPtr client = getContext()->getMOLDClient();
+      client->deliver(MOLD::Protocol::Message::STOP_TRYING_TO_DROP, droper->getName());
+
+      getLogger()->info("Sending MOLD message to droper that he should stop trying to drop me weapon, because he is too late!");
+    }
+    // We have waited long enough
+    getLocalPlanner()->requestTransition("wander");
+  }
 }
 
 }
