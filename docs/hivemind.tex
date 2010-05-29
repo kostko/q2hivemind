@@ -556,7 +556,14 @@ message PollVote {
 
 Agentje svoje glasove oddajo neposredno tistemu, ki je anketo ustvaril, tako da ne obremenjujejo vodila in ostalih agentov z nepotrebnimi sporočili. Kdor je anketo zahteval je odgovoren tudi za štetje glasov po končanem glasovanju. Glasovanje se samodejno zaključi ko ali glasujejo vsi agenti, ki so do glasovanja upravičeni, ali pa preteče čas, ki je odvisen od dane ankete.
 
-Znotraj posameznega agenta se ob končani anketi generira ustrezen dogodek, ki je na voljo posameznim komponentam agenta. 
+Znotraj posameznega agenta se ob končani anketi generira ustrezen dogodek, ki je na voljo posameznim komponentam agenta.
+
+Trenutno so implementirani naslednji glasovalni moduli:
+\begin{itemize}
+  \item \texttt{DummyVoter}, ki se uporablja za periodično testiranje delovanja glasovanja kjer agentje glasujejo z naključnimi vrednostmi.
+  
+  \item \texttt{DroperVoter}, ki glasuje na podlagi tega ali ima agent na voljo kakšno orožje odveč in glede na razdaljo od agenta, ki je zahteval glasovanje. Na tak način se izbere agent, ki bo na novo \textit{respawnanemu} agentu prinesel orožje.
+\end{itemize} 
 
 \section{Možne izboljšave}
 
