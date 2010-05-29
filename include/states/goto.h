@@ -72,12 +72,12 @@ public:
     /**
      * Sets the exists flag.
      */
-    inline void setItemExists(bool exists) { m_exists = exists; }
+    void setItemExists(bool exists) { m_exists = exists; }
 
     /**
      * Does at least one item exist?
      */
-    inline bool itemExists() const { return m_exists; }
+    bool itemExists() const { return m_exists; }
 
     /**
      * Requests path recomputation from current location to our

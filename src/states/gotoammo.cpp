@@ -42,7 +42,7 @@ GoToAmmoState::GoToAmmoState(Context *context)
 void GoToAmmoState::evaluate()
 {
   // All ammo equally valued if we only have a blaster
-  if (getLocalPlanner()->getGameState()->player.getWeaponName() == "Blaster") {
+  if (m_gameState->player.getWeaponName() == "Blaster") {
     m_items.push_back(ItemValue(Item::Bullets, 1));
     m_items.push_back(ItemValue(Item::Cells, 1));
     m_items.push_back(ItemValue(Item::Grenades, 1));
@@ -58,6 +58,9 @@ void GoToAmmoState::evaluate()
     std::string w = element.first;
 
     if (m_weapons.find(w) == m_weapons.end())
+      continue;
+
+    if (m_weaponsAmmo.find(w) == m_weaponsAmmo.end())
       continue;
 
     if (w == "Blaster" || w == "Grenades")
