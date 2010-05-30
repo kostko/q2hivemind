@@ -66,8 +66,9 @@ void SoldierBrains::init()
 
   // Load the data according to the bot's id
   std::string id = m_localPlanner->getContext()->getBotId();
+  std::string fn = m_localPlanner->getContext()->getKnowledgeFilename();
   std::string dataDir = m_localPlanner->getContext()->getDataDir();
-  m_knFilePath = dataDir + "/" + id;
+  m_knFilePath = dataDir + "/" + (fn != "default" ? fn : id);
   m_Q->load(m_knFilePath + ".knowledge");
   m_numQ->load(m_knFilePath + ".visits");
 
