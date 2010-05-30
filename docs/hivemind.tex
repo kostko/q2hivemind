@@ -380,7 +380,7 @@ Postopek po katerem se agenti odločijo kdo bo prinesel orožje agentu, ki je za
        mu prinese orožje.
 \end{enumerate}
 Agent gre iz tega stanja, ko dobi obvestilo o tem, da naj ne čaka več na orožje, ker je to orožje dobil ali pa se je dostavljalcu kaj zgodilo. Tretja možnost je, da se dostavljalec predolgo obira - v tem primeru poteče časovnik, čakajoči agent zamenja stanje in dostavljalcu pošlje MOLD sporočilo, da ne potrebuje več orožja.
-\subsubsection{DropWeapon}
+\subsubsection{DropWeapon} \label{sec:states-dropweapon}
 V opisu stanja \verb+Camper+ smo omenili, da lahko ubiti agent ustvari anketo o tem, kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju). Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se preko dispečerja sproži notranji dogodek, ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti orožje, ter o njegovi poziciji.
 
 Za tem sledi faza planiranja poti do želenega položaja v svetu, kjer čaka agent, ki želi imeti orožje. Če dostavljalec orožja najde pot, se začne premikati proti cilju, sicer pa zapusti stanje \verb+DropWeapon+. Med potovanjem do čakajočega igralca je stanje \verb+DropWeapon+ lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
@@ -444,26 +444,25 @@ Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v st
 % aka. Reinforcement Learning
 \subsection{Splošno o nagrajevalnem učenju}
 
-Ideja, ki se nam je zdela zanimiva je, da se naši agenti na najvišjem nivoji ne bi odločali glede na v naprej zakljenjena pravila, ampak, da bi se vsak agent znal na podlagi izkušenj naučiti katere akcije so primerne v danem trenutku in katere ne. 
+Ideja, ki se nam je zdela zanimiva je, da se naši agenti na najvišjem nivoji ne bi odločali glede na v naprej zakljenjena pravila, temveč da bi se vsak agent znal na podlagi izkušenj naučiti, katere akcije so primerne v danem trenutku in katere ne. 
 
 Za realizacijo naše ideje nam je mentor predlagal uporabo metode \textit{nagrajevalnega učenja}\footnote{Reinforcement Learning}. Bistvo te metode je, da se agent poskuša z raziskovanjem naučiti kako mora izvajati akcije v svojem okolju, da bo na dolgi rok čimbolje nagrajen.
 
 Prednost uporabe nagrajevalnega učenja, pred npr. nadzorovanim učenjem, je v tem, da nam pri tej metodi ni potrebno eksplicitno specificirati katera akcija je pravilna za dano stanje - tega se agent nauči z raziskovanjem in preko dobljenih nagrad. Druga prednost je fleksibilen učni postopek, saj lahko brez težav prehajamo med raziskovanjem (med katerim se agent uči) in med uporabo dobljenega znanja.
 
-Naloga algoritma za nagrajevalno učenje je, da bo vsota nagrad, ki jih agent dobi z izvajanjem svojih akcije na dolgi rok čimvečja; iščemo torej primerno \textit{politiko} po kateri se bo ravnal agent. 
+Naloga algoritma za nagrajevalno učenje je, da bo vsota nagrad, ki jih agent dobi z izvajanjem svojih akcij na dolgi rok čimvečja; iščemo torej primerno \textit{politiko} po kateri se bo ravnal agent. 
 
 \subsection{Q-learning}
 
-Algoritmov s katerimi lahko dosežemo (aproksimacijo) optimalne politike je veliko. V našem primeru vsak agent
-uporablja pristop imenovan \textit{Q-learning}\cite{rl}. Prednosti, ki smo jih videli v tem pristopu so:
+Algoritmov, s katerimi lahko dosežemo (aproksimacijo) optimalne politike je veliko. V našem primeru vsak agent uporablja pristop imenovan \textit{Q-learning}\cite{rl}. Prednosti, ki smo jih videli v tem pristopu so:
 
 \begin{itemize}
- \item za ocenjevanje tega kako dobro se bo posamezna akcija obnesla ne potrebujemo modela okolja,
+ \item za ocenjevanje tega, kako dobro se bo posamezna akcija obnesla ne potrebujemo modela okolja,
  \item enostavna implementacija in
- \item možnost nadgraditve v SARSA pristop.
+ \item možnost nadgraditve v pristop SARSA.
 \end{itemize}
 
-Okolje s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja), zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
+Okolje, s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja), zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
 vir \cite{rl}.
 
 Q-learning sloni na podatkovni strukturi, ki za dani par $(stanje, akcija)$ pove vrednost te odločitve (imenovane tudi \textit{Q-value}):
