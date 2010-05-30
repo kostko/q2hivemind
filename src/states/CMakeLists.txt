@@ -14,4 +14,5 @@ camper.cpp
 )
 
 add_library(states STATIC ${states_src})
+add_dependencies(states mold)
 
