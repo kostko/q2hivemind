@@ -331,19 +331,17 @@ V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo
 Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
   
 \subsubsection{Swim}
-V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.\\ 
-Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani (glej poglavje \textit{\ref{sec:mozgani} \nameref{sec:mozgani}}). Lahko bi rekli, da je 
-\textit{refleksno} in se ga nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
+V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.
+
+Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani (glej poglavje \textit{\ref{sec:mozgani} \nameref{sec:mozgani}}). Lahko bi rekli, da je \textit{refleksno} in se ga nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
 \subsubsection{Shoot}
 V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. 
 S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete 
-izmikanja. Slednje je seveda težje modelirati.\\
-Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od 
-agenta zahtevajo možgani (glej poglavje \textit{\ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj.
-Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
+izmikanja. Slednje je seveda težje modelirati.
+
+Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od agenta zahtevajo možgani (glej poglavje \textit{\ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj. Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
 \subsubsection{Respawn}
-V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega
-planerja zahteva prehod v stanje \verb+Camper+. Prav tako izprazni seznam ustreznih stanj \verb+eligibleStates+, saj so stanja v njem odvisna od agentove lokacije, ko je bil še živ.
+V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega planerja zahteva prehod v stanje \verb+Camper+. Prav tako izprazni seznam ustreznih stanj \verb+eligibleStates+, saj so stanja v njem odvisna od agentove lokacije, ko je bil še živ.
 \subsubsection{GoTo[Ammo, Health, Weapon, Upgrade]}
 
 Za potrebe bolj napredne interakcije z okoljem smo implementirali tudi stanja v katerih agent poišče pot do predmetov, ki jih potrebuje.
@@ -356,24 +354,19 @@ Definirali smo stanje \verb+GoTo+ in njegove izpeljanke:
  \item \verb+GoToUpgrade+.
 \end{enumerate}
 
-Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. 
-oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi
-planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.\\
-Prehod v vsako izmed stanj postane mogoč le, ko je tako stanje smiselno. Primer: prehod v stanje \verb+GoToWeapon+ bo možno le, ko bo agent
-vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta
-prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.
+Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.
 
-Jasno je, da agent v vsakem trenutku ne ve kateri predmet se zagotovo nahaja na nekem mestu (saj ga je lahko npr. ravnokar pobral sovražnik), zato smo vpeljali tudi časovno komponento. V primeru, da 
-za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.
+Prehod v vsako izmed stanj postane mogoč le, ko je tako stanje smiselno. Primer: prehod v stanje \verb+GoToWeapon+ bo možno le, ko bo agent vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.
 
-Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). 
-Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".
+Jasno je, da agent v vsakem trenutku ne ve kateri predmet se zagotovo nahaja na nekem mestu (saj ga je lahko npr. ravnokar pobral sovražnik), zato smo vpeljali tudi časovno komponento. V primeru, da za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.
+
+Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".
 
 Podobno kot stanje \verb+Shoot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja se zaključijo, ko agent pobere željeni predmet ali pa če se agent med izvajanjem stanje kje zatakne.
+
 \subsubsection{Camper} \label{sec:states-camper}
-V tem stanju se agent znajde po tem, ko je bil ubit. Ideja \verb+Camper+ stanja je, da agent ostale agente prosi, če mu lahko kateri izmed njih prinese boljše 
-orožje in naboje, saj so agentu po smrti odvzeti vsi predmeti. Tako sodelovanje je pogosto pri pravih igralcih in tako ima tak agent boljši izhodiščni položaj 
-kot sicer.\\
+V tem stanju se agent znajde po tem, ko je bil ubit. Ideja \verb+Camper+ stanja je, da agent ostale agente prosi, če mu lahko kateri izmed njih prinese boljše orožje in naboje, saj so agentu po smrti odvzeti vsi predmeti. Tako sodelovanje je pogosto pri pravih igralcih in tako ima tak agent boljši izhodiščni položaj kot sicer.
+
 Postopek po katerem se agenti odločijo kdo bo prinesel orožje agentu, ki je zanj prosil je naslednji.
 \begin{enumerate}
  \item Ubit agent preide v stanje \verb+Camper+ in preko MOLD-a ustvari anketo kategorije \verb+System.WhoWillDrop+.
@@ -386,19 +379,11 @@ Postopek po katerem se agenti odločijo kdo bo prinesel orožje agentu, ki je za
  \item Anketa se zapre, ko (a) glasujejo vsi agenti ali (b) poteče čas. Takrat ustvarjalec ankete zmagovalcu ankete pošlje sporočilo, da je bil izbran in naj 
        mu prinese orožje.
 \end{enumerate}
-Agent gre iz tega stanja, ko dobi obvestilo o tem, da naj ne čaka več na orožje, ker je to orožje dobil ali pa se je dostavljalcu kaj zgodilo.
-Tretja možnost je, da se dostavljalec predolgo obira - v tem primeru poteče časovnik, čakajoči agent zamenja stanje in dostavljalcu pošlje MOLD sporočilo,
-da ne potrebuje več orožja.
+Agent gre iz tega stanja, ko dobi obvestilo o tem, da naj ne čaka več na orožje, ker je to orožje dobil ali pa se je dostavljalcu kaj zgodilo. Tretja možnost je, da se dostavljalec predolgo obira - v tem primeru poteče časovnik, čakajoči agent zamenja stanje in dostavljalcu pošlje MOLD sporočilo, da ne potrebuje več orožja.
 \subsubsection{DropWeapon}
-V opisu stanja \verb+Camper+ smo omenili, da lahko ubiti agent ustvari anketo o tem, kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je 
-oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju). 
-Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se preko dispečerja sproži notranji dogodek, 
-ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti
-orožje, ter o njegovi poziciji.
+V opisu stanja \verb+Camper+ smo omenili, da lahko ubiti agent ustvari anketo o tem, kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju). Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se preko dispečerja sproži notranji dogodek, ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti orožje, ter o njegovi poziciji.
 
-Za tem sledi faza planiranja poti do želenega položaja v svetu, kjer čaka agent, ki želi imeti orožje. Če dostavljalec orožja najde pot, se začne premikati proti cilju, sicer
-pa zapusti stanje \verb+DropWeapon+. Med potovanjem do čakajočega igralca je stanje \verb+DropWeapon+ lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje
-je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
+Za tem sledi faza planiranja poti do želenega položaja v svetu, kjer čaka agent, ki želi imeti orožje. Če dostavljalec orožja najde pot, se začne premikati proti cilju, sicer pa zapusti stanje \verb+DropWeapon+. Med potovanjem do čakajočega igralca je stanje \verb+DropWeapon+ lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
 
 Agent vedno preda najboljše orožje (v primeru, da ima poleg tega v roki še eno na zalogi) ali pa drugo najboljše orožje iz svojega inventarja in naboje.
 
