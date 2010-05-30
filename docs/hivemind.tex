@@ -462,15 +462,19 @@ Algoritmov, s katerimi lahko dosežemo (aproksimacijo) optimalne politike je vel
  \item možnost nadgraditve v pristop SARSA.
 \end{itemize}
 
-Okolje, s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja), zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
-vir \cite{rl}.
+Okolje, s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja), zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč vir \cite{rl}.
 
 Q-learning sloni na podatkovni strukturi, ki za dani par $(stanje, akcija)$ pove vrednost te odločitve (imenovane tudi \textit{Q-value}):
 $$Q: S\times A \rightarrow \mathbb{R}$$
 
+\noindent
+Skozi postopek učenja se te vrednosti iterativno popravlja na podlagi dobljene nagrade, stare Q-vrednosti in najvišje možne Q-vrednosti, ki lahko sledi po tej akciji (glej \cite{ql}).
+
+Čez čas te vrednosti konvergirajo. Če takrat za dano stanje $s$ vedno izberemo tisto akcijo $a$, ki ima največjo Q-vrednost $Q(s, a)$, potem bo agent sledil optimalni politiki.
+
 \subsection{Integracija v Hivemind} \label{sec:mozgani}
 Problem nagrajevalnega učenja je formuliran kot Markovski odločitveni problem\footnote{Markov decision process ali MDP}. To pomeni, da model nagrajevalnega učenja
-predstavimo z
+predstavimo z:
 
 \begin{itemize}
  \item množico stanj,
@@ -484,7 +488,7 @@ V našem primeru smo se odločili za naslednjo predstavitev problema. Agent je p
  \item funkcijo nagrade, ki nagradi akcije, ki so v prid agentu.
 \end{itemize}
 
-Odločanje o nadaljnih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta (lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja ipd). Zaradi pomanjkanja časa imamo tako le eno različico možgan. Delovanje teh pa podrobneje razložijo naslednja podpoglavja.
+Odločanje o nadaljnjih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta (lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja, ipd.). V trenutni implementaciji imamo tako le eno različico možganov, katero bomo raložili v nadaljevanju.
 
 \subsubsection{Notranja stanja agenta}
 
