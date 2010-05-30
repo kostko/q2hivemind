@@ -48,22 +48,22 @@
 
 Cilj naše seminarske naloge je bil izdelava skupine avtonomnih botov (agentov), ki so zmožni navigacije po navideznem svetu ter medsebojne komunikacije. Navidezni svet smo si izbrali zaradi lažje izdelave senzorjev, saj se nam pri tem ni bilo potrebno ukvarjati s težavami računalniškega vida, ki sam po sebi predstavlja široko področje.
 
-Da bi se torej izognili tem težavam, smo si za navidezno okolje v katerem bodo agenti delovali izbrali svet Quake II. Razlog za to izbiro je, da je implementacija tega sveta že na voljo in sicer pod odprtokodno licenco. To omogoča boljše razumevanje delovanja in tudi morebitne popravke ter integracijo.
+Da bi se torej izognili tem težavam, smo si za navidezno okolje, v katerem bodo agenti delovali, izbrali svet Quake II. Razlog za to izbiro je, da je implementacija tega sveta že na voljo, in sicer pod odprtokodno licenco. To omogoča boljše razumevanje delovanja in tudi morebitne popravke ter integracijo.
 
-Problem smo razdelili na nekaj ključnih podproblemov, katere je potrebno rešiti, da bo avtonomni agent v takem okolju deloval zadovljivo:
+Problem smo razdelili na nekaj ključnih podproblemov, ki jih je potrebno rešiti, da bi avtonomni agent v takem okolju deloval zadovoljivo:
 \begin{enumerate}
   \item \textbf{Vmesnik do navideznega sveta} je prvi korak, ki omogoča našemu agentu interakcijo z objekti v svetu in tudi povratno informacijo o rezultatih njegovih akcij.
   
-  \item \textbf{Nadzor gibanja} je najnižja komponenta sistema, ki omogoča da se agent premika po svetu. Zadovoljiv nadzor gibanja mora omogočati \textit{reaktivno in samodejno izogibanje oviram} transparentno glede na to kaj zahtevajo višji nivoji. Sem spadajo tudi osnovni senzorji potrebni za pridobitev informacij o geometriji sveta.
+  \item \textbf{Nadzor gibanja} je najnižja komponenta sistema, ki omogoča da se agent premika po svetu. Zadovoljiv nadzor gibanja mora omogočati \textit{reaktivno in samodejno izogibanje oviram} transparentno, glede na to kaj zahtevajo višji nivoji. Sem spadajo tudi osnovni senzorji, potrebni za pridobitev informacij o geometriji sveta.
   
-  \item \textbf{Navigacija po svetu} omogoča agentu, da si zgradi notranjo predstavitev virtualnega sveta okoli njega, ki mu omogoča učinkovito načrtovanje poti v njem.
+  \item \textbf{Navigacija po svetu} omogoča agentu, da si zgradi notranjo predstavitev virtualnega sveta okrog njega, kar mu omogoča učinkovito načrtovanje poti v njem.
   
   \item \textbf{Stanja agenta} določajo trenutno obnašanje in cilje agenta na najvišjem nivoju.
   
-  \item \textbf{Komunikacija} omogoča da se večje število agentov poveže v skupino, katere člani si lahko izmenjujejo znanje o svetu in ga tako hitreje spoznajo. Komunikacija omogoča tudi sodelovanje med člani skupine ter identifikacijo pripadnosti (nekakšen IFF\footnote{Identification Friend or Foe}) v primeru napadov.
+  \item \textbf{Komunikacija} omogoča, da se večje število agentov poveže v skupino, katere člani si lahko izmenjujejo znanje o svetu in ga tako hitreje spoznajo. Komunikacija omogoča tudi sodelovanje med člani skupine in identifikacijo pripadnosti (nekakšen IFF\footnote{Identification Friend or Foe}) v primeru napadov.
 \end{enumerate}
 
-Tekom raziskovanja smo zgradili relativno preprosto ogrodje, ki omogoča implementacijo zgoraj omenjenih delov takšnega sistema. V nadaljevanju bomo najprej predstavili hiter pregled arhitekture ter potem lastnosti vsake komponente. Med razvojem so se nekatere prvotno zamišljene rešitve izkazale kot slabe in primorani smo jih bili zamenjati. Tudi te smo dokumentirali in opisali njihove pomanjkljivosti.
+Med raziskovanjem smo zgradili relativno preprosto ogrodje, ki omogoča implementacijo zgoraj omenjenih delov takšnega sistema. V nadaljevanju bomo najprej predstavili hiter pregled arhitekture in nato lastnosti vsake komponente. Med razvojem so se nekatere prvotno zamišljene rešitve izkazale kot slabe in primorani smo jih bili zamenjati. Tudi te smo dokumentirali in opisali njihove pomanjkljivosti.
 
 \section{Pregled arhitekture rešitve}
 
@@ -159,22 +159,22 @@ Tekom raziskovanja smo zgradili relativno preprosto ogrodje, ki omogoča impleme
 
 Osnovna arhitektura močno sledi podproblemom, ki smo jih predstavili v uvodu. Posamezne komponente so organizirane kot C++ razredi, povezani preko neposrednih klicev ali pa preko dogodkov.
 
-Celoten sistem je predstavljen s pomočjo centralne komponente imenovane \texttt{Context}. Ta komponenta povezuje vse ostale v celoto in skrbi za uspešno inicializacijo vmesnika do virtualnega sveta, komunikacijskega podsistema, dispečerja dogodkov ipd. Omogoča tudi nekaj osnovnih storitev kot je izpis sporočil za potrebe spremljanja poteka izvajanja programa.
+Celoten sistem je predstavljen s pomočjo centralne komponente imenovane \texttt{Context}. Ta komponenta povezuje vse ostale v celoto in skrbi za uspešno inicializacijo vmesnika do virtualnega sveta, komunikacijskega podsistema, dispečerja dogodkov ipd. Omogoča tudi nekaj osnovnih storitev, kot je izpis sporočil za potrebe spremljanja poteka izvajanja programa.
 
 \section{Vmesnik do virtualnega sveta}
 
-Kot naš virtualni svet smo vzeli svet Quake II, ki omogoča dva načina vključitve v sam svet:
+Virtualni svet Quake II omogoča dva načina vključitve:
 \begin{enumerate}
   \item \textbf{UDP/IP povezava odjemalca} se v osnovi obnaša popolnoma enako kot uraden Quake II odjemalec, ki je namenjen večigralstvu. Za to je potrebno razumevanje in implementacija Quake II protokola.
   
-  \item \textbf{Integracija v naslovni prostor igre} je v osnovni namenjena t.i. \textit{strežniškim botom} pa tudi najrazličnejšim dodatkom in razširitev igre.
+  \item \textbf{Integracija v naslovni prostor igre} je v osnovni namenjena t.i. \textit{strežniškim botom} pa tudi najrazličnejšim dodatkom in razširitvam igre.
 \end{enumerate}
 
-Ker je cilj narediti avtonomne agente, ki niso na nikakršen način priviligirani nad ostalimi igralci, poleg tega pa morajo biti tudi sposobni delovanja iz različnih sistemov IP\footnote{V mrežo povezanih računalnikov} je edina smiselna možnost prva. Zaradi tega je bil prvi korak razumevanje in implementacija Quake II protokola ter izdelava preprostega odjemalca zanj.
+Ker je bil naš cilj narediti avtonomne agente, ki niso na nikakršen način priviligirani nad ostalimi igralci, poleg tega pa morajo biti tudi sposobni delovanja iz različnih sistemov IP\footnote{V mrežo povezanih računalnikov} je edina smiselna možnost prva. Zaradi tega je bil prvi korak razumevanje in implementacija Quake II protokola in nato izdelava preprostega odjemalca zanj.
 
-Vendar pa naše ogrodje relativno transparentno podpira tudi drugi način za potrebe pospešene simulacije. Razlogi za to so opisani v enem izmed kasnejših poglavij, ki opisuje \textit{evolucijske umetne nevronske mreže}. Čeprav samega pristopa kasneje nismo uporabili, se je podpora za takšen način simulacije ohranila.
+Vendar pa naše ogrodje relativno transparentno podpira tudi drugi način za potrebe pospešene simulacije. Razlogi za to so opisani v enem izmed kasnejših poglavij, ki opisuje \textit{evolucijske umetne nevronske mreže} (glej poglavje \textit{\ref{sec:EANN} \nameref{sec:EANN}}). Čeprav samega pristopa kasneje nismo uporabili, se je podpora za takšen način simulacije ohranila.
 
-V podrobnosti obeh implementacij se na tem mestu ne  bi spuščali, pomembno je omeniti le da na svet v obeh primerih vplivamo na enak način. V vsakem trenutku moramo svetu posredovati vektorja orientacije (v obliki Eulerjevih kotov) ter hitrosti, poleg tega pa še oznako ali naj agent strelja ali ne. V drugi smeri pa so agentu periodično posredovani podatki o bližnjih dinamičnih entitetah ter o njegovi lokaciji.
+V podrobnosti obeh implementacij se na tem mestu ne bomo spuščali, pomembno je omeniti le, da na svet v obeh primerih vplivamo na enak način. V vsakem trenutku moramo svetu posredovati vektorja orientacije (v obliki Eulerjevih kotov) in hitrosti, poleg tega pa še oznako ali naj agent strelja ali ne. V drugi smeri pa so agentu periodično posredovani podatki o bližnjih dinamičnih entitetah ter o njegovi lokaciji.
 
 Celotno ogrodje je organizirano tako, da najprej vsem komponentam sistema posreduje najnovejše znanje o bližnjem svetu (t.i. \textit{game state}), nato pa od nadzornika gibanja zahteva nov set vektorjev, ki jih preko vmesnika posreduje v svet. Vse to se mora odvijati dovolj hitro, saj svet zahteva posodobitve v realnem času.
 
@@ -188,7 +188,7 @@ Tak sistem mora imeti tudi sposobnost izogibanja oviram, saj bi se v nasprotnem 
 
 Navidezni senzorji omogočajo zaznavanje razdalje do ovire pod določenim kotom. Podatki o statični geometriji sveta so na voljo v t.i. BSP\footnote{\textit{Binary Space Partitioning} drevesa razdelijo prostor s hiperravninami na manjše odseke in omogočajo učinkovite poizvedbe o geometriji} drevesih za katere smo morali implementirati parser in ustrezne funkcije za izvajanje poizvedb nad njimi. Tako je v osnovi mogoče izstreliti žarek iz točke A proti točki B in ugotoviti kje na poti ga prekine statična geometrija.
 
-Agentove senzorje smo si najprej zamislili kot nekaj (v našem primeru jih je 19 v zrazponu od -90° do +90°) usmerjenih žarkov, ki v vsakem trenutku preverjajo kje se nahaja ovira. Vsi žarki so razporejeni v neki ravnini na fiksni višini glede na položaj agenta, kotom pa je dodan naključen šum +-5°, ki zmanjšuje možnost da bi agent zgrešil kakšno oviro. Tak način sicer v osnovi deluje dobro pri zaznavanju sten in večjih ovir, odpove pa na stopnicah (agent bi v tem primeru stopnice zaznal kot steno) in prepadih (teh agent sploh ne bi zaznal).
+Agentove senzorje smo si najprej zamislili kot nekaj (v našem primeru jih je 19 v razponu od -90° do +90°) usmerjenih žarkov, ki v vsakem trenutku preverjajo kje se nahaja ovira. Vsi žarki so razporejeni v neki ravnini na fiksni višini glede na položaj agenta, kotom pa je dodan naključen šum +-5°, ki zmanjšuje možnost da bi agent zgrešil kakšno oviro. Tak način sicer v osnovi deluje dobro pri zaznavanju sten in večjih ovir, odpove pa pri poševnih stopnicah (agent bi v tem primeru stopnice zaznal kot steno) in prepadih (teh agent sploh ne bi zaznal).
 
 V ta namen smo preproste senzorje razdalje nadomestili s preprosto lokalno simulacijo sprehoda v dani smeri. Definirali smo dolžino koraka in simulacija je potekala tako:
 \begin{enumerate}
@@ -198,16 +198,16 @@ V ta namen smo preproste senzorje razdalje nadomestili s preprosto lokalno simul
   
   \item Preverimo ali stojimo na trdnih tleh, tako da usmerimo žarek navpično navzdol od mesta simulacije. V kolikor stojimo na tleh, prestavimo simulacijo na to mesto.
   
-  \item Če smo presegli maksimalno število korakov vrnemo razdaljo, sicer nazaj na prvo točko.
+  \item Če smo presegli maksimalno število korakov postane rezultat razdalja, sicer nazaj na prvo točko.
 \end{enumerate}
 
 Takšni senzorji se obnesejo veliko bolje, saj lahko agent sedaj pravilno zazna tako stopnice kot tudi prepade. To sicer poveča število geometričnih poizvedb (testov z žarkom), vendar se BSP drevesa izkažejo kot učinkovita optimizacija in tako te poizvedbe ne predstavljajo velikih težav.
 
 Sami senzorji pa so zgolj orodje, ki ga mora učinkovito uporabiti nadzorni sistem za sprejetje odločitve kam naj se dejansko premakne. V naslednjih dveh podpoglavjih bomo predstavili dva pristopa, enega manj uspešnega in enega precej uspešnega.
 
-\subsection{Nadzorni sistem z EANN}
+\subsection{Nadzorni sistem z EANN} \label{sec:EANN}
 
-Najprej smo želeli nadzorni sistem implementirati s t.i. evolucijskimi umetnimi nevronskimi mrežami. Gre za koncept, kjer za učenje nevronske mreže uporabljamo genetski algoritem, ki ga vodi kriterijska funkcija. V literaturi \cite{champandard02} smo zasledili da se omenjena kombinacija dobro obnese na problemski domeni nadzornih sistemov takšnih agentov, zato smo jo poskušali uporabiti.
+Najprej smo želeli nadzorni sistem implementirati s t.i. evolucijskimi umetnimi nevronskimi mrežami. Gre za koncept, kjer za učenje nevronske mreže uporabljamo genetski algoritem, ki ga vodi kriterijska funkcija. V literaturi \cite{champandard02} smo zasledili, da se omenjena kombinacija dobro obnese na problemski domeni nadzornih sistemov takšnih agentov, zato smo jo poskušali uporabiti.
 
 V našem primeru so namreč tako vhodi (razdalje do ovir s senzorjev ter prejšnji izhod mreže) kot izhodi (zahtevani popravek kota) zvezne vrednosti za kar so nevronske mreže še posebej primerne (v kolikor uporabljamo ustrezno sigmoidno odzivno funkcijo), saj ne zahtevajo diskretizacije vrednosti.
 
@@ -231,7 +231,7 @@ Na tem mestu pa je nastopila precejšnja težava. Genetski algoritem za konverge
 
 Edina možnost, da bi lahko preizkusili dani algoritem in povečali možnost konvergence v doglednem času je bila da na nek način pospešimo simulacijo. Za ta namen smo našemu ogrodju dodali možnost neposredne integracije v naslovni prostor simulatorja (torej igre Quake II), kjer smo lahko hitrost delovanja prilagodili. Tako smo dosegli približno 30-kratno pospešitev simulacije.
 
-Na žalost tudi po vsem tem naporu željenih rezultatov nismo dobili, konvergenca genetskega algoritma se je ustavila v nekem popolnoma neuporabnem naboru uteži. Razloge za to gre verjetno iskati v neprilagojenosti vrednosti parametrov kriterijske funkcije ali pa morebiti v kakšnem hrošču v implementaciji. Na žalost nismo imeli časa, da bi odkrili vzrok, tako da je to ena izmed možnosti za nadaljnje raziskave. Smo pa v tem procesu našemu ogrodju dodali funkcionalnost potrebno za pospešeno simulacijo ter za uporabo genetskih algoritmov in umetnih nevronskih mrež.
+Na žalost tudi po vsem tem naporu željenih rezultatov nismo dobili, konvergenca genetskega algoritma se je ustavila v nekem popolnoma neuporabnem naboru uteži. Razloge za to gre verjetno iskati v neprilagojenosti vrednosti parametrov kriterijske funkcije ali pa morebiti kakšnem hrošču v implementaciji. Na žalost nismo imeli časa, da bi odkrili vzrok, tako da je to ena izmed možnosti za nadaljnje raziskave. Smo pa v tem procesu našemu ogrodju dodali funkcionalnost potrebno za pospešeno simulacijo ter za uporabo genetskih algoritmov in umetnih nevronskih mrež.
 
 \subsection{Nadzorni sistem z mehko logiko}
 
@@ -243,9 +243,9 @@ Mehka logika se sicer veliko uporablja tudi v robotiki \cite{grayston06}, v prin
   ČE kot = majhen IN ovira = blizu POTEM ZAVIJ(za 15°).
 \end{verbatim}
 
-Takšna obnašanja definiramo za vse kombinacije kota in razdalje do ovire. Izračun poteka v dveh fazah in sicer najprej moramo vhodne vrednosti (kot ter razdaljo) spremeniti glede na pripadnost posameznim razredom (v našem primeru so imeli razredi trapezno obliko), nato pa izračunati izhodni kot glede na definirana obnašanja z množenjem ustreznih uteži.
+Takšna obnašanja definiramo za vse kombinacije kota in razdalje do ovire. Izračun poteka v dveh fazah, in sicer: najprej moramo vhodne vrednosti (kot ter razdaljo) spremeniti glede na pripadnost posameznim razredom (v našem primeru so imeli razredi trapezno obliko), nato pa izračunati izhodni kot glede na definirana obnašanja z množenjem ustreznih uteži.
 
-Ker spremenljivke nimajo grobih mej in ker se razredi deloma prekrivajo, dobimo kot izhod neverjetno gladke odzive na ovire. Ta rešitev se je torej izkazala kot zelo preprosta in zelo efektivna. Med že prej omenjenimi senzorji smo torej izbrali tistega, ki je sporočil najmanjšo razdaljo ter njegov kot ter zaznano razdaljo uporabili kot vhod v nadzorni sistem z mehko logiko. Na izhodu smo izračunali potreben popravek smeri.
+Ker spremenljivke nimajo grobih mej in ker se razredi deloma prekrivajo, dobimo kot rezultat neverjetno gladke odzive na ovire. Ta rešitev se je torej izkazala kot zelo preprosta in zelo efektivna. Med že prej omenjenimi senzorji smo torej izbrali tistega, ki je sporočil najmanjšo razdaljo ter njegov kot ter zaznano razdaljo uporabili kot vhod v nadzorni sistem z mehko logiko. Na izhodu smo izračunali potreben popravek smeri.
 
 \subsection{Evaluacija rešitve}
 
@@ -265,7 +265,7 @@ Rešitev je slaba tudi zato, ker je vezana na opis geometrije, ki v osnovi ni na
 
 \subsection{Samodejno učenje topografije}
 
-Naša naslednja ideja je bila: zakaj se agent ne bi sam naučil kateri premiki po svetu so mogoči in kateri ne? Tako bi lahko bil bolje prepričan kaj se da in kaj ni mogoče. Za hitrejše učenje (in ker agent včasih nima dovolj domišljije) pa bi lahko opazoval tudi druge dinamične entitete (igralce) v lokalni okolici in se učil tudi na podlagi njihovih premikov.
+Naša naslednja ideja je bila: zakaj se agent ne bi sam naučil kateri premiki po svetu so mogoči in kateri ne? Tako bi bil lahko bolje prepričan, kaj se da in kaj ni mogoče. Za hitrejše učenje (in ker agent včasih nima dovolj domišljije) pa bi lahko opazoval tudi druge dinamične entitete (igralce) v lokalni okolici in se učil tudi na podlagi njihovih premikov.
 
 Bistvo ideje je naslednje - v kolikor sem se uspešno premaknil iz točke A na točko B, obstaja velika verjetnost da sta ti dve točki povezani. Potrebno je zgolj definirati način, kako te premike učinkovito spraviti v obliko, ki je ustrezna za kasnejše preiskovanje (torej graf).
 
@@ -293,25 +293,25 @@ Za boljšo vizualizacijo tako naučenega grafa smo v ogrodje dodali možnost izv
 
 \subsubsection{Posodabljanje topografije glede na zunanje informacije}
 
-Naš agent ima sposobnost, da znanje o svetu dinamično prilagaja. V ta namen ima komponento, ki se odziva na dogodke o na novo odkritih entitetah in njihovih premikih. V kolikor agent nastopa v skupini, si te informacije izmenjuje tudi z drugimi agenti znotraj skupine. Vsako točko, ki jo na tak način vidi oz. zazna, takoj doda v notranjo predstavitev sveta, kljub temu da mogoče še ni dosegljiva. Takoj ko kasneje opazi povezavo med takšno točko (ali celo nepovezano komponento grafa) in preostalim delom sveta jo poveže, tako da so vse informacije nemudoma na voljo.
+Naš agent ima sposobnost, da znanje o svetu dinamično prilagaja. V ta namen ima komponento, ki se odziva na dogodke o na novo odkritih entitetah in njihovih premikih. V kolikor agent nastopa v skupini, si te informacije izmenjuje tudi z drugimi agenti znotraj skupine. Vsako točko, ki jo na tak način vidi oz. zazna, takoj doda v notranjo predstavitev sveta, kljub temu da mogoče še ni dosegljiva. Takoj ko kasneje opazi povezavo med takšno točko (ali celo nepovezano komponento grafa) in preostalim delom sveta, jo poveže, tako da so vse informacije nemudoma na voljo.
 
 To izboljša hitrost grajenja predstave o svetu, saj omogoča da se topografija gradi vzporedno glede na znanje celotne skupine oz. drugih entitet, ki so morda vidne, vendar se nahajajo zunaj znanega grafa.
 
 \subsection{Iskanje poti skozi svet}
 
-Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od njegove trenutne lokacije do nekih določenih koordinat v svetu. V ta namen smo za učinkovito preiskovanje grafa uporabili algoritem A*.
+Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od svoje trenutne lokacije do nekih določenih koordinat v svetu. V ta namen smo za učinkovito preiskovanje grafa uporabili algoritem A*.
 
 Razdalje med vozlišči so kar evklidske razdalje med točkami, ki predstavljajo središče posameznega vozlišča. Prav tako se kot hevristika dobro izkaže kar evklidska razdalja med trenutnim in ciljnim vozliščem. Iskanje poti preko kompaktnega grafa tako ne predstavlja bistvenega problema in je mogoče v realnem času.
 
 \section{Stanja agenta}
-Stanja agenta določajo trenutno obnašanje in cilje agenta na najvišjem nivoju. Če na agenta gledamo kot na končni avtomat, predstavljajo posamezna stanja agenta posamezna stanja v končnem avtomatu. V nadaljevanju bomo opisali katera stanja smo implementirali, kako deluje prehajanje med stanji in na kakšne težave smo pri tem naleteli.
+Stanja agenta določajo trenutno obnašanje in cilje agenta na najvišjem nivoju. Če na agenta gledamo kot na končni avtomat, predstavljajo posamezna stanja agenta posamezna stanja v končnem avtomatu. V nadaljevanju bomo opisali katera stanja smo implementirali, kako deluje prehajanje med stanji in kakšen razmislek je bil potreben za uspešno realizacijo vsakega stanja posebej.
 \subsection{Opis stanj}
 Iz definicije stanja v končnem avtomatu sledi, da so stanja diskretna in je lahko agent v danem trenutku v natanko enem stanju naenkrat. Osnovna naloga vsakega stanja je, da zna lokalnemu planerju odgovoriti na vprašanje: "Kam naj v tem trenutku premaknem agenta?" Odgovor na to vprašanje je seveda odvisen od tega, kaj je cilj oziroma naloga stanja. Akcija agenta v danem trenutku je torej odvisna od tega, v katerem stanju se agent trenutno nahaja.
 
 V ločenih podpoglavjih bomo našteli in opisali stanja, ki jih naši agenti poznajo.
 
 \subsubsection{Wander}
-To je osnovno stanje agenta, v katerem se znajde takoj po povezavi na strežnik. Glavna naloga tega stanja je, da se agent sprehaja po mapi in se uči iz okolice (glej tudi \ref{sec:navigacija-po-svetu} \nameref{sec:navigacija-po-svetu}). Stanje ima \textit{fazo planiranja} in \textit{fazo izvajanja}. 
+To je osnovno stanje agenta, v katerem se znajde takoj po povezavi na strežnik. Glavna naloga tega stanja je, da se agent sprehaja po mapi in se uči iz okolice (glej tudi poglavje \textit{\ref{sec:navigacija-po-svetu} \nameref{sec:navigacija-po-svetu}}). Stanje ima \textit{fazo planiranja} in \textit{fazo izvajanja}. 
 
 V \textit{fazi planiranja} agent iz dane točke v svetu skonstruira pot naključne dolžine, ki nima podvojenih lokacij (pri dani poti agent torej ne bo dvakrat prečkal iste lokacije). Pri prvotni implementaciji nismo upoštevali omejitve, da v konstruirani poti ne sme biti podvojenih lokacij, zato so morale biti generirane poti nesorazmerno velike, da se je agent sploh kam premaknil. Poleg tega je bilo optimiziranje danega kd-drevesa (poti) izredno procesorsko intenzivno, zaradi česar smo razmislili o alternativni rešitvi. Gradnjo poti smo implementirali kot DFS\footnote{Depth First Search ali iskanje v globino} iz trenutne lokacije do naključne globine. V danem koraku algoritma se odločamo katerega od N naslednikov bomo dodali v seznam vozlišč na poti. Možne kandidate (lokacijska vozlišča) sortiramo po času zadnje obiskanosti. Na ta način favoriziramo vozlišča, ki jih še nismo obiskali ali smo jih obiskali največ časa nazaj. S tem "prisilimo" agenta, da obišče še neobiskane kotičke mape in se nerad vrača na točke, kjer je bil ravno pred kratkim. Naj izpostavimo probleme, ki jih ima ta pristop in rešitve, ki smo jih uporabili pri tem:
 
@@ -331,19 +331,19 @@ V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo
 Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
   
 \subsubsection{Swim}
-V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.
-
-Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani. Lahko bi rekli, da je \textit{refleksno} in se je nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
-
+V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.\\ 
+Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani (glej poglavje \textit{\ref{sec:mozgani} \nameref{sec:mozgani}}). Lahko bi rekli, da je 
+\textit{refleksno} in se ga nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
 \subsubsection{Shoot}
-
-V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete izmikanja. Slednje je seveda težje modelirati.
-
-Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od agenta zahtevajo možgani (glej poglavje \textit{Nagrajevalno učenje}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj. Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
-
+V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. 
+S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete 
+izmikanja. Slednje je seveda težje modelirati.\\
+Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od 
+agenta zahtevajo možgani (glej poglavje \textit{\ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj.
+Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
 \subsubsection{Respawn}
-V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega planerja zahteva prehod v stanje \verb+Camper+.
-
+V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega
+planerja zahteva prehod v stanje \verb+Camper+. Prav tako izprazni seznam ustreznih stanj \verb+eligibleStates+, saj so stanja v njem odvisna od agentove lokacije, ko je bil še živ.
 \subsubsection{GoTo[Ammo, Health, Weapon, Upgrade]}
 
 Za potrebe bolj napredne interakcije z okoljem smo implementirali tudi stanja v katerih agent poišče pot do predmetov, ki jih potrebuje.
@@ -356,17 +356,20 @@ Definirali smo stanje \verb+GoTo+ in njegove izpeljanke:
  \item \verb+GoToUpgrade+.
 \end{enumerate}
 
-Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.
-
+Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. 
+oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi
+planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.\\
 Prehod v vsako izmed stanj postane mogoč le, ko je tako stanje smiselno. Primer: prehod v stanje \verb+GoToWeapon+ bo možno le, ko bo agent
-vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.
+vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta
+prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.
 
-Jasno je, da agent v vsakem trenutku ne ve kater predmet se zagotovo nahaja na nekem mestu, zato smo vpeljali tudi časovno komponento. V primeru, da za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.
+Jasno je, da agent v vsakem trenutku ne ve kateri predmet se zagotovo nahaja na nekem mestu (saj ga je lahko npr. ravnokar pobral sovražnik), zato smo vpeljali tudi časovno komponento. V primeru, da 
+za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.
 
-Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".
+Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). 
+Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".
 
-Podobno kot stanje \verb+Shot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja so označena kot zaključena, ko agent pobere željen predmet ali pa, ko se kje med izvajanjem agent zatakne.
- 
+Podobno kot stanje \verb+Shoot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja se zaključijo, ko agent pobere željeni predmet ali pa če se agent med izvajanjem stanje kje zatakne.
 \subsubsection{Camper} \label{sec:states-camper}
 V tem stanju se agent znajde po tem, ko je bil ubit. Ideja \verb+Camper+ stanja je, da agent ostale agente prosi, če mu lahko kateri izmed njih prinese boljše 
 orožje in naboje, saj so agentu po smrti odvzeti vsi predmeti. Tako sodelovanje je pogosto pri pravih igralcih in tako ima tak agent boljši izhodiščni položaj 
@@ -386,15 +389,18 @@ Postopek po katerem se agenti odločijo kdo bo prinesel orožje agentu, ki je za
 Agent gre iz tega stanja, ko dobi obvestilo o tem, da naj ne čaka več na orožje, ker je to orožje dobil ali pa se je dostavljalcu kaj zgodilo.
 Tretja možnost je, da se dostavljalec predolgo obira - v tem primeru poteče časovnik, čakajoči agent zamenja stanje in dostavljalcu pošlje MOLD sporočilo,
 da ne potrebuje več orožja.
+\subsubsection{DropWeapon}
+V opisu stanja \verb+Camper+ smo omenili, da lahko ubiti agent ustvari anketo o tem, kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je 
+oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju). 
+Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se preko dispečerja sproži notranji dogodek, 
+ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti
+orožje, ter o njegovi poziciji.
 
-\subsubsection{DropWeapon} \label{sec:states-dropweapon}
-V opisu stanja \verb+Camper+ smo omenili, da lahko ubit agent ustvari anketo o tem kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju).
+Za tem sledi faza planiranja poti do želenega položaja v svetu, kjer čaka agent, ki želi imeti orožje. Če dostavljalec orožja najde pot, se začne premikati proti cilju, sicer
+pa zapusti stanje \verb+DropWeapon+. Med potovanjem do čakajočega igralca je stanje \verb+DropWeapon+ lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje
+je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
 
-Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se sproži dogodek, ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti orožje, ter o njegovi poziciji.
-
-Za tem sledi faza planiranja poti do željenega položaja v svetu, kjer ga čaka agent, ki želi imeti orožje. Če najde pot, se začne premikati proti cilju, sicer pa zapusti stanje \verb+DropWeapon+. Med tem, ko potuje proti cilju, je to stanje lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
-
-Agent vedno preda najboljše orožje (v primeru, da ima dve enaki) ali pa drugo najboljše orožje in naboje.
+Agent vedno preda najboljše orožje (v primeru, da ima poleg tega v roki še eno na zalogi) ali pa drugo najboljše orožje iz svojega inventarja in naboje.
 
 \subsection{Preklapljanje med stanji}
 
@@ -405,7 +411,7 @@ Izkazalo se je, da je ta postopek premalo fleksibilen in preveč omejujoč, saj 
 \begin{enumerate}
  \item \textbf{Sklad stanj} - Stanja, ki so odvisna od določenih dogodkov so časovno odvisna. To pomeni, da mora biti dogodek prisoten, da je stanje sploh smiselno. Na primer, agent mora videti sovražnika, da je preklop v stanje \textit{Shoot} smiseln. Recimo, da je agent v stanju \textit{Shoot} in medtem pade v vodo, kar prekine prej omenjeno stanje in novo stanje \textit{Swim} se doda na sklad. Ko sedaj agent splava iz vode in se stanje \textit{Swim} zaključi, sistem preklopi nazaj v stanje \textit{Shoot} (ki je ostalo na skladu). Vendar pa je lahko sovražnik med tem že pobegnil in torej stanje \textit{Shoot} ni več ustrezno.
   
- \item \textbf{Prioritete zahtevkov} - Nastavljanje prioritet zahtev za preklop stanja je nepotrebno omejujoče. Nadzor nad tem, kater zahtevek za preklop stanja bo resnično izveden naj ima raje posebna komponenta sistema - možgani (glej tudi \ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}).
+ \item \textbf{Prioritete zahtevkov} - Nastavljanje prioritet zahtev za preklop stanja je nepotrebno omejujoče. Nadzor nad tem, kater zahtevek za preklop stanja bo resnično izveden naj ima raje posebna komponenta sistema - možgani (glej tudi poglavje \textit{\ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}}).
 \end{enumerate}
 
 Zaradi zgoraj omenjenih razlogov smo preklop med stanji naredili na način, ki ga bomo opisali spodaj.
@@ -478,12 +484,7 @@ vir \cite{rl}.
 Q-learning sloni na podatkovni strukturi, ki za dani par $(stanje, akcija)$ pove vrednost te odločitve (imenovane tudi \textit{Q-value}):
 $$Q: S\times A \rightarrow \mathbb{R}$$
 
-\noindent
-Skozi postopek učenja se te vrednosti iterativno popravlja na podlagi dobljene nagrade, stare Q-vrednosti in najvišje možne Q-vrednosti, ki lahko sledi po tej akciji (glej \cite{ql}).
-
-Čez čas te vrednosti konvergirajo. Če takrat za dano stanje $s$ vedno izberemo tisto akcijo $a$, ki ima največjo Q-vrednost $Q(s, a)$, potem bo agent sledil optimalni politiki.
-
-\subsection{Integracija v Hivemind}
+\subsection{Integracija v Hivemind} \label{sec:mozgani}
 Problem nagrajevalnega učenja je formuliran kot Markovski odločitveni problem\footnote{Markov decision process ali MDP}. To pomeni, da model nagrajevalnega učenja
 predstavimo z
 
@@ -728,7 +729,7 @@ Trenutno so implementirani naslednji glasovalni moduli:
 \begin{itemize}
   \item \texttt{DummyVoter}, ki se uporablja za periodično testiranje delovanja glasovanja kjer agentje glasujejo z naključnimi vrednostmi.
   
-  \item \texttt{DroperVoter}, ki glasuje na podlagi tega ali ima agent na voljo kakšno orožje odveč in glede na razdaljo od agenta, ki je zahteval glasovanje. Na tak način se izbere agent, ki bo na novo \textit{respawnanemu} agentu prinesel orožje. Način delovanja je bolj podrobno vpisan v podpoglavjih \ref{sec:states-dropweapon} \nameref{sec:states-dropweapon} in \ref{sec:states-camper} \nameref{sec:states-camper}.
+  \item \texttt{DroperVoter}, ki glasuje na podlagi tega ali ima agent na voljo kakšno orožje odveč in glede na razdaljo od agenta, ki je zahteval glasovanje. Na tak način se izbere agent, ki bo na novo \textit{respawnanemu} agentu prinesel orožje. Način delovanja je bolj podrobno vpisan v podpoglavjih \textit{\ref{sec:states-dropweapon} \nameref{sec:states-dropweapon}} in \textit{\ref{sec:states-camper} \nameref{sec:states-camper}}.
 \end{itemize} 
 
 \section{Možne izboljšave}
