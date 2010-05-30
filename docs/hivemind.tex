@@ -314,8 +314,10 @@ V ločenih podpoglavjih bomo našteli in opisali stanja, ki jih naši agenti poz
 To je osnovno stanje agenta, v katerem se znajde takoj po povezavi na strežnik. Glavna naloga tega stanja je, da se agent sprehaja po mapi in se uči iz okolice (glej tudi \ref{sec:navigacija-po-svetu} \nameref{sec:navigacija-po-svetu}). Stanje ima \textit{fazo planiranja} in \textit{fazo izvajanja}. 
 
 V \textit{fazi planiranja} agent iz dane točke v svetu skonstruira pot naključne dolžine, ki nima podvojenih lokacij (pri dani poti agent torej ne bo dvakrat prečkal iste lokacije). Pri prvotni implementaciji nismo upoštevali omejitve, da v konstruirani poti ne sme biti podvojenih lokacij, zato so morale biti generirane poti nesorazmerno velike, da se je agent sploh kam premaknil. Poleg tega je bilo optimiziranje danega kd-drevesa (poti) izredno procesorsko intenzivno, zaradi česar smo razmislili o alternativni rešitvi. Gradnjo poti smo implementirali kot DFS\footnote{Depth First Search ali iskanje v globino} iz trenutne lokacije do naključne globine. V danem koraku algoritma se odločamo katerega od N naslednikov bomo dodali v seznam vozlišč na poti. Možne kandidate (lokacijska vozlišča) sortiramo po času zadnje obiskanosti. Na ta način favoriziramo vozlišča, ki jih še nismo obiskali ali smo jih obiskali največ časa nazaj. S tem "prisilimo" agenta, da obišče še neobiskane kotičke mape in se nerad vrača na točke, kjer je bil ravno pred kratkim. Naj izpostavimo probleme, ki jih ima ta pristop in rešitve, ki smo jih uporabili pri tem:
+
 \begin{itemize}
  \item Ker obstajajo v grafu lokacijskih vozlišč tudi cikli, nam omejitev, da se v dani poti vozlišča ne smejo ponoviti včasih predstavlja problem. V tem primeru moramo od zadnje lokacijske točke v poti nazaj izvajati sestopanje (t.i. back-tracking) in iskati alternativne poti.
+ 
  \item V ekstremnih primerih, ko se agent na določenem delu sveta zatakne, nam favoriziranje vozlišč, ki smo jih največ časa nazaj obiskali predstavlja problem. Agent namreč vedno znova poskuša najti isto pot, saj se ne premika in s tem časi obiskanosti sosednjih lokacijskih točk ostajajo enaki. Ker vedno izbiramo prvo točko iz sortiranega seznama naslednikov, pademo v neskončno zanko. Ko tak primer zaznamo, opustimo favoriziranje in izberemo naslednika naključno, kar se je izkazalo za ugodno rešitev.
 \end{itemize}
 
@@ -329,40 +331,42 @@ V \textit{fazi izvajanja} po vrsti obiščemo lokacijska vozlišča poti, ki smo
 Ko pridemo do konca poti, to sporočimo \textit{fazi planiranja}, ki ponovno konstruira naključno pot in cikel se ponovi. 
   
 \subsubsection{Swim}
-V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.\\ 
-Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani. Lahko bi rekli, da je 
-\textit{refleksno} in se je nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
+V to stanje agent preide, ko zazna, da je padel v vodo. V tem primeru mora agent znati priplavati na kopno, saj v nasprotnem primeru umre.
+
+Ko se zazna, da je v nekem trenutku agent v vodi, to stanje prekine katerokoli drugo stanje - stanja \verb+Swim+ ne zahtevajo možgani. Lahko bi rekli, da je \textit{refleksno} in se je nima smisla "učiti", saj je v taki situaciji to edino smiselno stanje v katero lahko preide agent.
+
 \subsubsection{Shoot}
-V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. 
-S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete 
-izmikanja. Slednje je seveda težje modelirati.\\
-Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od 
-agenta zahtevajo možgani (glej poglavje \textit{Nagrajevalno učenje}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj.
-Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
+
+V tem stanju agent poišče najbližjega nasprotnika in ga prične streljati. Ko je agent enkrat v tem stanju, se lahko obrača le okrog osi in se ne premika. S tem smo želeli zmanjšati kompleksnost in bolj poudariti element strategije v smislu pobiranja zanimivih predmetov, zdravja in omiliti element kvalitete izmikanja. Slednje je seveda težje modelirati.
+
+Prehod v to stanje postane mogoč le v primeru, ko agent vidi nasprotnika. To stanje je eno izmed stanj, ki lahko izpolnijo neko akcijo, ki jo od agenta zahtevajo možgani (glej poglavje \textit{Nagrajevalno učenje}) - to pomeni, da moramo označiti kdaj je to stanje doseglo svoj cilj. Slednje se zgodi, ko nasprotnik izgine ali pa, ko gledani agent umre.
+
 \subsubsection{Respawn}
-V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega
-planerja zahteva prehod v stanje \verb+Camper+.
+V to stanje agent preide, ko zazna, da je umrl. Naloga tega stanja je, da strežniku sporoči naj agenta ponovno pošlje v igro in da od lokalnega planerja zahteva prehod v stanje \verb+Camper+.
+
 \subsubsection{GoTo[Ammo, Health, Weapon, Upgrade]}
+
 Za potrebe bolj napredne interakcije z okoljem smo implementirali tudi stanja v katerih agent poišče pot do predmetov, ki jih potrebuje.
 Definirali smo stanje \verb+GoTo+ in njegove izpeljanke:
+
 \begin{enumerate}
  \item \verb+GoToAmmo+,
  \item \verb+GoToHealth+,
  \item \verb+GoToWeapon+ ter
  \item \verb+GoToUpgrade+.
 \end{enumerate}
-Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. 
-oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi
-planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.\\
+
+Kot je razvidno iz imen lahko agent poišče potrebne naboje, pakete z zdravjem, boljše orožje ter kako nadgraditev, ki mu prinese prednost (npr. oklep). V fazi planiranja poti do nekega predmeta, se potreba po določenem predmetu ovrednoti na podlagi predmetov, ki jih že ima, nato pa poskusi planirati pot od najbolj potrebnega predmeta do najmanj potrebnega predmeta.
+
 Prehod v vsako izmed stanj postane mogoč le, ko je tako stanje smiselno. Primer: prehod v stanje \verb+GoToWeapon+ bo možno le, ko bo agent
-vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta
-prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.\\ 
-Jasno je, da agent v vsakem trenutku ne ve kater predmet se zagotovo nahaja na nekem mestu, zato smo vpeljali tudi časovno komponento. V primeru, da 
-za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.\\
-Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). 
-Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".\\
-Podobno kot stanje \verb+Shot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja so označena kot zaključena,
-ko agent pobere željen predmet ali pa, ko se kje med izvajanjem agent zatakne. 
+vedel kje je vsaj eno orožje v njegovem okolju. Ustrezno stanje se tako doda v \verb+eligibleStates+, ko agent dobi informacijo o lokaciji predmeta prave vrste. Informacijo o tem pa lahko dobi s svojim opazovanjem ali pa od drugih agentov (članov ekipe) preko sistema MOLD.
+
+Jasno je, da agent v vsakem trenutku ne ve kater predmet se zagotovo nahaja na nekem mestu, zato smo vpeljali tudi časovno komponento. V primeru, da za nek predmet agent določen čas ni prejel obvestila o poziciji, bo tak predmet umaknil iz svoje baze znanja o predmetih.
+
+Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hitrejše dostopanje hranijo v ločenem kd-drevesu (vsak tip predmetov v svojem). Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".
+
+Podobno kot stanje \verb+Shot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja so označena kot zaključena, ko agent pobere željen predmet ali pa, ko se kje med izvajanjem agent zatakne.
+ 
 \subsubsection{Camper} \label{sec:states-camper}
 V tem stanju se agent znajde po tem, ko je bil ubit. Ideja \verb+Camper+ stanja je, da agent ostale agente prosi, če mu lahko kateri izmed njih prinese boljše 
 orožje in naboje, saj so agentu po smrti odvzeti vsi predmeti. Tako sodelovanje je pogosto pri pravih igralcih in tako ima tak agent boljši izhodiščni položaj 
@@ -382,31 +386,33 @@ Postopek po katerem se agenti odločijo kdo bo prinesel orožje agentu, ki je za
 Agent gre iz tega stanja, ko dobi obvestilo o tem, da naj ne čaka več na orožje, ker je to orožje dobil ali pa se je dostavljalcu kaj zgodilo.
 Tretja možnost je, da se dostavljalec predolgo obira - v tem primeru poteče časovnik, čakajoči agent zamenja stanje in dostavljalcu pošlje MOLD sporočilo,
 da ne potrebuje več orožja.
-\subsubsection{DropWeapon}
-V opisu stanja \verb+Camper+ smo omenili, da lahko ubit agent ustvari anketo o tem kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je 
-oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju). 
-Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se sproži dogodek, 
-ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti
-orožje, ter o njegovi poziciji.\\
-Za tem sledi faza planiranja poti do željenega položaja v svetu, kjer ga čaka agent, ki želi imeti orožje. Če najde pot, se začne premikati proti cilju, sicer
-pa zapusti stanje \verb+DropWeapon+. Med tem, ko potuje proti cilju, je to stanje lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje
-je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.\\
+
+\subsubsection{DropWeapon} \label{sec:states-dropweapon}
+V opisu stanja \verb+Camper+ smo omenili, da lahko ubit agent ustvari anketo o tem kdo mu bo dostavil orožje (če sploh kdo). Imejmo agenta, ki je oddal veljaven glas (torej ima kako orožje odveč) in ta agent je tudi najbližji agentu, ki je ustvaril anketo (ta čaka v \verb+Camper+ stanju).
+
+Slednji bo zmagovalcu ankete poslal MOLD sporočilo, da je bil izbran za dostavo orožja. Ko izbrani agent prejme MOLD sporočilo, se sproži dogodek, ki nato povzroči preklop v stanje \verb+DropWeapon+. V zadnjem MOLD sporočilu dobi dostavljalec informacijo o identifikaciji agenta, ki želi imeti orožje, ter o njegovi poziciji.
+
+Za tem sledi faza planiranja poti do željenega položaja v svetu, kjer ga čaka agent, ki želi imeti orožje. Če najde pot, se začne premikati proti cilju, sicer pa zapusti stanje \verb+DropWeapon+. Med tem, ko potuje proti cilju, je to stanje lahko prekinjeno le od refleksnih stanj. Kadarkoli agent zapusti to stanje je čakajoči agent o tem obveščen, da lahko nadaljuje z igro.
+
 Agent vedno preda najboljše orožje (v primeru, da ima dve enaki) ali pa drugo najboljše orožje in naboje.
 
 \subsection{Preklapljanje med stanji}
 
-Za potrebe preklapljanja med stanji smo najprej razvili sistem, ki je uporabljal \textit{sklad stanj} in \textit{zakasnjene zahteve za preklop stanja}. V tem sistemu je imela vsaka zahteva za preklop stanja svojo prioriteto in zahteve z višjimi prioritetami so prekinjale stanja in zahteve z nižjimi prioritetami. V primeru, ko je neka zahteva prekinila stanje z nižjo prioriteto, smo novo stanje dodali na sklad in vanj tudi preklopili. Ko je določeno stanje svoje delo zaključilo, pa je sistem prešel v stanje nižje na skladu (torej stanje, katerega je pravkar zaključeno stanje nekoč prekinilo). 
-  Izkazalo se je, da je ta postopek premalo fleksibilen in preveč omejujoč, saj ne pokrije vseh scenarijev, ki smo jih potrebovali, predvsem pa sta problematični naslednji komponenti:
+Za potrebe preklapljanja med stanji smo najprej razvili sistem, ki je uporabljal \textit{sklad stanj} in \textit{zakasnjene zahteve za preklop stanja}. V tem sistemu je imela vsaka zahteva za preklop stanja svojo prioriteto in zahteve z višjimi prioritetami so prekinjale stanja in zahteve z nižjimi prioritetami. V primeru, ko je neka zahteva prekinila stanje z nižjo prioriteto, smo novo stanje dodali na sklad in vanj tudi preklopili. Ko je določeno stanje svoje delo zaključilo, pa je sistem prešel v stanje nižje na skladu (torej stanje, katerega je pravkar zaključeno stanje nekoč prekinilo).
+
+Izkazalo se je, da je ta postopek premalo fleksibilen in preveč omejujoč, saj ne pokrije vseh scenarijev, ki smo jih potrebovali, predvsem pa sta problematični naslednji komponenti:
+
 \begin{enumerate}
- \item \textbf{Sklad stanj} - Stanja, ki so odvisna od določenih dogodkov so časovno odvisna. To pomeni, da mora biti dogodek prisoten, da je stanje sploh smiselno. Na primer, agent mora videti sovražnika, da je preklop v stanje \textit{Shoot} smiseln. Recimo, da je agent v stanju \textit{Shoot} in medtem pade v vodo, kar prekine prej omenjeno stanje in novo stanje \textit{Swim} se doda na sklad. Ko sedaj agent splava iz vode in se stanje \textit{Swim} zaključi, sistem preklopi nazaj v stanje \textit{Shoot} (ki je ostalo na skladu). Vendar pa je lahko sovražnik med tem že pobegnil in torej stanje \textit{Shoot} ni več ustrezno. 
+ \item \textbf{Sklad stanj} - Stanja, ki so odvisna od določenih dogodkov so časovno odvisna. To pomeni, da mora biti dogodek prisoten, da je stanje sploh smiselno. Na primer, agent mora videti sovražnika, da je preklop v stanje \textit{Shoot} smiseln. Recimo, da je agent v stanju \textit{Shoot} in medtem pade v vodo, kar prekine prej omenjeno stanje in novo stanje \textit{Swim} se doda na sklad. Ko sedaj agent splava iz vode in se stanje \textit{Swim} zaključi, sistem preklopi nazaj v stanje \textit{Shoot} (ki je ostalo na skladu). Vendar pa je lahko sovražnik med tem že pobegnil in torej stanje \textit{Shoot} ni več ustrezno.
+  
  \item \textbf{Prioritete zahtevkov} - Nastavljanje prioritet zahtev za preklop stanja je nepotrebno omejujoče. Nadzor nad tem, kater zahtevek za preklop stanja bo resnično izveden naj ima raje posebna komponenta sistema - možgani (glej tudi \ref{sec:nagrajevalno-ucenje} \nameref{sec:nagrajevalno-ucenje}).
 \end{enumerate}
 
-Zaradi zgoraj omenjenih razlogov smo preklop med stanji naredili na način, ki ga bomo opisali spodaj. \\
+Zaradi zgoraj omenjenih razlogov smo preklop med stanji naredili na način, ki ga bomo opisali spodaj.
 
 Vpeljali smo pojem seznama stanj - \texttt{eligibleStates}, ki so v danem trenutku ustrezna. Ta seznam, ki je podmnožica vseh stanj, vsebuje stanja, v katera je v danem trenutku smiselno preklopiti. Tako se arbiter stanj (možgani) v trenutku odločanja menjave stanja odloča le med stanji v tem seznamu. 
 
-Vsako stanje lahko definira metodo \texttt{checkEvent()}, ki skrbi za to, da preko dispečerja sproži ustrezen notranji dogodek, kot odziv na stanje agenta ali njegovo okolico. Tako na primer že omenjeno stanje \textit{Shoot} sproži notranji dogodek \texttt{OpponentSpotted} če opazi sovražnika. To ima za posledico, da se stanje doda na seznam trenutno ustreznih stanj. Vsako stanje prav tako definira, koliko časa (od trenutka, ko je bil sprožen dogodek) naj ostane v seznamu trenutno ustreznih stanj, preden se iz seznama izbriše. \\
+Vsako stanje lahko definira metodo \texttt{checkEvent()}, ki skrbi za to, da preko dispečerja sproži ustrezen notranji dogodek, kot odziv na stanje agenta ali njegovo okolico. Tako na primer že omenjeno stanje \textit{Shoot} sproži notranji dogodek \texttt{OpponentSpotted} če opazi sovražnika. To ima za posledico, da se stanje doda na seznam trenutno ustreznih stanj. Vsako stanje prav tako definira, koliko časa (od trenutka, ko je bil sprožen dogodek) naj ostane v seznamu trenutno ustreznih stanj, preden se iz seznama izbriše.
 
 Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v stanju \textit{Wander} in da mu prijateljski agent sporoči, da je na neki lokaciji opazil orožje. Agent je trenutek pred tem sam opazil paket zdravja, prav tako pa se mu je približal sovražni agent. V trenutku odločanja se bo torej arbiter stanj odločal le med stanji \textit{GoToWeapon}, \textit{GoToHealth} in \textit{Shoot}, kar izboljša odločanje, saj izloči neustrezna stanja. Ta situacija je predstavljena na sliki \ref{fig:eligible-set-example}. 
 
@@ -446,40 +452,41 @@ Za ilustracijo delovanja vzemimo naslednji primer. Recimo, da je naš agent v st
 \section{Nagrajevalno učenje} \label{sec:nagrajevalno-ucenje}
 % aka. Reinforcement Learning
 \subsection{Splošno o nagrajevalnem učenju}
-Ideja, ki se nam je zdela zanimiva je, da se naši agenti na najvišjem nivoji ne bi odločali glede na v naprej zakljenjena pravila, ampak, da bi se vsak agent znal
-na podlagi izkušenj naučiti katere akcije so primerne v danem trenutku in katere ne. 
 
-Za realizacijo naše ideje nam je mentor predlagal uporabo metode \textit{nagrajevalnega učenja}\footnote{Reinforcement Learning}. Bistvo te metode je, da se 
-agent poskuša z raziskovanjem naučiti kako mora izvajati akcije v svojem okolju, da bo na dolgi rok čimbolje nagrajen.
+Ideja, ki se nam je zdela zanimiva je, da se naši agenti na najvišjem nivoji ne bi odločali glede na v naprej zakljenjena pravila, ampak, da bi se vsak agent znal na podlagi izkušenj naučiti katere akcije so primerne v danem trenutku in katere ne. 
 
-Prednost uporabe nagrajevalnega učenja, pred npr. nadzorovanim učenjem, je v tem, da nam pri tej metodi ni potrebno eksplicitno specificirati katera akcija
-je pravilna za dano stanje - tega se agent nauči z raziskovanjem in preko dobljenih nagrad. Druga prednost je fleksibilen učni postopek, saj lahko brez težav prehajamo med raziskovanjem 
-(med katerim se agent uči) in med uporabo dobljenega znanja.
+Za realizacijo naše ideje nam je mentor predlagal uporabo metode \textit{nagrajevalnega učenja}\footnote{Reinforcement Learning}. Bistvo te metode je, da se agent poskuša z raziskovanjem naučiti kako mora izvajati akcije v svojem okolju, da bo na dolgi rok čimbolje nagrajen.
 
-Naloga algoritma za nagrajevalno učenje je, da bo vsota nagrad, ki jih agent dobi z izvajanjem svojih akcije na dolgi rok čimvečja; iščemo torej primerno
-\textit{politiko} po kateri se bo ravnal agent. 
+Prednost uporabe nagrajevalnega učenja, pred npr. nadzorovanim učenjem, je v tem, da nam pri tej metodi ni potrebno eksplicitno specificirati katera akcija je pravilna za dano stanje - tega se agent nauči z raziskovanjem in preko dobljenih nagrad. Druga prednost je fleksibilen učni postopek, saj lahko brez težav prehajamo med raziskovanjem (med katerim se agent uči) in med uporabo dobljenega znanja.
+
+Naloga algoritma za nagrajevalno učenje je, da bo vsota nagrad, ki jih agent dobi z izvajanjem svojih akcije na dolgi rok čimvečja; iščemo torej primerno \textit{politiko} po kateri se bo ravnal agent. 
 
 \subsection{Q-learning}
+
 Algoritmov s katerimi lahko dosežemo (aproksimacijo) optimalne politike je veliko. V našem primeru vsak agent
 uporablja pristop imenovan \textit{Q-learning}\cite{rl}. Prednosti, ki smo jih videli v tem pristopu so:
+
 \begin{itemize}
  \item za ocenjevanje tega kako dobro se bo posamezna akcija obnesla ne potrebujemo modela okolja,
  \item enostavna implementacija in
  \item možnost nadgraditve v SARSA pristop.
 \end{itemize}
-Okolje s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja),
-zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
-vir \cite{rl}.\\\\
+
+Okolje s katerim naš agent interaktira je zelo kompleksno (v primerjavi npr. z igro backgammon, ki je pogosto omenjena domena za uporabo nagrajevalnega učenja), zato se nam je zdel takšen pristop brez modeliranja okolja še posebej privlačen. Pri implementaciji in razumevanju tega principa nam je bil še posebej v pomoč 
+vir \cite{rl}.
+
 Q-learning sloni na podatkovni strukturi, ki za dani par $(stanje, akcija)$ pove vrednost te odločitve (imenovane tudi \textit{Q-value}):
 $$Q: S\times A \rightarrow \mathbb{R}$$
-Skozi postopek učenja se te vrednosti iterativno popravlja na podlagi dobljene nagrade, stare Q-vrednosti in najvišje možne Q-vrednosti, ki lahko sledi po tej 
-akciji (glej \cite{ql}).\\
-Čez čas te vrednosti konvergirajo. Če takrat za dano stanje $s$ vedno izberemo tisto akcijo $a$, ki ima največjo Q-vrednost $Q(s, a)$, potem bo agent sledil
-optimalni politiki.
+
+\noindent
+Skozi postopek učenja se te vrednosti iterativno popravlja na podlagi dobljene nagrade, stare Q-vrednosti in najvišje možne Q-vrednosti, ki lahko sledi po tej akciji (glej \cite{ql}).
+
+Čez čas te vrednosti konvergirajo. Če takrat za dano stanje $s$ vedno izberemo tisto akcijo $a$, ki ima največjo Q-vrednost $Q(s, a)$, potem bo agent sledil optimalni politiki.
 
 \subsection{Integracija v Hivemind}
 Problem nagrajevalnega učenja je formuliran kot Markovski odločitveni problem\footnote{Markov decision process ali MDP}. To pomeni, da model nagrajevalnega učenja
 predstavimo z
+
 \begin{itemize}
  \item množico stanj,
  \item množico akcij ter
@@ -491,68 +498,61 @@ V našem primeru smo se odločili za naslednjo predstavitev problema. Agent je p
  \item množico akcij, ki je v resnici podmnožica \textit{fizičnih} stanj (v prostoru igre), ki jih lahko zavzame agent (npr. stanje Shoot; glej poglavje \textit{Stanja agenta}) in
  \item funkcijo nagrade, ki nagradi akcije, ki so v prid agentu.
 \end{itemize}
-Odločanje o nadaljnih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih 
-stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta 
-(lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja ipd). Zaradi pomanjkanja časa imamo 
-tako le eno različico možgan. Delovanje teh pa podrobneje razložijo naslednja podpoglavja.
+
+Odločanje o nadaljnih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta (lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja ipd). Zaradi pomanjkanja časa imamo tako le eno različico možgan. Delovanje teh pa podrobneje razložijo naslednja podpoglavja.
 
 \subsubsection{Notranja stanja agenta}
-Problem pri nagrajevalnemu učenju lahko nastopi pri prevelikem številu možnih stanj agenta. Takrat lahko postane prostor, ki ga agent raziskuje 
-(pri učenju naključno) enostavno prevelik, da bi v doglednem času prišli do optimalne politike obnašanja. Da bi se temu izognili smo morali nekatere 
-komponente, ki predstavljajo notranje stanje agenta diskretizirati.\\
+
+Problem pri nagrajevalnemu učenju lahko nastopi pri prevelikem številu možnih stanj agenta. Takrat lahko postane prostor, ki ga agent raziskuje (pri učenju naključno) enostavno prevelik, da bi v doglednem času prišli do optimalne politike obnašanja. Da bi se temu izognili smo morali nekatere komponente, ki predstavljajo notranje stanje agenta diskretizirati.
+
 Odločili smo se za naslednjo strukturo stanja našega agenta (vsako stanje je vektor, ki lahko zavzame navedene vrednosti):
 $$(health \in \{low, mid, high\}, weapon \in \{blaster, shotgun, \ldots\}, ammo \in \{low, high\}, enemyVisible \in \{true, false\})$$
+
+\noindent
 Informacije o tem kakšne so vrednosti komponent možgani dobijo preko posodobitev, ki jih o igralcu pošlje Quake II strežnik in zato niso
-nič bolj napredne kot bi jih imel pri igranju človek. Kot smo že omenili, smo želeli, da naši agenti ne goljufajo kot je to običajno pri računalniško
-gnanih igralcih pri takih igrah - ponavadi imajo na voljo precej več informacij o svetu kot pa človek.
+nič bolj napredne kot bi jih imel pri igranju človek. Kot smo že omenili, smo želeli, da naši agenti ne goljufajo kot je to običajno pri računalniško gnanih igralcih pri takih igrah - ponavadi imajo na voljo precej več informacij o svetu kot pa človek.
 
 \subsubsection{Množica akcij}
-Agent lahko na okolje vpliva preko množice akcij. Omenili smo že, da je vsaka taka akcija predstavljena s fizičnim stanjem agenta (poglavje \textit{Stanja agenta}),
-ki govori o tem kako naj se v vsakem trenutku agent obnaša v svetu.\\
-Značilnosti okolja kot ga vidi naš agent je, da je zelo kompleksno in posledično so kompleksne tudi akcije s katerimi agent lahko vpliva na svet - akcije trajajo 
-določen čas, agent se lahko med tem fizično premakne, pade v vodo, sreča sovražnika, ipd. Zaradi tega smo se odločili, da akcije modeliramo kot stanja, ki se v 
-nekem trenutku zaključijo. \\
-Primer: možgani se odločijo naj agent izvede akcijo Shoot. Agent bo šel v fizično stanje Shoot in začel streljati najbližjega sovražnika. Ko sovražnika ne bo 
-več ali pa ko sam umre, se bo stanje označilo kot končano. V tem primeru možgani vedo, da se je akcija končala in oceni kako je bila uspešna ter posodobi 
-Q-vrednost za dani par $(stanje, akcija)$.\\
+
+Agent lahko na okolje vpliva preko množice akcij. Omenili smo že, da je vsaka taka akcija predstavljena s fizičnim stanjem agenta (poglavje \textit{Stanja agenta}), ki govori o tem kako naj se v vsakem trenutku agent obnaša v svetu.
+
+Značilnosti okolja kot ga vidi naš agent je, da je zelo kompleksno in posledično so kompleksne tudi akcije s katerimi agent lahko vpliva na svet - akcije trajajo določen čas, agent se lahko med tem fizično premakne, pade v vodo, sreča sovražnika, ipd. Zaradi tega smo se odločili, da akcije modeliramo kot stanja, ki se v nekem trenutku zaključijo.
+
+Primer: možgani se odločijo naj agent izvede akcijo Shoot. Agent bo šel v fizično stanje Shoot in začel streljati najbližjega sovražnika. Ko sovražnika ne bo več ali pa ko sam umre, se bo stanje označilo kot končano. V tem primeru možgani vedo, da se je akcija končala in oceni kako je bila uspešna ter posodobi Q-vrednost za dani par $(stanje, akcija)$.
+
 Možne akcije, ki jih lahko izvaja agent so:
 $$A = \{wander, shootAt, findAmmo, findBetterWeapon, findUpgrade\}$$
-Na tem mestu je potrebno omeniti, da se v svetu v katerem so naši agenti ni smiselno ``učiti'' vseh akcij. Za določene akcije lahko rečemo, da so take, da jih
-agent izvede kot \textit{refleks}. Primer take akcije oz. fizičnega stanja je iti v stanje plavanja, ko agent pade v vodo, saj je ta akcija ob taki situaciji 
-edina smiselna in se prehod v to stanje zgodi brez posredovanja možganov.\\
-Omenili smo že, da s številom možnih akcij in stanj narašča prostor, ki ga mora potencialno raziskati agent. Modifikacija, ki smo jo lahko uvedli v našem okolju
-je že omenjen seznam \verb+eligibleStates+, ki pove katera stanja so sploh na voljo v danem momentu. To pomeni, da bodo možgani v nekem trenutku imeli
-na voljo le akcije (oz. fizična stanja), ki so sploh možne. S tem seveda onemogočimo nesmiselno raziskovanje, ki bi lahko sledilo v nasprotnem primeru.
+
+\noindent
+Na tem mestu je potrebno omeniti, da se v svetu v katerem so naši agenti ni smiselno ``učiti'' vseh akcij. Za določene akcije lahko rečemo, da so take, da jih agent izvede kot \textit{refleks}. Primer take akcije oz. fizičnega stanja je iti v stanje plavanja, ko agent pade v vodo, saj je ta akcija ob taki situaciji edina smiselna in se prehod v to stanje zgodi brez posredovanja možganov.
+
+Omenili smo že, da s številom možnih akcij in stanj narašča prostor, ki ga mora potencialno raziskati agent. Modifikacija, ki smo jo lahko uvedli v našem okolju je že omenjen seznam \verb+eligibleStates+, ki pove katera stanja so sploh na voljo v danem momentu. To pomeni, da bodo možgani v nekem trenutku imeli na voljo le akcije (oz. fizična stanja), ki so sploh možne. S tem seveda onemogočimo nesmiselno raziskovanje, ki bi lahko sledilo v nasprotnem primeru.
 
 \subsubsection{Funkcija nagrade}
-Postopka po katerem bi dobili uspešno funkcijo nagrade ni. Vprašati se je bilo potrebno po cilju h kateremu bo vsak agent stremel. Agenti skupaj v skupini
-tekmujejo proti drugi skupini agentov in zmagovalna bo tista ekipa, ki bo prva dosegla določeno število pobojev nasprotnikov.\\
-Pri nagrajevalnem učenju seveda ne moremo eksplicitno govoriti o pravilnih akcijah, ampak le posredno preko nagrad. Odločili smo se, da je agent nagrajen v 
-treh primerih:
+
+Postopka po katerem bi dobili uspešno funkcijo nagrade ni. Vprašati se je bilo potrebno po cilju h kateremu bo vsak agent stremel. Agenti skupaj v skupini tekmujejo proti drugi skupini agentov in zmagovalna bo tista ekipa, ki bo prva dosegla določeno število pobojev nasprotnikov.
+
+Pri nagrajevalnem učenju seveda ne moremo eksplicitno govoriti o pravilnih akcijah, ampak le posredno preko nagrad. Odločili smo se, da je agent nagrajen v treh primerih:
+
 \begin{itemize}
  \item ko se mu zviša nivo zdravja (nagrada velikosti 1),
  \item ko pobere naboje (nagrada velikosti 1),
  \item ko ubije kakega sovražnika (nagrada velikosti 5).
 \end{itemize}
+
+\noindent
 Predpostavljali smo, da če agent stremi po akcijah, ki mu prinašajo zgornje nagrade, potem bo deloval skladno s skupnim ciljem ekipe.
 
 \subsection{Implementacija}
-Najbolj običajna implementacija Q-learning postopka je preko \textit{look-up} tabele v kateri se hranijo Q-vrednosti. Taka podatkovna struktura pa 
-postane težavna, če imamo veliko množico stanj. V našem primeru to ni bilo težavno, saj je bilo kombinacij stanj sorazmerno malo, lahko pa bi bilo
-problematično, če nekaterih vrednosti ne bi diskretizirali.\\
-Alternativna možnost za implementacijo pa je z uporabo prilagojene umetne nevronske mreže \cite{ql}. V tem primeru nevronska mreža vrača kar
-Q-vrednosti. To pa predstavlja tudi možnost za nadaljne delo - preskusiti kako bi se obneslo nagrajevalno učenje skupaj z nevronsko mrežo, saj
-v tem primeru diskretizacija komponent vektorja stanja agenta morda ne bi bila potrebna in zanimivo bi bilo videti kakšna bi bila v tem primeru
-videti optimalna politika obnašanja.\\
-V sklopu našega projekta se Q-vrednosti hranijo v \textit{look-up} tabeli. Taka tabela je abstrahirana v posebno podatkovno strukturo, ki na podlagi dejstva, 
-da imamo končno število stanj in akcij, oštevilči vsak tak vektor (ali stanja ali akcije, če bi akcija imela več komponent) in tako na podlagi te enolične 
-identifikacije dostopa do Q-vrednosti, ki jo hrani za tak par $(stanje, akcija)$.
+Najbolj običajna implementacija Q-learning postopka je preko \textit{look-up} tabele v kateri se hranijo Q-vrednosti. Taka podatkovna struktura pa postane težavna, če imamo veliko množico stanj. V našem primeru to ni bilo težavno, saj je bilo kombinacij stanj sorazmerno malo, lahko pa bi bilo problematično, če nekaterih vrednosti ne bi diskretizirali.
+
+Alternativna možnost za implementacijo pa je z uporabo prilagojene umetne nevronske mreže \cite{ql}. V tem primeru nevronska mreža vrača kar Q-vrednosti. To pa predstavlja tudi možnost za nadaljne delo - preskusiti kako bi se obneslo nagrajevalno učenje skupaj z nevronsko mrežo, saj v tem primeru diskretizacija komponent vektorja stanja agenta morda ne bi bila potrebna in zanimivo bi bilo videti kakšna bi bila v tem primeru videti optimalna politika obnašanja.
+
+V sklopu našega projekta se Q-vrednosti hranijo v \textit{look-up} tabeli. Taka tabela je abstrahirana v posebno podatkovno strukturo, ki na podlagi dejstva, da imamo končno število stanj in akcij, oštevilči vsak tak vektor (ali stanja ali akcije, če bi akcija imela več komponent) in tako na podlagi te enolične identifikacije dostopa do Q-vrednosti, ki jo hrani za tak par $(stanje, akcija)$.
 
 \subsection{Obstojnost znanja}
-V sistemu, ki smo ga razvili lahko ob zagonu z zastavico povemo ali naj se v tej seji agent uči oz. ali naj uporablja že pridobljeno znanje (specificirano
-z datoteko). 
-Če se agent uči, potem na določene časovne intervale shranjujemo vso znanje (Q-vrednosti), ki jih je agent pridobil do tega trenutka, v datoteko. Tako datoteko lahko potem
-agent v naslednjih sejah spet uvozi in jo uporablja naprej.
+
+V sistemu, ki smo ga razvili lahko ob zagonu z zastavico povemo ali naj se v tej seji agent uči oz. ali naj uporablja že pridobljeno znanje (specificirano z datoteko). Če se agent uči, potem na določene časovne intervale shranjujemo vso znanje (Q-vrednosti), ki jih je agent pridobil do tega trenutka, v datoteko. Tako datoteko lahko potem agent v naslednjih sejah spet uvozi in jo uporablja naprej.
 
 \section{Komunikacija med agenti}
 
