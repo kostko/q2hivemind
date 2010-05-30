@@ -82,6 +82,9 @@ void CamperState::processFrame()
     m_alreadyStartedPoll = true;
   }
 
+  if (Timing::getCurrentTimestamp() - m_lastEntered > 5000 && !m_alreadyStartedPoll)
+    getLocalPlanner()->requestTransition("wander");
+
   // As we are camping, we stand still and are a sitting duck
   m_moveTarget = m_moveDestination = Vector3f(std::numeric_limits<float>::infinity(), 0, 0);
 

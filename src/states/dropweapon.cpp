@@ -233,7 +233,7 @@ void DropWeaponState::processPlanning()
       resetPointStatistics();
     } else {
       getLogger()->info("Sorry, not coming to drop as I didn't find a path.");
-      m_complete = true;
+      getLocalPlanner()->requestTransition("wander");
     }
   }
 }
