@@ -363,9 +363,9 @@ Na tem mestu bi omenili še, da se informacije o predmetih določene vrste za hi
 Na ta način lahko hitro opravimo poizvedbo v smislu "poišči najbližji predmet te vrste".\\
 Podobno kot stanje \verb+Shot+, tudi vsa \verb+GoTo+ stanja predstavljajo neko akcijo, ki jo lahko izberejo možgani agenta. Ta stanja so označena kot zaključena,
 ko agent pobere željen predmet ali pa, ko se kje med izvajanjem agent zatakne. 
-\subsubsection{DropWeapon}
+\subsubsection{DropWeapon} \label{sec:states-dropweapon}
 %TODO
-\subsubsection{Camper}
+\subsubsection{Camper} \label{sec:states-camper}
 V tem stanju se agent znajde po tem, ko je bil ubit. Ideja \verb+Camper+ stanja je, da agent ostale agente prosi, če mu lahko kateri izmed njih prinese boljše 
 orožje in naboje, saj so agentu po smrti odvzeti vsi predmeti. Tako sodelovanje je pogosto pri pravih igralcih in tako ima tak agent boljši izhodiščni položaj 
 kot sicer.\\
@@ -720,7 +720,7 @@ Trenutno so implementirani naslednji glasovalni moduli:
 \begin{itemize}
   \item \texttt{DummyVoter}, ki se uporablja za periodično testiranje delovanja glasovanja kjer agentje glasujejo z naključnimi vrednostmi.
   
-  \item \texttt{DroperVoter}, ki glasuje na podlagi tega ali ima agent na voljo kakšno orožje odveč in glede na razdaljo od agenta, ki je zahteval glasovanje. Na tak način se izbere agent, ki bo na novo \textit{respawnanemu} agentu prinesel orožje.
+  \item \texttt{DroperVoter}, ki glasuje na podlagi tega ali ima agent na voljo kakšno orožje odveč in glede na razdaljo od agenta, ki je zahteval glasovanje. Na tak način se izbere agent, ki bo na novo \textit{respawnanemu} agentu prinesel orožje. Način delovanja je bolj podrobno vpisan v podpoglavjih \ref{sec:states-dropweapon} \nameref{sec:states-dropweapon} in \ref{sec:states-camper} \nameref{sec:states-camper}.
 \end{itemize} 
 
 \section{Možne izboljšave}
@@ -736,8 +736,7 @@ Med razvojem ogrodja in raziskovanjem področja smo odkrili nekaj možnosti za i
   
   \item Raziskati možnost sledenja gladkim potem skozi več točk, ki so generirane s pomočjo Catmull-Romovih zlepkov. Prav tako bi lahko iskanje poti upoštevalo kote med zaporednimi točkami in izbiralo takšne točke, ki minimizirajo zavoje.
 
-  \item Implementacija poizvedb za Q-vrednosti s prilagojeno umetno nevronsko mrežo. V tem primeru je prostor stanj lahko veliko večji, kar bi lahko prineslo
-        določene prednosti pri obnašanju agentov.
+  \item Implementacija poizvedb za Q-vrednosti s prilagojeno umetno nevronsko mrežo. V tem primeru je prostor stanj lahko veliko večji, kar bi lahko prineslo določene prednosti pri obnašanju agentov.
 \end{itemize}
 
 \section{Zaključek}
