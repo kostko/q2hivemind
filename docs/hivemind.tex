@@ -303,7 +303,7 @@ Ko imamo graf enkrat zgrajen, mora biti agent sposoben poiskati pot od svoje tre
 
 Razdalje med vozlišči so kar evklidske razdalje med točkami, ki predstavljajo središče posameznega vozlišča. Prav tako se kot hevristika dobro izkaže kar evklidska razdalja med trenutnim in ciljnim vozliščem. Iskanje poti preko kompaktnega grafa tako ne predstavlja bistvenega problema in je mogoče v realnem času.
 
-\section{Stanja agenta}
+\section{Stanja agenta} \label{sec:stanja-agenta}
 Stanja agenta določajo trenutno obnašanje in cilje agenta na najvišjem nivoju. Če na agenta gledamo kot na končni avtomat, predstavljajo posamezna stanja agenta posamezna stanja v končnem avtomatu. V nadaljevanju bomo opisali katera stanja smo implementirali, kako deluje prehajanje med stanji in kakšen razmislek je bil potreben za uspešno realizacijo vsakega stanja posebej.
 \subsection{Opis stanj}
 Iz definicije stanja v končnem avtomatu sledi, da so stanja diskretna in je lahko agent v danem trenutku v natanko enem stanju naenkrat. Osnovna naloga vsakega stanja je, da zna lokalnemu planerju odgovoriti na vprašanje: "Kam naj v tem trenutku premaknem agenta?" Odgovor na to vprašanje je seveda odvisen od tega, kaj je cilj oziroma naloga stanja. Akcija agenta v danem trenutku je torej odvisna od tega, v katerem stanju se agent trenutno nahaja.
@@ -488,7 +488,7 @@ V našem primeru smo se odločili za naslednjo predstavitev problema. Agent je p
  \item funkcijo nagrade, ki nagradi akcije, ki so v prid agentu.
 \end{itemize}
 
-Odločanje o nadaljnjih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta (lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja, ipd.). V trenutni implementaciji imamo tako le eno različico možganov, katero bomo raložili v nadaljevanju.
+Odločanje o nadaljnjih potezah je abstrahirano v razredu \verb+Brains+, ki je v Hivemind sistem integriran tako, da je povsem transparenten od dejanskih izbranih stanj, akcij in nagrad agenta - lahko bi se poigrali in definirali več različic možganov - odvisno od obnašanja, ki bi ga želeli od agenta (lahko bi bil agresiven do nasprotnikov, lahko bi bil bolj previden in bi se neprestano zdravil in iskal boljša orožja, ipd.). V trenutni implementaciji imamo tako le eno različico možganov, ki jo bomo razložili v nadaljevanju.
 
 \subsubsection{Notranja stanja agenta}
 
@@ -498,22 +498,21 @@ Odločili smo se za naslednjo strukturo stanja našega agenta (vsako stanje je v
 $$(health \in \{low, mid, high\}, weapon \in \{blaster, shotgun, \ldots\}, ammo \in \{low, high\}, enemyVisible \in \{true, false\})$$
 
 \noindent
-Informacije o tem kakšne so vrednosti komponent možgani dobijo preko posodobitev, ki jih o igralcu pošlje Quake II strežnik in zato niso
-nič bolj napredne kot bi jih imel pri igranju človek. Kot smo že omenili, smo želeli, da naši agenti ne goljufajo kot je to običajno pri računalniško gnanih igralcih pri takih igrah - ponavadi imajo na voljo precej več informacij o svetu kot pa človek.
+Informacije o tem, kakšne so vrednosti komponent, možgani dobijo preko posodobitev, ki jih o igralcu pošlje Quake II strežnik in zato niso nič bolj napredne kot bi jih imel pri igranju človek. Kot smo že omenili, smo želeli, da naši agenti ne goljufajo, kot je to običajno pri računalniško gnanih igralcih pri takih igrah, kjer imajo ponavadi na voljo precej več informacij o svetu kot pa navaden igralec.
 
 \subsubsection{Množica akcij}
 
-Agent lahko na okolje vpliva preko množice akcij. Omenili smo že, da je vsaka taka akcija predstavljena s fizičnim stanjem agenta (poglavje \textit{Stanja agenta}), ki govori o tem kako naj se v vsakem trenutku agent obnaša v svetu.
+Agent lahko na okolje vpliva preko množice akcij. Omenili smo že, da je vsaka taka akcija predstavljena s fizičnim stanjem agenta (glej poglavje \textit{\ref{sec:stanja-agenta} \nameref{sec:stanja-agenta}}), ki govori o tem, kako naj se v vsakem trenutku agent obnaša v svetu.
 
 Značilnosti okolja kot ga vidi naš agent je, da je zelo kompleksno in posledično so kompleksne tudi akcije s katerimi agent lahko vpliva na svet - akcije trajajo določen čas, agent se lahko med tem fizično premakne, pade v vodo, sreča sovražnika, ipd. Zaradi tega smo se odločili, da akcije modeliramo kot stanja, ki se v nekem trenutku zaključijo.
 
-Primer: možgani se odločijo naj agent izvede akcijo Shoot. Agent bo šel v fizično stanje Shoot in začel streljati najbližjega sovražnika. Ko sovražnika ne bo več ali pa ko sam umre, se bo stanje označilo kot končano. V tem primeru možgani vedo, da se je akcija končala in oceni kako je bila uspešna ter posodobi Q-vrednost za dani par $(stanje, akcija)$.
+Primer: možgani se odločijo naj agent izvede akcijo Shoot. Agent bo šel v fizično stanje Shoot in začel streljati najbližjega sovražnika. Ko sovražnika ne bo več ali pa ko sam umre, se bo stanje označilo kot končano. V tem primeru možgani vedo, da se je akcija končala in oceni kako je bila uspešna je bila ter posodobi Q-vrednost za dani par $(stanje, akcija)$.
 
 Možne akcije, ki jih lahko izvaja agent so:
 $$A = \{wander, shootAt, findAmmo, findBetterWeapon, findUpgrade\}$$
 
 \noindent
-Na tem mestu je potrebno omeniti, da se v svetu v katerem so naši agenti ni smiselno ``učiti'' vseh akcij. Za določene akcije lahko rečemo, da so take, da jih agent izvede kot \textit{refleks}. Primer take akcije oz. fizičnega stanja je iti v stanje plavanja, ko agent pade v vodo, saj je ta akcija ob taki situaciji edina smiselna in se prehod v to stanje zgodi brez posredovanja možganov.
+Na tem mestu je potrebno omeniti, da se v svetu v katerem so naši agenti ni smiselno ``učiti'' vseh akcij. Za določene akcije lahko rečemo, da so take, da jih agent izvede kot \textit{refleks}. Primer take akcije oz. fizičnega stanja je prehod v stanje plavanja, ko agent pade v vodo, saj je ta akcija ob taki situaciji edina smiselna in se prehod v to stanje zgodi brez posredovanja možganov.
 
 Omenili smo že, da s številom možnih akcij in stanj narašča prostor, ki ga mora potencialno raziskati agent. Modifikacija, ki smo jo lahko uvedli v našem okolju je že omenjen seznam \verb+eligibleStates+, ki pove katera stanja so sploh na voljo v danem momentu. To pomeni, da bodo možgani v nekem trenutku imeli na voljo le akcije (oz. fizična stanja), ki so sploh možne. S tem seveda onemogočimo nesmiselno raziskovanje, ki bi lahko sledilo v nasprotnem primeru.
 
