@@ -171,7 +171,7 @@ void LocalPlanner::tryUseBetterWeapon()
   std::string bestWeapon = bestWeaponInInventory();
 
   if (getAmmoForWeapon(currentWeapon) == 0) {
-    currentWeapon = "Blaster";
+    currentWeapon = "Grenades";
   }
 
   boost::unordered_map<std::string, int> weapons;
@@ -274,7 +274,7 @@ void LocalPlanner::updateEligibleStates()
   BOOST_FOREACH(StatePair element, m_states) {
     State *state = element.second;
 
-    if (m_gameState->player.health < 0 && state->getName() != "respawn")
+    if (m_gameState->player.health <= 0 && state->getName() != "respawn")
       continue;
 
     state->checkEvent();

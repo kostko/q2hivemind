@@ -58,7 +58,7 @@ void RespawnState::checkEvent()
 {
   int health = m_gameState->player.health;
 
-  if (Timing::getCurrentTimestamp() - m_killedTime > 5000 && health < 0) {
+  if (Timing::getCurrentTimestamp() - m_killedTime > 5000 && health <= 0) {
     getLocalPlanner()->requestTransition("respawn");
     m_killedTime = Timing::getCurrentTimestamp();    
   }
