@@ -1,0 +1,1 @@
+A distributed agent-based Quake 2 bot.
